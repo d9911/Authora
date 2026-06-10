@@ -1,27 +1,44 @@
+# Authora — Docker Compose
+#
+# Default stack (`docker compose up -d`) runs the app on SQLite, which needs no
+# database container, so there are no dangling `depends_on` references.
+#
+# To use a server database instead, start it via its profile and set DB_TYPE:
+#   make db-mongo-up      DB_TYPE=mongo     MONGO_URI=mongodb://mongo:27017/authora
+#   make db-postgres-up   DB_TYPE=postgres  (Sequelize repos — WIP)
 services:
   backend:
     build: ./backend
     ports:
-      - "3010:3010"
+      - "${BACKEND_PORT:-3010}:3010"
     env_file:
-      - ./backend/.env
+      - path: ./backend/.env
+        required: false
     environment:
-      # Override host for in-container networking
-      MONGO_URI: mongodb://mongo:27017/app_db
-    depends_on:
-      - mongo
+      # Sensible container defaults; override in backend/.env as needed.
+      DB_TYPE: ${DB_TYPE:-sqlite}
+      SQLITE_FILE: /data/authora.sqlite
+      # When DB_TYPE=mongo, mongo is reachable on the compose network by name:
+      MONGO_URI: ${MONGO_URI:-mongodb://mongo:27017/authora}
+    volumes:
+      - sqlite_data:/data
     restart: unless-stopped
 
-  # frontend service is added in a later stage
-  # frontend:
-  #   build: ./frontend
-  #   ports:
-  #     - "5178:5178"
-  #   env_file:
-  #     - ./frontend/.env
-  #   depends_on:
-  #     - backend
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-5178}:5178"
+    env_file:
+      - path: ./frontend/.env
+        required: false
+    environment:
+      # The frontend proxy talks to the backend over the compose network.
+      BACKEND_INTERNAL_URL: http://backend:3010
+    depends_on:
+      - backend
+    restart: unless-stopped
 
+  # Optional databases — started only via their profiles.
   mongo:
     image: mongo:7
     profiles:
@@ -39,7 +56,7 @@ services:
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
-      POSTGRES_DB: app_db
+      POSTGRES_DB: authora
     ports:
       - "5432:5432"
     volumes:
@@ -47,5 +64,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  sqlite_data:
   mongo_data:
   postgres_data:

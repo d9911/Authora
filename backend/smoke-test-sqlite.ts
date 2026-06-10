@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 /**
- * End-to-end smoke test for the SQLite implementation + Swagger docs.
+ * End-to-end smoke test for the SQLite implementation.
  * Uses an in-memory SQLite database (no external services required).
  * Run: npx ts-node-dev --transpile-only smoke-test-sqlite.ts
  */
@@ -66,19 +66,6 @@ async function main() {
   // health reports sqlite
   const health = await (await fetch(`${base}/health`)).json();
   check('health db=sqlite', health.status === 'ok' && health.db === 'sqlite', health);
-
-  // swagger docs available
-  const swaggerJson = await (await fetch(`${base}/swagger.json`)).json();
-  check('swagger.json served', swaggerJson.openapi === '3.0.3' && !!swaggerJson.paths['/graphql'], {
-    openapi: swaggerJson.openapi,
-  });
-  const docsRes = await fetch(`${base}/docs/`);
-  const docsHtml = await docsRes.text();
-  check('GET /docs serves Swagger UI', docsRes.status === 200 && docsHtml.includes('swagger-ui'));
-  const exampleCount = Object.keys(
-    swaggerJson.paths['/graphql'].post.requestBody.content['application/json'].examples,
-  ).length;
-  check('swagger has GraphQL examples', exampleCount >= 15, { exampleCount });
 
   // sign up
   const signUp = await gql(

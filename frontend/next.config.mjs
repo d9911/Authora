@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Produce a self-contained server bundle for a small Docker runtime image.
+  output: 'standalone',
   // The frontend talks to its own /api/* proxy routes, never to the backend
   // directly. BACKEND_INTERNAL_URL is only read on the server side.
   env: {

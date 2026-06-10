@@ -1,7 +1,7 @@
-# ---- Root Makefile for the monorepo ----
+# ---- Root Makefile for the Authora monorepo ----
 .PHONY: install dev backend-dev frontend-dev backend-build frontend-build \
         backend-start backend-test backend-test-sqlite seed seed-mongo seed-sqlite docker-up docker-down \
-        db-mongo-up db-postgres-up db-sqlite-up
+        db-mongo-up db-postgres-up db-sqlite-up clean-ports
 
 BACKEND_DIR = backend
 FRONTEND_DIR = frontend
@@ -20,13 +20,12 @@ clean-ports:
 	@-lsof -ti :$(FRONTEND_PORT) | xargs kill -9 2>/dev/null || true
 	@echo "$(GREEN)✅ Порты свободны$(NC)"
 
-
 install:
 	cd backend && yarn install
 	cd frontend && yarn install
 
 # --- dev ---
-dev:backend-dev ## run backend (frontend added later)
+dev: backend-dev frontend-dev
 
 backend-dev:
 	cd backend && yarn run dev

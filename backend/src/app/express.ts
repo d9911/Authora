@@ -6,14 +6,11 @@ import { createHandler } from 'graphql-http/lib/use/express';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { ruruHTML } = require('ruru/server') as { ruruHTML: (cfg: { endpoint: string }) => string };
 
-import swaggerUi from 'swagger-ui-express';
-
 import { env } from '../config/env';
 import { typeDefs } from './graphql/schema';
 import { resolvers } from './graphql/resolvers';
 import { buildContext } from './graphql/context';
 import { AppError, ErrorCodes } from '../core/errors/AppError';
-import { buildOpenApiSpec } from '../shared/swagger';
 
 export function createApp(): Express {
   const app = express();
@@ -30,20 +27,6 @@ export function createApp(): Express {
   app.get('/health', (_req: Request, res: Response) => {
     res.json({ status: 'ok', db: env.dbType, time: new Date().toISOString() });
   });
-
-  // Swagger / OpenAPI documentation
-  const openApiSpec = buildOpenApiSpec();
-  app.get('/swagger.json', (_req: Request, res: Response) => {
-    res.json(openApiSpec);
-  });
-  app.use(
-    '/docs',
-    swaggerUi.serve,
-    swaggerUi.setup(openApiSpec, {
-      customSiteTitle: 'Fullstack App API Docs',
-      swaggerOptions: { persistAuthorization: true },
-    }),
-  );
 
   const schema = makeExecutableSchema({ typeDefs, resolvers });
 

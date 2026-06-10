@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
+    "target": "ES2022",
     "module": "CommonJS",
     "moduleResolution": "node",
-    "lib": ["ES2021"],
+    "lib": ["ES2022"],
     "outDir": "dist",
     "rootDir": "src",
-    "baseUrl": "src",
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["./src/*"],
+      "@/src/*": ["./src/*"]
     },
     "strict": true,
     "esModuleInterop": true,
@@ -18,7 +18,8 @@
     "declaration": false,
     "sourceMap": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "ignoreDeprecations": "6.0"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "smoke-test.ts"]

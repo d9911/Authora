@@ -1,7 +1,7 @@
 {
   "name": "authora-backend",
   "version": "0.1.0",
-  "description": "Fullstack app backend — Express + GraphQL + Clean Architecture (MVP: MongoDB)",
+  "description": "Authora backend — Express + GraphQL + Clean Architecture (Mongo / SQLite)",
   "main": "dist/app/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/app/server.ts",
@@ -29,8 +29,7 @@
     "nodemailer": "^8.0.11",
     "qrcode": "^1.5.4",
     "ruru": "^2.0.0",
-    "speakeasy": "^2.0.0",
-    "swagger-ui-express": "^5.0.1"
+    "speakeasy": "^2.0.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
@@ -42,7 +41,6 @@
     "@types/nodemailer": "^8.0.0",
     "@types/qrcode": "^1.5.5",
     "@types/speakeasy": "^2.0.10",
-    "@types/swagger-ui-express": "^4.1.8",
     "ts-node-dev": "^2.0.0",
     "typescript": "^6.0.3"
   }

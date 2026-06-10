@@ -24,7 +24,6 @@ async function bootstrap(): Promise<void> {
     // eslint-disable-next-line no-console
     console.log(`[backend] Playground http://localhost:${env.backendPort}/playground`);
     // eslint-disable-next-line no-console
-    console.log(`[backend] Swagger:    http://localhost:${env.backendPort}/docs`);
   });
 
   const shutdown = async (signal: string) => {
