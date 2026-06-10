@@ -9,15 +9,15 @@ export function LoaderMain({ label = 'Loading…' }: { label?: string }) {
         justifyContent: 'center',
         gap: 12,
         padding: 40,
-        color: 'var(--color-text-muted)',
+        color: 'var(--steel)',
       }}
     >
       <span
         style={{
           width: 18,
           height: 18,
-          border: '2px solid var(--color-border)',
-          borderTopColor: 'var(--color-primary)',
+          border: '2px solid var(--hairline-strong)',
+          borderTopColor: 'var(--brand-green-mid)',
           borderRadius: '50%',
           display: 'inline-block',
           animation: 'spin 0.8s linear infinite',

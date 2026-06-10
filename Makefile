@@ -20,12 +20,26 @@ clean-ports:
 	@-lsof -ti :$(FRONTEND_PORT) | xargs kill -9 2>/dev/null || true
 	@echo "$(GREEN)✅ Порты свободны$(NC)"
 
+setup:
+	@cd backend && ([ -f .env ] || cp .env.example .env)
+	@cd frontend && ([ -f .env ] || cp .env.example .env)
+	@echo "✅ .env files created (if they were missing)"
+
 install:
 	cd backend && yarn install
 	cd frontend && yarn install
 
+# Удобная команда, которая делает всё сразу
+init: setup install
+
 # --- dev ---
-dev: backend-dev frontend-dev
+## run backend + frontend together (Ctrl-C stops both)
+dev: clean-ports
+	@echo "$(BLUE)🚀 Старт backend (:$(BACKEND_PORT)) + frontend (:$(FRONTEND_PORT))$(NC)"
+	@trap 'kill 0' INT TERM EXIT; \
+	( cd $(BACKEND_DIR) && yarn run dev ) & \
+	( cd $(FRONTEND_DIR) && yarn run dev ) & \
+	wait
 
 backend-dev:
 	cd backend && yarn run dev

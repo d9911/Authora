@@ -34,7 +34,7 @@ export default function ConfirmEmailPage() {
       {state === 'error' && (
         <>
           <p className="error-text">This confirmation link is invalid or expired.</p>
-          <Link href="/login">Back to login</Link>
+          <Link href="/sign-in">Back to sign in</Link>
         </>
       )}
     </div>

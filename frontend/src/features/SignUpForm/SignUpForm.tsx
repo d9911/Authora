@@ -60,7 +60,7 @@ export function SignUpForm() {
         After signing up, check your email to confirm your address.
       </p>
       <div style={{ marginTop: 8, fontSize: 14 }}>
-        Already have an account? <Link href="/login">Sign in</Link>
+        Already have an account? <Link href="/sign-in">Sign in</Link>
       </div>
     </form>
   );

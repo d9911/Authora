@@ -1,0 +1,35 @@
+{
+	"version": "0.2",
+	"language": "en,ru,es,fr,ua",
+	"words": [
+		"actualizar",
+		"camino",
+		"CICD",
+		"Crowdsec",
+		"e",
+		"select",
+		"traefik",
+		"zipkin",
+		"Выберите",
+		"язык"
+	],
+	"languageSettings": [
+		{
+			"languageId": "plaintext",
+			"dictionaries": [
+				"ru"
+			]
+		}
+	],
+	"dictionaries": [
+		"ru"
+	],
+	"dictionaryDefinitions": [
+		{
+			"name": "ru",
+			"path": "./dictionaries/ru.txt"
+		}
+	]
+}
+// jq -r '.[].message | gsub("\""; "") | gsub(": Unknown word.";"")' fail.json | awk '{printf "\"%s\",", $0}' | sed 's/,$//' | awk '{print "[" $0 "]"}'
+// jq -r '.[].message' error.json

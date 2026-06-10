@@ -64,18 +64,22 @@ make install
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 
-# 3a. Option A — SQLite (no Docker needed). Set DB_TYPE=sqlite in backend/.env
+# 3a. Option A — SQLite (DEFAULT, no Docker needed). Seed sample locations:
 make seed-sqlite
 
-# 3b. Option B — MongoDB (Docker) and seed sample locations
+# 3b. Option B — MongoDB: set DB_TYPE=mongo in backend/.env, then:
 make db-mongo-up
 make seed-mongo
 
-# 4. Run dev
+# 4. Run BOTH backend + frontend together (Ctrl-C stops both)
+make dev
+
+#   …or run them separately:
 make backend-dev      # http://localhost:3010
 make frontend-dev     # http://localhost:5178
 ```
 
+- Frontend:          `http://localhost:5178` (sign in at `/sign-in`, `/login` redirects there)
 - GraphQL endpoint:  `http://localhost:3010/graphql`
 - GraphQL IDE (Ruru): `http://localhost:3010/playground`
 - Health check:      `http://localhost:3010/health`
@@ -101,9 +105,18 @@ make docker-down
 ```
 
 The default compose stack runs on SQLite, so there are **no dangling service
-dependencies**. To use a server database, start it via its profile and set
-`DB_TYPE` (e.g. `make db-mongo-up` then `DB_TYPE=mongo`,
+dependencies**. The frontend waits for the backend's `/health` healthcheck before
+starting. To use a server database, start it via its profile and set `DB_TYPE`
+(e.g. `make db-mongo-up` then `DB_TYPE=mongo`,
 `MONGO_URI=mongodb://mongo:27017/authora`).
+
+Notes on the images:
+
+- Backend uses **`node:22-bookworm-slim`** (glibc) so `better-sqlite3` installs a
+  prebuilt binary — no `node-gyp`/Python compilation (the cause of the Alpine
+  build failure). Node 22 also satisfies `ruru`'s engine requirement.
+- Frontend uses the Next.js **standalone** output for a small runtime image,
+  bound to `0.0.0.0:5178`.
 
 ## Example GraphQL
 

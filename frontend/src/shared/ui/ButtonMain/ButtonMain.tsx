@@ -3,15 +3,21 @@
 import { ButtonHTMLAttributes } from 'react';
 
 interface ButtonMainProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'on-dark';
   fullWidth?: boolean;
   loading?: boolean;
 }
 
-const palette = {
-  primary: { bg: 'var(--color-primary)', color: '#fff', border: 'transparent' },
-  ghost: { bg: 'transparent', color: 'var(--color-text)', border: 'var(--color-border)' },
-  danger: { bg: 'var(--color-danger)', color: '#fff', border: 'transparent' },
+/**
+ * Pill-shaped button (rounded.full) — a MongoDB brand signature.
+ * Primary = bright green with deep-navy text.
+ */
+const palette: Record<string, { bg: string; color: string; border: string }> = {
+  primary: { bg: 'var(--brand-green)', color: 'var(--on-primary)', border: 'transparent' },
+  'on-dark': { bg: 'var(--brand-green)', color: 'var(--on-primary)', border: 'transparent' },
+  secondary: { bg: 'transparent', color: 'var(--ink)', border: 'var(--hairline-strong)' },
+  ghost: { bg: 'transparent', color: 'var(--ink)', border: 'transparent' },
+  danger: { bg: 'var(--danger)', color: '#fff', border: 'transparent' },
 };
 
 export function ButtonMain({
@@ -24,6 +30,7 @@ export function ButtonMain({
   ...rest
 }: ButtonMainProps) {
   const c = palette[variant];
+  const isGhost = variant === 'ghost';
   return (
     <button
       {...rest}
@@ -32,14 +39,15 @@ export function ButtonMain({
         background: c.bg,
         color: c.color,
         border: `1px solid ${c.border}`,
-        borderRadius: 'var(--radius)',
-        padding: '10px 16px',
-        fontSize: 15,
+        borderRadius: isGhost ? 'var(--r-md)' : 'var(--r-full)',
+        padding: isGhost ? '8px 12px' : '10px 22px',
+        fontSize: 14,
         fontWeight: 600,
+        lineHeight: 1.3,
         cursor: disabled || loading ? 'not-allowed' : 'pointer',
-        opacity: disabled || loading ? 0.6 : 1,
+        opacity: disabled || loading ? 0.55 : 1,
         width: fullWidth ? '100%' : undefined,
-        transition: 'opacity 0.15s ease',
+        transition: 'opacity 0.15s ease, background 0.15s ease',
         ...style,
       }}
     >

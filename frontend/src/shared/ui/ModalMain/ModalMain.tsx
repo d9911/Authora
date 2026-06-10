@@ -17,7 +17,7 @@ export function ModalMain({ open, title, onClose, children }: ModalMainProps) {
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.6)',
+        background: 'rgba(0, 30, 43, 0.45)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -27,10 +27,17 @@ export function ModalMain({ open, title, onClose, children }: ModalMainProps) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="card"
-        style={{ width: '100%', maxWidth: 460 }}
+        style={{
+          width: '100%',
+          maxWidth: 460,
+          background: 'var(--canvas)',
+          border: '1px solid var(--hairline)',
+          borderRadius: 'var(--r-lg)',
+          padding: 24,
+          boxShadow: 'var(--shadow-4)',
+        }}
       >
-        {title && <h3>{title}</h3>}
+        {title && <h4>{title}</h4>}
         {children}
       </div>
     </div>

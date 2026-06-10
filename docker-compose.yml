@@ -10,7 +10,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "${BACKEND_PORT:-3010}:3010"
+      - '${BACKEND_PORT:-3010}:3010'
     env_file:
       - path: ./backend/.env
         required: false
@@ -22,12 +22,19 @@ services:
       MONGO_URI: ${MONGO_URI:-mongodb://mongo:27017/authora}
     volumes:
       - sqlite_data:/data
+    healthcheck:
+      # Use 127.0.0.1 (not "localhost") so Node's fetch hits IPv4 where Express binds.
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3010/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
     restart: unless-stopped
 
   frontend:
     build: ./frontend
     ports:
-      - "${FRONTEND_PORT:-5178}:5178"
+      - '${FRONTEND_PORT:-5178}:5178'
     env_file:
       - path: ./frontend/.env
         required: false
@@ -35,22 +42,23 @@ services:
       # The frontend proxy talks to the backend over the compose network.
       BACKEND_INTERNAL_URL: http://backend:3010
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
   # Optional databases — started only via their profiles.
   mongo:
-    image: mongo:7
+    image: mongo:8
     profiles:
       - mongo
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongo_data:/data/db
     restart: unless-stopped
 
   postgres:
-    image: postgres:16
+    image: postgres:17.10.0
     profiles:
       - postgres
     environment:
@@ -58,7 +66,7 @@ services:
       POSTGRES_PASSWORD: app
       POSTGRES_DB: authora
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped

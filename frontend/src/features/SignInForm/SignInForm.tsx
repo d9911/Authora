@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux';
 import {
@@ -17,6 +17,9 @@ import { TelegramLoginButton } from '@/features/TelegramLoginButton/TelegramLogi
 export function SignInForm() {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Where to go after a successful sign-in (set by middleware via ?next=).
+  const nextPath = searchParams.get('next') || '/profile/edit';
   const { error, twoFactorToken } = useAppSelector((s) => s.auth);
 
   const [email, setEmail] = useState('');
@@ -30,9 +33,9 @@ export function SignInForm() {
     dispatch(clearAuthError());
     const res = await dispatch(signInThunk({ email, password }));
     setBusy(false);
-    // If 2FA is not required and login succeeded, go to profile.
+    // If 2FA is not required and sign-in succeeded, go to the next page.
     if (signInThunk.fulfilled.match(res) && !res.payload.needTwoFactor) {
-      router.push('/profile/edit');
+      router.push(nextPath);
     }
   };
 
@@ -42,7 +45,7 @@ export function SignInForm() {
     setBusy(true);
     const res = await dispatch(signInTwoFactorThunk({ twoFactorToken, code }));
     setBusy(false);
-    if (signInTwoFactorThunk.fulfilled.match(res)) router.push('/profile/edit');
+    if (signInTwoFactorThunk.fulfilled.match(res)) router.push(nextPath);
   };
 
   if (twoFactorToken) {

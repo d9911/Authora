@@ -20,7 +20,7 @@ export const env = {
   backendPort: Number(process.env.BACKEND_PORT ?? 3010),
 
   // Which database implementation to use. MVP supports "mongo".
-  dbType: (process.env.DB_TYPE ?? 'mongo') as DbType,
+  dbType: (process.env.DB_TYPE ?? 'sqlite') as DbType,
 
   mongo: {
     uri: process.env.MONGO_URI ?? 'mongodb://127.0.0.1:27017/app_db',
