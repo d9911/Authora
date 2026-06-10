@@ -1,0 +1,35 @@
+{
+  "name": "authora",
+  "description": "",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/d9911/Authora.git"
+  },
+  "author": {
+    "name": "Denis Gutsuliak",
+    "email": "admin@d9911.org",
+    "url": "https://t.me/d9911/"
+  },
+  "contributors": [
+    {
+      "name": "Denis Gutsuliak",
+      "email": "admin@d9911.org",
+      "url": "https://t.me/d9911/"
+    }
+  ],
+  "license": "GPL-3.0-or-later",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=8.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/d9911/Authora/issues"
+  },
+  "homepage": "https://github.com/d9911/Authora#readme"
+}

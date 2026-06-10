@@ -1,0 +1,66 @@
+.claude/
+CLAUDE.md
+coverage/
+*/output.txt
+output.txt
+preferences.db
+DESIGN.md
+*/.next
+# Environment / secrets
+.env
+*/.env
+*.env.local
+!.env.example
+superset-src/
+superset-frontend/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+# Database
+*.db
+*.sqlite
+*.sqlite3
+# Node
+node_modules/
+*/node_modules/
+dist/
+*/dist/
+build/
+.npm
+.yarn
+package-lock.json
+*/package-lock.json
+yarn.lock
+*/yarn.lock
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+# OS
+.DS_Store
+Thumbs.db
+*.log
+# Docker
+*.tar
+# macOS
+.DS_Store
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!frontend/dist/_redirects

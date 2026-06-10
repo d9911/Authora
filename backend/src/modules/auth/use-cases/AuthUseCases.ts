@@ -1,0 +1,280 @@
+import { AppError, ErrorCodes } from '../../../core/errors/AppError';
+import { PublicUser, toPublicUser } from '../../user/domain/User';
+import { UserRepository } from '../../user/domain/UserRepository';
+import { ProfileRepository } from '../../profile/domain/ProfileRepository';
+import { RefreshTokenRepository } from '../domain/RefreshTokenRepository';
+import {
+  EmailTokenRepository,
+} from '../../../infrastructure/database/mongo/MongoEmailTokenRepository';
+import { MailService } from '../../../infrastructure/mail/MailService';
+import { TwoFactorService } from '../services/TwoFactorService';
+import {
+  comparePassword,
+  hashPassword,
+  randomToken,
+  sha256,
+} from '../../../infrastructure/jwt/hash';
+import {
+  refreshTokenExpiryDate,
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} from '../../../infrastructure/jwt/jwt';
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface AuthPayload extends AuthTokens {
+  user: PublicUser;
+  needTwoFactor?: false;
+}
+
+export interface NeedTwoFactorPayload {
+  needTwoFactor: true;
+  // short-lived ticket the client exchanges with the 2FA code
+  twoFactorToken: string;
+  accessToken?: undefined;
+  refreshToken?: undefined;
+  user?: undefined;
+}
+
+export type SignInResult = AuthPayload | NeedTwoFactorPayload;
+
+export interface AuthDeps {
+  users: UserRepository;
+  profiles: ProfileRepository;
+  refreshTokens: RefreshTokenRepository;
+  emailTokens: EmailTokenRepository;
+  mail: MailService;
+  twoFactor: TwoFactorService;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ONE_HOUR = 60 * 60 * 1000;
+const ONE_DAY = 24 * ONE_HOUR;
+
+export class AuthUseCases {
+  constructor(private readonly deps: AuthDeps) {}
+
+  /* ----------------------------- helpers ----------------------------- */
+
+  private async issueTokens(userId: string, email: string): Promise<AuthTokens> {
+    const accessToken = signAccessToken({ sub: userId, email });
+    const refreshToken = signRefreshToken({ sub: userId });
+    await this.deps.refreshTokens.save(
+      userId,
+      sha256(refreshToken),
+      refreshTokenExpiryDate(),
+    );
+    return { accessToken, refreshToken };
+  }
+
+  /* ----------------------------- sign up ----------------------------- */
+
+  async signUp(input: {
+    email: string;
+    password: string;
+    name?: string;
+    nickname?: string;
+  }): Promise<AuthPayload> {
+    const email = input.email?.trim().toLowerCase();
+    if (!email || !EMAIL_RE.test(email)) throw AppError.validation('Invalid email');
+    if (!input.password || input.password.length < 8) {
+      throw AppError.validation('Password must be at least 8 characters');
+    }
+
+    const existing = await this.deps.users.findByEmail(email);
+    if (existing) throw AppError.emailTaken();
+
+    const passwordHash = await hashPassword(input.password);
+    const user = await this.deps.users.create({
+      email,
+      password: passwordHash,
+      name: input.name,
+      nickname: input.nickname,
+      emailVerified: false,
+    });
+
+    // isVerified mirrors email confirmation status, stored on the profile.
+    await this.deps.profiles.create({ userId: user.id, isVerified: false });
+
+    // Email confirmation token (stored hashed).
+    const rawToken = randomToken();
+    await this.deps.emailTokens.create(
+      user.id,
+      sha256(rawToken),
+      'verify_email',
+      new Date(Date.now() + ONE_DAY),
+    );
+    await this.deps.mail.sendEmailVerification(email, rawToken);
+
+    const tokens = await this.issueTokens(user.id, user.email);
+    return { ...tokens, user: toPublicUser(user) };
+  }
+
+  /* --------------------------- confirm email -------------------------- */
+
+  async confirmEmail(token: string): Promise<boolean> {
+    const record = await this.deps.emailTokens.findValid(sha256(token), 'verify_email');
+    if (!record) throw new AppError(ErrorCodes.INVALID_TOKEN, 'Invalid or expired token', 400);
+    await this.deps.users.update(record.userId, { emailVerified: true });
+    await this.deps.profiles.update(record.userId, { isVerified: true });
+    await this.deps.emailTokens.markUsed(record.id);
+    return true;
+  }
+
+  /* ----------------------------- sign in ----------------------------- */
+
+  async signIn(input: { email: string; password: string }): Promise<SignInResult> {
+    const email = input.email?.trim().toLowerCase();
+    const user = await this.deps.users.findByEmail(email);
+    if (!user || !user.password) throw AppError.invalidCredentials();
+
+    const ok = await comparePassword(input.password, user.password);
+    if (!ok) throw AppError.invalidCredentials();
+
+    if (user.twoFactorEnabled) {
+      // Issue a short-lived ticket scoped to the 2FA step only.
+      const twoFactorToken = signAccessToken({ sub: user.id, email: user.email });
+      return { needTwoFactor: true, twoFactorToken };
+    }
+
+    const tokens = await this.issueTokens(user.id, user.email);
+    return { ...tokens, user: toPublicUser(user) };
+  }
+
+  async signInTwoFactor(input: { userId: string; code: string }): Promise<AuthPayload> {
+    const user = await this.deps.users.findById(input.userId);
+    if (!user) throw AppError.unauthorized();
+    if (!user.twoFactorEnabled || !user.twoFactorSecret) {
+      throw new AppError(ErrorCodes.TWO_FACTOR_NOT_ENABLED, 'Two-factor is not enabled', 400);
+    }
+    const valid = this.deps.twoFactor.verify(user.twoFactorSecret, input.code);
+    if (!valid) throw new AppError(ErrorCodes.INVALID_2FA_CODE, 'Invalid 2FA code', 401);
+
+    const tokens = await this.issueTokens(user.id, user.email);
+    return { ...tokens, user: toPublicUser(user) };
+  }
+
+  /* ----------------------------- refresh ----------------------------- */
+
+  async refresh(refreshToken: string): Promise<AuthPayload> {
+    const payload = verifyRefreshToken(refreshToken);
+    const hash = sha256(refreshToken);
+    const record = await this.deps.refreshTokens.findValidByHash(hash);
+    if (!record) throw new AppError(ErrorCodes.INVALID_TOKEN, 'Refresh token revoked', 401);
+
+    const user = await this.deps.users.findById(payload.sub);
+    if (!user) throw AppError.unauthorized();
+
+    // Rotation: revoke the used token, issue a fresh pair.
+    await this.deps.refreshTokens.revokeByHash(hash);
+    const tokens = await this.issueTokens(user.id, user.email);
+    return { ...tokens, user: toPublicUser(user) };
+  }
+
+  /* ----------------------------- logout ------------------------------ */
+
+  async logout(refreshToken?: string): Promise<boolean> {
+    if (refreshToken) {
+      await this.deps.refreshTokens.revokeByHash(sha256(refreshToken));
+    }
+    return true;
+  }
+
+  /* ------------------------- password recovery ----------------------- */
+
+  async requestPasswordReset(email: string): Promise<boolean> {
+    const user = await this.deps.users.findByEmail(email?.trim().toLowerCase());
+    // Always return true to avoid leaking which emails are registered.
+    if (!user) return true;
+
+    await this.deps.emailTokens.invalidateForUser(user.id, 'reset_password');
+    const rawToken = randomToken();
+    await this.deps.emailTokens.create(
+      user.id,
+      sha256(rawToken),
+      'reset_password',
+      new Date(Date.now() + ONE_HOUR),
+    );
+    await this.deps.mail.sendPasswordReset(user.email, rawToken);
+    return true;
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<boolean> {
+    if (!newPassword || newPassword.length < 8) {
+      throw AppError.validation('Password must be at least 8 characters');
+    }
+    const record = await this.deps.emailTokens.findValid(sha256(token), 'reset_password');
+    if (!record) throw new AppError(ErrorCodes.INVALID_TOKEN, 'Invalid or expired token', 400);
+
+    const passwordHash = await hashPassword(newPassword);
+    await this.deps.users.update(record.userId, { password: passwordHash });
+    await this.deps.emailTokens.markUsed(record.id);
+    // Invalidate all sessions after a password change.
+    await this.deps.refreshTokens.revokeAllForUser(record.userId);
+    return true;
+  }
+
+  async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<boolean> {
+    const user = await this.deps.users.findById(userId);
+    if (!user || !user.password) throw AppError.unauthorized();
+    const ok = await comparePassword(oldPassword, user.password);
+    if (!ok) throw AppError.invalidCredentials('Current password is incorrect');
+    if (!newPassword || newPassword.length < 8) {
+      throw AppError.validation('Password must be at least 8 characters');
+    }
+    await this.deps.users.update(userId, { password: await hashPassword(newPassword) });
+    await this.deps.refreshTokens.revokeAllForUser(userId);
+    return true;
+  }
+
+  /* ------------------------------- 2FA ------------------------------- */
+
+  async enableTwoFactor(userId: string): Promise<{ qrDataUrl: string; otpauthUrl: string }> {
+    const user = await this.deps.users.findById(userId);
+    if (!user) throw AppError.unauthorized();
+    if (user.twoFactorEnabled) {
+      throw new AppError(
+        ErrorCodes.TWO_FACTOR_ALREADY_ENABLED,
+        'Two-factor is already enabled',
+        400,
+      );
+    }
+    const setup = await this.deps.twoFactor.generate(user.email);
+    // Store secret but keep 2FA disabled until confirmed with a code.
+    await this.deps.users.update(userId, { twoFactorSecret: setup.secret });
+    return { qrDataUrl: setup.qrDataUrl, otpauthUrl: setup.otpauthUrl };
+  }
+
+  async confirmTwoFactor(userId: string, code: string): Promise<boolean> {
+    const user = await this.deps.users.findById(userId);
+    if (!user || !user.twoFactorSecret) {
+      throw new AppError(ErrorCodes.TWO_FACTOR_NOT_ENABLED, 'No pending 2FA setup', 400);
+    }
+    const valid = this.deps.twoFactor.verify(user.twoFactorSecret, code);
+    if (!valid) throw new AppError(ErrorCodes.INVALID_2FA_CODE, 'Invalid 2FA code', 401);
+    await this.deps.users.update(userId, { twoFactorEnabled: true });
+    return true;
+  }
+
+  async disableTwoFactor(userId: string, code: string): Promise<boolean> {
+    const user = await this.deps.users.findById(userId);
+    if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+      throw new AppError(ErrorCodes.TWO_FACTOR_NOT_ENABLED, 'Two-factor is not enabled', 400);
+    }
+    const valid = this.deps.twoFactor.verify(user.twoFactorSecret, code);
+    if (!valid) throw new AppError(ErrorCodes.INVALID_2FA_CODE, 'Invalid 2FA code', 401);
+    await this.deps.users.update(userId, {
+      twoFactorEnabled: false,
+      twoFactorSecret: null,
+    });
+    return true;
+  }
+}

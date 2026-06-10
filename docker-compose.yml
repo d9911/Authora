@@ -1,0 +1,51 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3010:3010"
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override host for in-container networking
+      MONGO_URI: mongodb://mongo:27017/app_db
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  # frontend service is added in a later stage
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "5178:5178"
+  #   env_file:
+  #     - ./frontend/.env
+  #   depends_on:
+  #     - backend
+
+  mongo:
+    image: mongo:7
+    profiles:
+      - mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    profiles:
+      - postgres
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  postgres_data:
