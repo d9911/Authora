@@ -23,8 +23,9 @@ async function getCountry(id: string): Promise<Country | null> {
   }
 }
 
-export default async function CountryPage({ params }: { params: { id: string } }) {
-  const country = await getCountry(params.id);
+export default async function CountryPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const country = await getCountry(id);
   if (!country) notFound();
 
   return (

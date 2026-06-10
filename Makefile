@@ -1,5 +1,5 @@
 # ---- Root Makefile for the Authora monorepo ----
-.PHONY: install dev backend-dev frontend-dev backend-build frontend-build \
+.PHONY: setup init install dev backend-dev frontend-dev backend-build frontend-build \
         backend-start backend-test backend-test-sqlite seed seed-mongo seed-sqlite docker-up docker-down \
         db-mongo-up db-postgres-up db-sqlite-up clean-ports
 
@@ -23,7 +23,7 @@ clean-ports:
 setup:
 	@cd backend && ([ -f .env ] || cp .env.example .env)
 	@cd frontend && ([ -f .env ] || cp .env.example .env)
-	@echo "✅ .env files created (if they were missing)"
+	@echo "$(GREEN)✅ .env files created (if they were missing)$(NC)"
 
 install:
 	cd backend && yarn install
@@ -76,14 +76,28 @@ seed-sqlite:
 	cd backend && yarn run seed:sqlite
 
 # --- docker ---
+# Default stack: backend + frontend on SQLite.
 docker-up:
-	docker compose up -d
+	docker compose up -d --build
 
 docker-down:
 	docker compose down
 
+# Seed sample data INSIDE the running backend container (shares its DB/volume).
+docker-seed:
+	docker compose exec backend node dist/infrastructure/database/sqlite/seed.js
+
+docker-seed-mongo:
+	docker compose exec backend node dist/infrastructure/database/mongo/seed.js
+
+# Bring up the full stack on MongoDB (backend waits for mongo to be healthy),
+# then seed it.
 db-mongo-up:
-	docker compose --profile mongo up -d
+	docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml up -d --build
+	@echo "⏳ waiting for backend to become healthy before seeding..."
+	@until [ "$$(docker inspect -f '{{.State.Health.Status}}' authora-backend-1 2>/dev/null)" = "healthy" ]; do sleep 2; done
+	docker compose -f docker-compose.yml -f docker-compose.mongo.yml exec backend node dist/infrastructure/database/mongo/seed.js
+	@echo "✅ MongoDB stack up and seeded"
 
 db-postgres-up:
 	docker compose --profile postgres up -d

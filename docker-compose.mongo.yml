@@ -1,0 +1,12 @@
+# Override applied for the MongoDB stack:
+#   docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml up -d
+#
+# It forces the backend onto MongoDB and makes it wait for the mongo healthcheck.
+services:
+  backend:
+    environment:
+      DB_TYPE: mongo
+      MONGO_URI: mongodb://mongo:27017/authora
+    depends_on:
+      mongo:
+        condition: service_healthy

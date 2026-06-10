@@ -3,26 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 5178",
+    "dev": "next dev -p 5178 -H 0.0.0.0",
     "build": "next build",
-    "start": "next start -p 5178",
+    "start": "next start -p 5178 -H 0.0.0.0",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.7",
-    "axios": "^1.7.4",
-    "next": "14.2.5",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "axios": "^1.17.0",
+    "next": "16.2.9",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "react-redux": "^9.1.2",
     "redux-thunk": "^3.1.0"
   },
   "devDependencies": {
-    "@types/node": "^20.14.10",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
+    "@types/node": "^25.9.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
     "sass": "^1.77.8",
-    "typescript": "^5.5.3"
+    "typescript": "^6.0.3"
   }
 }

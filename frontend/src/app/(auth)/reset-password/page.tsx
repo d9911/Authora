@@ -2,10 +2,11 @@ import { PasswordResetForm } from '@/features/PasswordResetForm/PasswordResetFor
 
 export const metadata = { title: 'Reset password' };
 
-export default function ResetPasswordPage({
+export default async function ResetPasswordPage({
   searchParams,
 }: {
-  searchParams: { token?: string };
+  searchParams: Promise<{ token?: string }>;
 }) {
-  return <PasswordResetForm token={searchParams.token} />;
+  const { token } = await searchParams;
+  return <PasswordResetForm token={token} />;
 }

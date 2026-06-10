@@ -17,8 +17,9 @@ async function getCity(id: string): Promise<City | null> {
   }
 }
 
-export default async function CityPage({ params }: { params: { id: string } }) {
-  const city = await getCity(params.id);
+export default async function CityPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const city = await getCity(id);
   if (!city) notFound();
 
   return (

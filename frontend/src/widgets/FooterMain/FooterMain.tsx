@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { config } from '@/shared/config';
 
-const columns: { title: string; links: { label: string; href: string; external?: boolean }[] }[] = [
+const columns: {
+  title: string;
+  links: { label: string; href: string; external?: boolean }[];
+}[] = [
   {
     title: 'Product',
     links: [
@@ -38,14 +41,13 @@ export function FooterMain() {
 
   return (
     <footer style={{ background: 'var(--brand-teal-deep)', color: 'var(--on-dark)' }}>
-      {/* Стили для hover-эффектов, так как в инлайн-стилях React нет псевдоклассов */}
+      {/* hover effects (inline styles can't express pseudo-classes) */}
       <style>{`
         .footer-link:hover { color: var(--on-dark) !important; opacity: 1 !important; }
         .footer-social-link:hover { opacity: 0.8 !important; }
       `}</style>
 
       <div className="container" style={{ padding: '64px 32px 32px' }}>
-        {/* Основная сетка */}
         <div
           style={{
             display: 'grid',
@@ -53,25 +55,41 @@ export function FooterMain() {
             gap: 40,
           }}
         >
-          {/* Акцентная колонка: Бренд и Контакты */}
-          <div style={{ gridColumn: 'span 1', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Brand & contacts column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 24 }}>📋</span>
               <span style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.5px' }}>
                 {config.appName}
               </span>
             </div>
-            <p style={{ color: 'var(--on-dark-muted)', fontSize: 14, lineHeight: 1.6, margin: 0, maxWidth: 320 }}>
-              Модуль для сбора и управления заявками с клиентских сайтов. Разработка под ключ — быстро, качественно, с гарантией результата.
+            <p
+              style={{
+                color: 'var(--on-dark-muted)',
+                fontSize: 14,
+                lineHeight: 1.6,
+                margin: 0,
+                maxWidth: 320,
+              }}
+            >
+              Модуль для сбора и управления заявками с клиентских сайтов. Разработка под
+              ключ — быстро, качественно, с гарантией результата.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--on-dark)', opacity: 0.9 }}>
+              <span
+                style={{ fontSize: 13, fontWeight: 500, color: 'var(--on-dark)', opacity: 0.9 }}
+              >
                 Denis Gutsuliak
               </span>
               <a
                 href="mailto:admin@d9911.org"
                 className="footer-social-link"
-                style={{ color: 'var(--on-dark-muted)', fontSize: 13, textDecoration: 'none', transition: 'opacity 0.2s' }}
+                style={{
+                  color: 'var(--on-dark-muted)',
+                  fontSize: 13,
+                  textDecoration: 'none',
+                  transition: 'opacity 0.2s',
+                }}
               >
                 📧 admin@d9911.org
               </a>
@@ -80,21 +98,35 @@ export function FooterMain() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="footer-social-link"
-                style={{ color: 'var(--on-dark-muted)', fontSize: 13, textDecoration: 'none', transition: 'opacity 0.2s' }}
+                style={{
+                  color: 'var(--on-dark-muted)',
+                  fontSize: 13,
+                  textDecoration: 'none',
+                  transition: 'opacity 0.2s',
+                }}
               >
                 💬 Telegram: @d9911
               </a>
             </div>
           </div>
 
-          {/* Колонки ссылок */}
+          {/* Link columns */}
           {columns.map((col) => (
             <div key={col.title}>
-              <div style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 16, opacity: 0.8 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginBottom: 16,
+                  opacity: 0.8,
+                }}
+              >
                 {col.title}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {col.links.map((l) => (
+                {col.links.map((l) =>
                   l.external ? (
                     <a
                       key={l.href + l.label}
@@ -125,14 +157,14 @@ export function FooterMain() {
                     >
                       {l.label}
                     </Link>
-                  )
-                ))}
+                  ),
+                )}
               </div>
             </div>
           ))}
         </div>
 
-        {/* Нижняя полоса */}
+        {/* Bottom bar */}
         <div
           style={{
             marginTop: 56,

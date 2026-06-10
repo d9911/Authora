@@ -100,23 +100,55 @@ enroll → confirm → 2FA-gated login, nested location queries, and password-re
 ## Docker
 
 ```bash
-make docker-up      # builds & runs backend + frontend (SQLite, no DB container)
+# SQLite stack (default — no DB container)
+make docker-up        # builds & runs backend + frontend on SQLite
+make docker-seed      # seed countries/regions/cities into the running container
 make docker-down
+
+# MongoDB stack (starts mongo, points backend at it, waits & seeds)
+make db-mongo-up
 ```
 
 The default compose stack runs on SQLite, so there are **no dangling service
-dependencies**. The frontend waits for the backend's `/health` healthcheck before
-starting. To use a server database, start it via its profile and set `DB_TYPE`
-(e.g. `make db-mongo-up` then `DB_TYPE=mongo`,
-`MONGO_URI=mongodb://mongo:27017/authora`).
+dependencies**. The frontend waits for the backend's `/health` healthcheck
+before starting.
+
+DB configuration is set with **literal values** in compose `environment`, and the
+container does **not** load `backend/.env` (that file is for local `make dev` and
+its `DB_TYPE=mongo` / `MONGO_URI=127.0.0.1` would be wrong inside a container).
+This guarantees `make docker-up` always runs on SQLite and never tries to reach
+`127.0.0.1:27017`. The MongoDB stack is wired via a compose override
+(`docker-compose.mongo.yml`) that flips `DB_TYPE=mongo`,
+`MONGO_URI=mongodb://mongo:27017/authora` and adds `depends_on: mongo (healthy)`.
+
+Docker secrets (SMTP / OAuth / Telegram) go in **`backend/.env.docker`**
+(copy from `backend/.env.docker.example`) — never DB settings.
 
 Notes on the images:
 
-- Backend uses **`node:22-bookworm-slim`** (glibc) so `better-sqlite3` installs a
-  prebuilt binary — no `node-gyp`/Python compilation (the cause of the Alpine
-  build failure). Node 22 also satisfies `ruru`'s engine requirement.
-- Frontend uses the Next.js **standalone** output for a small runtime image,
-  bound to `0.0.0.0:5178`.
+- Backend uses **`node:24-bookworm-slim`** (glibc) with `python3/make/g++` in the
+  build stage so the native `better-sqlite3` always compiles for the current Node
+  ABI (the cause of the earlier unhealthy container). The compiled `node_modules`
+  is copied into the runtime stage — no rebuild at runtime.
+- Frontend uses **`node:24-alpine`** with the Next.js **standalone** output, bound
+  to `0.0.0.0:5178` (also `next dev/start -H 0.0.0.0` so it's reachable outside
+  the container).
+- `mongo` has its own healthcheck; the backend also retries the Mongo connection
+  on startup so transient `ECONNREFUSED` during boot won't crash it.
+- The optional Ruru `/playground` is loaded lazily inside a `try/catch`, so a
+  missing/incompatible dev dependency can never crash the server at startup.
+- Backend uses `restart: on-failure:3` (not `unless-stopped`) so a crashing
+  container isn't silently recreated with a new id mid-`depends_on` wait — that
+  is what produced the confusing `No such container` / `dependency failed to
+  start` message.
+
+### Debugging a container that won't become healthy
+
+```bash
+docker compose logs backend          # see the actual startup error
+docker compose ps                    # check status / health
+docker compose exec backend node -e "require('http').get('http://127.0.0.1:3010/health',r=>console.log(r.statusCode))"
+```
 
 ## Example GraphQL
 

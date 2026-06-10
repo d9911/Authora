@@ -3,14 +3,31 @@ import cors from 'cors';
 import { GraphQLError } from 'graphql';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { createHandler } from 'graphql-http/lib/use/express';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { ruruHTML } = require('ruru/server') as { ruruHTML: (cfg: { endpoint: string }) => string };
 
 import { env } from '../config/env';
 import { typeDefs } from './graphql/schema';
 import { resolvers } from './graphql/resolvers';
 import { buildContext } from './graphql/context';
 import { AppError, ErrorCodes } from '../core/errors/AppError';
+
+/**
+ * Lazily load the optional Ruru playground. It is a dev convenience and must
+ * NEVER be able to crash the server at startup, so it is required on demand
+ * inside a try/catch rather than at module-load time.
+ */
+function renderPlayground(): string | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { ruruHTML } = require('ruru/server') as {
+      ruruHTML: (cfg: { endpoint: string }) => string;
+    };
+    return ruruHTML({ endpoint: '/graphql' });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('[backend] playground unavailable:', err instanceof Error ? err.message : err);
+    return null;
+  }
+}
 
 export function createApp(): Express {
   const app = express();
@@ -28,7 +45,26 @@ export function createApp(): Express {
     res.json({ status: 'ok', db: env.dbType, time: new Date().toISOString() });
   });
 
+  // Friendly root: this is an API server; the UI lives on the frontend.
+  app.get('/', (_req: Request, res: Response) => {
+    res.json({
+      name: 'authora-backend',
+      status: 'ok',
+      endpoints: {
+        graphql: 'POST /graphql',
+        playground: 'GET /playground',
+        health: 'GET /health',
+      },
+    });
+  });
+
   const schema = makeExecutableSchema({ typeDefs, resolvers });
+
+  // A browser GET to /graphql (no query) is not an error — send it to the IDE.
+  app.get('/graphql', (req: Request, res: Response, next: NextFunction) => {
+    if (req.query.query) return next(); // real GraphQL GET request
+    res.redirect('/playground');
+  });
 
   // GraphQL endpoint
   app.all(
@@ -56,9 +92,14 @@ export function createApp(): Express {
     }),
   );
 
-  // GraphiQL-like IDE (Ruru) for manual exploration in dev
+  // GraphiQL-like IDE (Ruru) for manual exploration in dev (optional).
   app.get('/playground', (_req: Request, res: Response) => {
-    res.type('html').end(ruruHTML({ endpoint: '/graphql' }));
+    const html = renderPlayground();
+    if (!html) {
+      res.status(503).json({ message: 'Playground unavailable', code: 'PLAYGROUND_UNAVAILABLE' });
+      return;
+    }
+    res.type('html').end(html);
   });
 
   // Fallback 404

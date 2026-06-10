@@ -29,6 +29,12 @@ function isOperation(query: string, name: string): boolean {
   return new RegExp(`\\b${name}\\b`).test(query);
 }
 
+// Matches an actual top-level mutation CALL like `refreshToken(input: ...)`,
+// NOT a field of the same name inside a selection set (e.g. `signUp { refreshToken }`).
+function callsMutation(query: string, name: string): boolean {
+  return new RegExp(`\\b${name}\\s*\\(`).test(query);
+}
+
 export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
   let body: GraphQLBody;
   try {
@@ -45,9 +51,10 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
   const query = body.query ?? '';
   const variables = { ...(body.variables ?? {}) } as Record<string, unknown>;
 
-  // Inject the httpOnly refresh token into operations that need it,
-  // since the browser never holds it.
-  if (isOperation(query, 'refreshToken')) {
+  // Inject the httpOnly refresh token into the refreshToken mutation only.
+  // We match the mutation CALL `refreshToken(...)`, never the field selection
+  // `refreshToken` that appears inside signUp/signIn payloads.
+  if (callsMutation(query, 'refreshToken')) {
     const input = (variables.input as Record<string, unknown>) ?? {};
     variables.input = { ...input, refreshToken: refreshToken ?? '' };
   }
@@ -82,33 +89,46 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
     errors?: unknown;
   };
 
-  const res = NextResponse.json(json, { status: upstream.status });
+  // IMPORTANT: mutate the body (strip tokens) BEFORE building NextResponse.json,
+  // because NextResponse.json serializes the object immediately — later mutations
+  // would not affect the already-serialized body.
+  let setAccess: string | null = null;
+  let setRefresh: string | null = null;
 
-  // Persist tokens returned by auth mutations into httpOnly cookies and
-  // strip them from the body so they never reach the client.
   const data = json.data ?? {};
   for (const key of ['signUp', 'signIn', 'signInTwoFactor', 'refreshToken']) {
-    const payload = data[key] as
-      | { accessToken?: string; refreshToken?: string }
-      | undefined;
+    const payload = data[key] as { accessToken?: string; refreshToken?: string } | undefined;
     if (payload?.accessToken) {
-      res.cookies.set(config.cookies.accessToken, payload.accessToken, {
-        ...COOKIE_BASE,
-        maxAge: 60 * 60, // 1h safety cap; refreshed via refresh flow
-      });
+      setAccess = payload.accessToken;
       delete (payload as Record<string, unknown>).accessToken;
     }
     if (payload?.refreshToken) {
-      res.cookies.set(config.cookies.refreshToken, payload.refreshToken, {
-        ...COOKIE_BASE,
-        maxAge: 60 * 60 * 24 * 30, // 30d
-      });
+      setRefresh = payload.refreshToken;
       delete (payload as Record<string, unknown>).refreshToken;
     }
   }
 
+  const clearCookies = isOperation(query, 'logout') && data.logout === true;
+
+  // Now serialize the (token-stripped) body.
+  const res = NextResponse.json(json, { status: upstream.status });
+
+  // Persist tokens as httpOnly cookies (never exposed to client JS).
+  if (setAccess) {
+    res.cookies.set(config.cookies.accessToken, setAccess, {
+      ...COOKIE_BASE,
+      maxAge: 60 * 60, // 1h safety cap; refreshed via refresh flow
+    });
+  }
+  if (setRefresh) {
+    res.cookies.set(config.cookies.refreshToken, setRefresh, {
+      ...COOKIE_BASE,
+      maxAge: 60 * 60 * 24 * 30, // 30d
+    });
+  }
+
   // Clear cookies on logout.
-  if (isOperation(query, 'logout') && data.logout === true) {
+  if (clearCookies) {
     res.cookies.set(config.cookies.accessToken, '', { ...COOKIE_BASE, maxAge: 0 });
     res.cookies.set(config.cookies.refreshToken, '', { ...COOKIE_BASE, maxAge: 0 });
   }

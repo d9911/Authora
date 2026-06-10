@@ -13,7 +13,7 @@ import { config as appConfig } from '@/shared/config';
 const PRIVATE_PREFIXES = ['/profile'];
 const AUTH_PAGES = ['/sign-in', '/sign-up'];
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
   // Legacy alias: /login -> /sign-in (preserve query string).

@@ -1,45 +1,56 @@
 # Authora — Docker Compose
 #
-# Default stack (`docker compose up -d`) runs the app on SQLite, which needs no
-# database container, so there are no dangling `depends_on` references.
+#   make docker-up      -> backend + frontend on SQLite (no DB container needed)
+#   make db-mongo-up    -> backend + frontend on MongoDB (starts the mongo service)
+#   make db-postgres-up -> starts the postgres service (Sequelize repos — WIP)
 #
-# To use a server database instead, start it via its profile and set DB_TYPE:
-#   make db-mongo-up      DB_TYPE=mongo     MONGO_URI=mongodb://mongo:27017/authora
-#   make db-postgres-up   DB_TYPE=postgres  (Sequelize repos — WIP)
+# DB configuration is set explicitly via `environment` (which takes precedence
+# over env_file), so a local backend/.env used for `make dev` can never leak
+# wrong DB host/credentials into the container.
 services:
   backend:
     build: ./backend
     ports:
-      - '${BACKEND_PORT:-3010}:3010'
+      - "3010:3010"
+    # Secrets (SMTP / OAuth / Telegram) come from backend/.env.docker if present.
+    # NOTE: we do NOT load backend/.env here — that file is for local `make dev`
+    # and its DB_TYPE / MONGO_URI (127.0.0.1) would be wrong inside a container.
     env_file:
-      - path: ./backend/.env
+      - path: ./backend/.env.docker
         required: false
+    # Literal DB values so nothing (shell, .env) can shadow them. The default
+    # compose stack runs on SQLite; the mongo override flips these.
     environment:
-      # Sensible container defaults; override in backend/.env as needed.
-      DB_TYPE: ${DB_TYPE:-sqlite}
+      NODE_ENV: production
+      BACKEND_PORT: "3010"
+      DB_TYPE: "sqlite"
       SQLITE_FILE: /data/authora.sqlite
-      # When DB_TYPE=mongo, mongo is reachable on the compose network by name:
-      MONGO_URI: ${MONGO_URI:-mongodb://mongo:27017/authora}
+      MONGO_URI: "mongodb://mongo:27017/authora"
+      JWT_ACCESS_SECRET: "docker_access_secret_change_me"
+      JWT_REFRESH_SECRET: "docker_refresh_secret_change_me"
+      CORS_ORIGINS: "http://localhost:5178"
     volumes:
       - sqlite_data:/data
     healthcheck:
-      # Use 127.0.0.1 (not "localhost") so Node's fetch hits IPv4 where Express binds.
-      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3010/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      # Probe /health over IPv4 using the built-in http module (robust across Node majors).
+      test:
+        ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3010/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 40s
-    restart: unless-stopped
+      retries: 12
+      start_period: 60s
+    # on-failure (not unless-stopped) keeps Compose's dependency tracking stable:
+    # a crashing container is not silently recreated with a new id mid-wait.
+    restart: on-failure:3
 
   frontend:
     build: ./frontend
     ports:
-      - '${FRONTEND_PORT:-5178}:5178'
-    env_file:
-      - path: ./frontend/.env
-        required: false
+      - "5178:5178"
+    # Local frontend/.env is for `make dev`; in the container the proxy must point
+    # at the backend service, so we set BACKEND_INTERNAL_URL literally here.
     environment:
-      # The frontend proxy talks to the backend over the compose network.
+      NODE_ENV: production
       BACKEND_INTERNAL_URL: http://backend:3010
     depends_on:
       backend:
@@ -52,9 +63,15 @@ services:
     profiles:
       - mongo
     ports:
-      - '27017:27017'
+      - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     restart: unless-stopped
 
   postgres:
@@ -66,7 +83,7 @@ services:
       POSTGRES_PASSWORD: app
       POSTGRES_DB: authora
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped

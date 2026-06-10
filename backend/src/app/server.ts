@@ -16,14 +16,14 @@ async function bootstrap(): Promise<void> {
   }
 
   const app = createApp();
-  const server = app.listen(env.backendPort, () => {
+  // Bind to 0.0.0.0 so the server is reachable from outside the container.
+  const server = app.listen(env.backendPort, '0.0.0.0', () => {
     // eslint-disable-next-line no-console
-    console.log(`[backend] listening on http://localhost:${env.backendPort}`);
+    console.log(`[backend] listening on http://0.0.0.0:${env.backendPort} (db=${env.dbType})`);
     // eslint-disable-next-line no-console
     console.log(`[backend] GraphQL:   http://localhost:${env.backendPort}/graphql`);
     // eslint-disable-next-line no-console
     console.log(`[backend] Playground http://localhost:${env.backendPort}/playground`);
-    // eslint-disable-next-line no-console
   });
 
   const shutdown = async (signal: string) => {
@@ -37,6 +37,16 @@ async function bootstrap(): Promise<void> {
   process.on('SIGINT', () => void shutdown('SIGINT'));
   process.on('SIGTERM', () => void shutdown('SIGTERM'));
 }
+
+// Surface unexpected runtime errors instead of silently dying.
+process.on('unhandledRejection', (reason) => {
+  // eslint-disable-next-line no-console
+  console.error('[backend] unhandledRejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  // eslint-disable-next-line no-console
+  console.error('[backend] uncaughtException:', err);
+});
 
 bootstrap().catch((err) => {
   // eslint-disable-next-line no-console

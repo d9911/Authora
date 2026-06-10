@@ -1,8 +1,12 @@
 # ---- authora-backend ----
-# Debian-slim (glibc) so better-sqlite3 uses prebuilt binaries — no node-gyp/Python.
-# Node 22 to satisfy ruru's engine requirement (>=22).
+# Debian-slim (glibc). Build tools are installed in the build stage so the
+# native module `better-sqlite3` always compiles for the current Node ABI,
+# even when no prebuilt binary exists (e.g. on newer Node majors).
 FROM node:24-bookworm-slim AS build
 WORKDIR /app
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
 COPY package*.json ./
 RUN npm install
 COPY . .
@@ -12,7 +16,7 @@ FROM node:24-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 # Reuse the already-built node_modules (incl. the working better-sqlite3 binary)
-# instead of reinstalling — avoids native-rebuild breakage at runtime.
+# instead of reinstalling — avoids any native-rebuild at runtime.
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY package*.json ./

@@ -23,8 +23,9 @@ async function getRegion(id: string): Promise<Region | null> {
   }
 }
 
-export default async function RegionPage({ params }: { params: { id: string } }) {
-  const region = await getRegion(params.id);
+export default async function RegionPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const region = await getRegion(id);
   if (!region) notFound();
 
   return (
