@@ -1,8 +1,7 @@
 # ---- Root Makefile for the monorepo ----
 .PHONY: install dev backend-dev frontend-dev backend-build frontend-build \
-        backend-start backend-test seed docker-up docker-down \
+        backend-start backend-test backend-test-sqlite seed seed-mongo seed-sqlite docker-up docker-down \
         db-mongo-up db-postgres-up db-sqlite-up
-
 
 BACKEND_DIR = backend
 FRONTEND_DIR = frontend
@@ -24,7 +23,7 @@ clean-ports:
 
 install:
 	cd backend && yarn install
-	# cd frontend && yarn install   # (frontend added in a later stage)
+	cd frontend && yarn install
 
 # --- dev ---
 dev:backend-dev ## run backend (frontend added later)
@@ -50,9 +49,18 @@ backend-start:
 backend-test:
 	cd backend && npx ts-node-dev --transpile-only smoke-test.ts
 
+backend-test-sqlite:
+	cd backend && npx ts-node-dev --transpile-only smoke-test-sqlite.ts
+
 # --- seed ---
 seed:
 	cd backend && yarn run seed
+
+seed-mongo:
+	cd backend && yarn run seed:mongo
+
+seed-sqlite:
+	cd backend && yarn run seed:sqlite
 
 # --- docker ---
 docker-up:

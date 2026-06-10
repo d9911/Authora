@@ -26,6 +26,11 @@ export const env = {
     uri: process.env.MONGO_URI ?? 'mongodb://127.0.0.1:27017/app_db',
   },
 
+  sqlite: {
+    // File path for the SQLite database (use ":memory:" for ephemeral/testing).
+    file: process.env.SQLITE_FILE ?? './data/app.sqlite',
+  },
+
   jwt: {
     accessSecret: required('JWT_ACCESS_SECRET', 'dev_access_secret_change_me'),
     refreshSecret: required('JWT_REFRESH_SECRET', 'dev_refresh_secret_change_me'),

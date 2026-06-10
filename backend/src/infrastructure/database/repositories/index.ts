@@ -4,14 +4,19 @@ import { ProfileRepository } from '../../../modules/profile/domain/ProfileReposi
 import { RefreshTokenRepository } from '../../../modules/auth/domain/RefreshTokenRepository';
 import { LocationRepository } from '../../../modules/location/domain';
 
+import { EmailTokenRepository } from '../../../modules/auth/domain/EmailTokenRepository';
+
 import { MongoUserRepository } from '../mongo/MongoUserRepository';
 import { MongoProfileRepository } from '../mongo/MongoProfileRepository';
 import { MongoRefreshTokenRepository } from '../mongo/MongoRefreshTokenRepository';
 import { MongoLocationRepository } from '../mongo/MongoLocationRepository';
-import {
-  EmailTokenRepository,
-  MongoEmailTokenRepository,
-} from '../mongo/MongoEmailTokenRepository';
+import { MongoEmailTokenRepository } from '../mongo/MongoEmailTokenRepository';
+
+import { SqliteUserRepository } from '../sqlite/SqliteUserRepository';
+import { SqliteProfileRepository } from '../sqlite/SqliteProfileRepository';
+import { SqliteRefreshTokenRepository } from '../sqlite/SqliteRefreshTokenRepository';
+import { SqliteLocationRepository } from '../sqlite/SqliteLocationRepository';
+import { SqliteEmailTokenRepository } from '../sqlite/SqliteEmailTokenRepository';
 
 export interface Repositories {
   users: UserRepository;
@@ -38,10 +43,17 @@ export function createRepositories(): Repositories {
         emailTokens: new MongoEmailTokenRepository(),
         locations: new MongoLocationRepository(),
       };
-    case 'postgres':
     case 'sqlite':
+      return {
+        users: new SqliteUserRepository(),
+        profiles: new SqliteProfileRepository(),
+        refreshTokens: new SqliteRefreshTokenRepository(),
+        emailTokens: new SqliteEmailTokenRepository(),
+        locations: new SqliteLocationRepository(),
+      };
+    case 'postgres':
       throw new Error(
-        `DB_TYPE="${env.dbType}" is not implemented yet in the MVP. Use DB_TYPE=mongo.`,
+        `DB_TYPE="postgres" is not implemented yet. Use DB_TYPE=mongo or DB_TYPE=sqlite.`,
       );
     default:
       throw new Error(`Unknown DB_TYPE: ${env.dbType}`);

@@ -3,3 +3,8 @@ dist
 .env
 *.log
 *.sqlite
+
+# data / sqlite
+data/
+*.sqlite
+*.sqlite-*

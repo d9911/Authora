@@ -1,13 +1,18 @@
 import { env } from '../config/env';
 import { createApp } from './express';
 import { connectMongo, disconnectMongo } from '../infrastructure/database/mongo/connection';
+import { connectSqlite, disconnectSqlite } from '../infrastructure/database/sqlite/connection';
 
 async function bootstrap(): Promise<void> {
-  // Connect the selected database.
+  // Connect the selected database (chosen via DB_TYPE).
   if (env.dbType === 'mongo') {
     await connectMongo();
+  } else if (env.dbType === 'sqlite') {
+    await connectSqlite();
   } else {
-    throw new Error(`DB_TYPE="${env.dbType}" not supported in MVP. Use DB_TYPE=mongo.`);
+    throw new Error(
+      `DB_TYPE="${env.dbType}" not supported. Use DB_TYPE=mongo or DB_TYPE=sqlite.`,
+    );
   }
 
   const app = createApp();
@@ -18,6 +23,8 @@ async function bootstrap(): Promise<void> {
     console.log(`[backend] GraphQL:   http://localhost:${env.backendPort}/graphql`);
     // eslint-disable-next-line no-console
     console.log(`[backend] Playground http://localhost:${env.backendPort}/playground`);
+    // eslint-disable-next-line no-console
+    console.log(`[backend] Swagger:    http://localhost:${env.backendPort}/docs`);
   });
 
   const shutdown = async (signal: string) => {
@@ -25,6 +32,7 @@ async function bootstrap(): Promise<void> {
     console.log(`\n[backend] ${signal} received, shutting down...`);
     server.close();
     await disconnectMongo();
+    await disconnectSqlite();
     process.exit(0);
   };
   process.on('SIGINT', () => void shutdown('SIGINT'));
