@@ -64,7 +64,7 @@ make install
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 
-# 3a. Option A — SQLite (DEFAULT, no Docker needed). Seed sample locations:
+# 3a. Option A — SQLite (DEFAULT, no Docker needed). Seed locations + users:
 make seed-sqlite
 
 # 3b. Option B — MongoDB: set DB_TYPE=mongo in backend/.env, then:
@@ -79,10 +79,10 @@ make backend-dev      # http://localhost:3010
 make frontend-dev     # http://localhost:5178
 ```
 
-- Frontend:          `http://localhost:5178` (sign in at `/sign-in`, `/login` redirects there)
-- GraphQL endpoint:  `http://localhost:3010/graphql`
+- Frontend: `http://localhost:5178` (sign in at `/sign-in`, `/login` redirects there)
+- GraphQL endpoint: `http://localhost:3010/graphql`
 - GraphQL IDE (Ruru): `http://localhost:3010/playground`
-- Health check:      `http://localhost:3010/health`
+- Health check: `http://localhost:3010/health`
 
 ## Run the test suite
 
@@ -140,7 +140,7 @@ Notes on the images:
 - Backend uses `restart: on-failure:3` (not `unless-stopped`) so a crashing
   container isn't silently recreated with a new id mid-`depends_on` wait — that
   is what produced the confusing `No such container` / `dependency failed to
-  start` message.
+start` message.
 
 ### Debugging a container that won't become healthy
 
@@ -158,12 +158,25 @@ mutation {
     accessToken
     refreshToken
     needTwoFactor
-    user { id email emailVerified }
+    user {
+      id
+      email
+      emailVerified
+    }
   }
 }
 
 query {
-  countries { id name regions { name cities { name } } }
+  countries {
+    id
+    name
+    regions {
+      name
+      cities {
+        name
+      }
+    }
+  }
 }
 ```
 
@@ -174,11 +187,28 @@ Send the `accessToken` as `Authorization: Bearer <token>` for protected operatio
 
 `DB_TYPE` in `backend/.env` selects the implementation — no business-logic changes:
 
-| `DB_TYPE`  | Driver         | Notes                                                                   |
-| ---------- | -------------- | ----------------------------------------------------------------------- |
-| `mongo`    | Mongoose       | Set `MONGO_URI`. Seed with `make seed-mongo`.                           |
-| `sqlite`   | better-sqlite3 | Set `SQLITE_FILE` (or `:memory:`). `make seed-sqlite`. No Docker needed.|
-| `postgres` | Sequelize      | Stubbed — implement the repos to enable.                                |
+| `DB_TYPE`  | Driver         | Notes                                                                    |
+| ---------- | -------------- | ------------------------------------------------------------------------ |
+| `mongo`    | Mongoose       | Set `MONGO_URI`. Seed with `make seed-mongo`.                            |
+| `sqlite`   | better-sqlite3 | Set `SQLITE_FILE` (or `:memory:`). `make seed-sqlite`. No Docker needed. |
+| `postgres` | Sequelize      | Stubbed — implement the repos to enable.                                 |
+
+### Seeded accounts
+
+The seed (`make seed-sqlite` / `make seed-mongo`) inserts 6 countries → regions →
+cities and these users (shared dataset in `backend/src/infrastructure/database/seed-data.ts`):
+
+| Email               | Password      | Notes                                                   |
+| ------------------- | ------------- | ------------------------------------------------------- |
+| `d.99113@gmail.com` | `d9911`       | **Key/owner account.** Email verified, **2FA enabled**. |
+| `alice@example.com` | `password123` | Verified                                                |
+| `bob@example.com`   | `password123` | Verified                                                |
+| `carol@example.com` | `password123` | Unverified                                              |
+
+The key user's 2FA secret comes from the token `c3516442d42c4bb599b58e5ead567afa`
+(hex), stored as base32 `YNIWIQWUFRF3LGNVRZPK2VT27I`. Add that secret manually in
+Google Authenticator / Authy (or scan a QR built from it) to get working codes;
+sign-in returns `needTwoFactor`, then `signInTwoFactor` with the 6-digit code.
 
 Both Mongo and SQLite implement the same repository interfaces in
 `backend/src/modules/*/domain/*Repository.ts`; they are registered in the single
@@ -199,4 +229,7 @@ Postgres means adding one more set of repository implementations there.
 - [ ] Telegram auth (signed Login Widget / bot flow)
 - [ ] Postgres (Sequelize) repositories
 - [ ] PM2 production setup
+
+```
+
 ```
