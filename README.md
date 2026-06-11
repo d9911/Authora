@@ -225,10 +225,40 @@ Postgres means adding one more set of repository implementations there.
 - [x] 2FA (speakeasy + qrcode)
 - [x] Frontend (Next.js, FSD, Redux) + PWA
 - [x] Docker Compose (backend + frontend)
-- [ ] GitHub OAuth
-- [ ] Telegram auth (signed Login Widget / bot flow)
+- [x] GitHub OAuth (login + account linking, cross-origin handoff)
+- [x] Telegram auth (signed Login Widget, login + linking)
 - [ ] Postgres (Sequelize) repositories
 - [ ] PM2 production setup
+
+## Social login & account linking (GitHub / Telegram)
+
+Both providers support **login** (sign in / auto-create) AND **linking** to an
+already-authenticated account (Profile → _Connected accounts_).
+
+**Why the handoff:** OAuth redirects to the backend origin, but sessions live in
+httpOnly cookies on the _frontend_ origin. So after a successful OAuth login the
+backend issues a one-time **handoff token** and redirects to
+`/oauth/complete?handoff=…`; that page calls `oauthExchange` through the
+same-origin proxy, which sets the cookies on the frontend. This works in Docker
+where the two run on different hosts.
+
+**Linking:** an authenticated user mints a short-lived `oauthLinkToken`, the
+provider flow is started with `?link=<token>`, and the callback attaches the
+provider to the current account instead of logging in. `unlinkProvider` removes
+it (refusing to leave a passwordless account with no way to sign in).
+
+Required env:
+
+```
+# backend (.env / .env.docker)
+GITHUB_CLIENT_ID=...        GITHUB_CLIENT_SECRET=...
+GITHUB_CALLBACK_URL=http://localhost:3010/api/auth/github/callback
+TELEGRAM_BOT_TOKEN=...
+
+# frontend (.env) — browser-facing
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3010   # full-page OAuth redirects
+NEXT_PUBLIC_TELEGRAM_BOT=your_bot_username       # enables the Telegram widget
+```
 
 ```
 

@@ -1,5 +1,5 @@
 import { gqlRequest } from '@/shared/api/graphqlClient';
-import { AuthPayload, TwoFactorSetupPayload } from '@/shared/types';
+import { AuthPayload, TwoFactorSetupPayload, User } from '@/shared/types';
 
 // We request accessToken/refreshToken so the backend returns them to the
 // SERVER-SIDE proxy, which stores them as httpOnly cookies and STRIPS them
@@ -117,4 +117,42 @@ export async function disableTwoFactor(code: string): Promise<boolean> {
     { code },
   );
   return data.disableTwoFactor;
+}
+
+/* ------------------------------ OAuth ------------------------------ */
+
+/** Exchange the backend OAuth handoff token for a real (frontend-origin) session. */
+export async function oauthExchange(handoff: string): Promise<AuthPayload> {
+  const data = await gqlRequest<{ oauthExchange: AuthPayload }>(
+    `mutation OauthExchange($handoff: String!) {
+      oauthExchange(handoff: $handoff) {
+        needTwoFactor
+        user { id name email emailVerified twoFactorEnabled githubId telegramId }
+      }
+    }`,
+    { handoff },
+    { retry: false },
+  );
+  return data.oauthExchange;
+}
+
+/** Authenticated user: get a short-lived token to start a provider LINK flow. */
+export async function getOAuthLinkToken(): Promise<string> {
+  const data = await gqlRequest<{ oauthLinkToken: string }>(
+    `mutation OauthLinkToken { oauthLinkToken }`,
+  );
+  return data.oauthLinkToken;
+}
+
+/** Unlink a connected provider from the current account. */
+export async function unlinkProvider(provider: 'github' | 'telegram'): Promise<User> {
+  const data = await gqlRequest<{ unlinkProvider: User }>(
+    `mutation UnlinkProvider($provider: String!) {
+      unlinkProvider(provider: $provider) {
+        id name email githubId telegramId
+      }
+    }`,
+    { provider },
+  );
+  return data.unlinkProvider;
 }

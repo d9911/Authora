@@ -18,7 +18,9 @@ import {
 import {
   refreshTokenExpiryDate,
   signAccessToken,
+  signOAuthToken,
   signRefreshToken,
+  verifyOAuthToken,
   verifyRefreshToken,
 } from '../../../infrastructure/jwt/jwt';
 
@@ -310,13 +312,7 @@ export class AuthUseCases {
    * Links by githubId first, then by email; creates a passwordless user
    * otherwise. GitHub-verified emails mark the account as verified.
    */
-  async loginWithGithub(profile: {
-    githubId: string;
-    email: string | null;
-    name?: string;
-    avatarUrl?: string;
-    emailVerified?: boolean;
-  }): Promise<AuthPayload> {
+  async loginWithGithub(profile: GithubProfileInput): Promise<AuthPayload> {
     let user = await this.deps.users.findByGithubId(profile.githubId);
 
     if (!user && profile.email) {
@@ -351,12 +347,7 @@ export class AuthUseCases {
    * Find-or-create a user from verified Telegram login data and issue tokens.
    * The signature MUST be validated by the caller before calling this.
    */
-  async loginWithTelegram(data: {
-    telegramId: string;
-    name?: string;
-    username?: string;
-    avatarUrl?: string;
-  }): Promise<AuthPayload> {
+  async loginWithTelegram(data: TelegramProfileInput): Promise<AuthPayload> {
     let user = await this.deps.users.findByTelegramId(data.telegramId);
 
     if (!user) {
@@ -375,4 +366,109 @@ export class AuthUseCases {
     const tokens = await this.issueTokens(user.id, user.email);
     return { ...tokens, user: toPublicUser(user) };
   }
+
+  /* --------------------------- linking (authed) --------------------------- */
+
+  /** Link a GitHub account to an already-authenticated user. */
+  async linkGithub(userId: string, profile: GithubProfileInput): Promise<PublicUser> {
+    const user = await this.deps.users.findById(userId);
+    if (!user) throw AppError.unauthorized();
+
+    const owner = await this.deps.users.findByGithubId(profile.githubId);
+    if (owner && owner.id !== userId) {
+      throw new AppError(
+        ErrorCodes.VALIDATION,
+        'This GitHub account is already linked to another user',
+        409,
+      );
+    }
+    const updated = await this.deps.users.update(userId, {
+      githubId: profile.githubId,
+      avatarUrl: user.avatarUrl ?? profile.avatarUrl,
+    });
+    return toPublicUser(updated);
+  }
+
+  /** Link a Telegram account to an already-authenticated user. */
+  async linkTelegram(userId: string, data: TelegramProfileInput): Promise<PublicUser> {
+    const user = await this.deps.users.findById(userId);
+    if (!user) throw AppError.unauthorized();
+
+    const owner = await this.deps.users.findByTelegramId(data.telegramId);
+    if (owner && owner.id !== userId) {
+      throw new AppError(
+        ErrorCodes.VALIDATION,
+        'This Telegram account is already linked to another user',
+        409,
+      );
+    }
+    const updated = await this.deps.users.update(userId, {
+      telegramId: data.telegramId,
+      avatarUrl: user.avatarUrl ?? data.avatarUrl,
+    });
+    return toPublicUser(updated);
+  }
+
+  /** Remove a linked provider. Refuses to leave a passwordless account with no way in. */
+  async unlinkProvider(userId: string, provider: 'github' | 'telegram'): Promise<PublicUser> {
+    const user = await this.deps.users.findById(userId);
+    if (!user) throw AppError.unauthorized();
+
+    const hasPassword = Boolean(user.password);
+    const otherProvider = provider === 'github' ? user.telegramId : user.githubId;
+    if (!hasPassword && !otherProvider) {
+      throw new AppError(
+        ErrorCodes.VALIDATION,
+        'Set a password before unlinking your only sign-in method',
+        400,
+      );
+    }
+    const patch =
+      provider === 'github'
+        ? ({ githubId: null } as const)
+        : ({ telegramId: null } as const);
+    const updated = await this.deps.users.update(userId, patch);
+    return toPublicUser(updated);
+  }
+
+  /* ----------------------- OAuth handoff (cross-origin) -------------------- */
+
+  /**
+   * After a successful OAuth login the backend issues a one-time handoff token.
+   * The frontend exchanges it here (through its own-origin proxy) so the
+   * resulting session cookies are set on the FRONTEND origin.
+   */
+  async issueOAuthHandoff(userId: string): Promise<string> {
+    return signOAuthToken(userId, 'oauth_handoff');
+  }
+
+  /** Mint a short-lived link token for an authenticated user starting a link flow. */
+  async issueOAuthLinkToken(userId: string): Promise<string> {
+    const user = await this.deps.users.findById(userId);
+    if (!user) throw AppError.unauthorized();
+    return signOAuthToken(userId, 'oauth_link');
+  }
+
+  async exchangeOAuthHandoff(handoffToken: string): Promise<AuthPayload> {
+    const { sub } = verifyOAuthToken(handoffToken, 'oauth_handoff');
+    const user = await this.deps.users.findById(sub);
+    if (!user) throw AppError.unauthorized();
+    const tokens = await this.issueTokens(user.id, user.email);
+    return { ...tokens, user: toPublicUser(user) };
+  }
+}
+
+export interface GithubProfileInput {
+  githubId: string;
+  email: string | null;
+  name?: string;
+  avatarUrl?: string;
+  emailVerified?: boolean;
+}
+
+export interface TelegramProfileInput {
+  telegramId: string;
+  name?: string;
+  username?: string;
+  avatarUrl?: string;
 }

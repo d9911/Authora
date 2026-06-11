@@ -4,16 +4,16 @@
  */
 
 export interface SeedCity {
-  name: string
+  name: string;
 }
 export interface SeedRegion {
-  name: string
-  cities: string[]
+  name: string;
+  cities: string[];
 }
 export interface SeedCountry {
-  name: string
-  code: string
-  regions: SeedRegion[]
+  name: string;
+  code: string;
+  regions: SeedRegion[];
 }
 
 export const SEED_COUNTRIES: SeedCountry[] = [
@@ -73,25 +73,25 @@ export const SEED_COUNTRIES: SeedCountry[] = [
       { name: 'Kansai', cities: ['Osaka', 'Kyoto', 'Kobe'] },
     ],
   },
-]
+];
 
 export interface SeedUser {
-  email: string
-  password: string // plain; the seeder hashes it
-  name: string
-  nickname?: string
-  emailVerified: boolean
+  email: string;
+  password: string; // plain; the seeder hashes it
+  name: string;
+  nickname?: string;
+  emailVerified: boolean;
   profile: {
-    bio?: string
-    description?: string
-    gender?: string
-    timezone?: string
-    address?: string
-  }
+    bio?: string;
+    description?: string;
+    gender?: string;
+    timezone?: string;
+    address?: string;
+  };
   twoFactor?: {
     /** Raw secret bytes provided as a hex string. Converted to base32 for storage. */
-    secretHex: string
-  }
+    secretHex: string;
+  };
 }
 
 /**
@@ -113,7 +113,7 @@ export const KEY_USER: SeedUser = {
     address: 'Moscow, Russia',
   },
   twoFactor: { secretHex: 'c3516442d42c4bb599b58e5ead567afa' },
-}
+};
 
 export const DEMO_USERS: SeedUser[] = [
   {
@@ -140,25 +140,25 @@ export const DEMO_USERS: SeedUser[] = [
     emailVerified: false,
     profile: { bio: 'Designer', gender: 'female', timezone: 'Europe/London' },
   },
-]
+];
 
 /** RFC 4648 base32 encoder (uppercase, no padding) — what TOTP apps expect. */
 export function base32FromHex(hex: string): string {
-  const bytes = Buffer.from(hex, 'hex')
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
-  let bits = 0
-  let value = 0
-  let output = ''
+  const bytes = Buffer.from(hex, 'hex');
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = 0;
+  let value = 0;
+  let output = '';
   for (const byte of bytes) {
-    value = (value << 8) | byte
-    bits += 8
+    value = (value << 8) | byte;
+    bits += 8;
     while (bits >= 5) {
-      output += alphabet[(value >>> (bits - 5)) & 31]
-      bits -= 5
+      output += alphabet[(value >>> (bits - 5)) & 31];
+      bits -= 5;
     }
   }
   if (bits > 0) {
-    output += alphabet[(value << (5 - bits)) & 31]
+    output += alphabet[(value << (5 - bits)) & 31];
   }
-  return output
+  return output;
 }

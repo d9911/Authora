@@ -112,6 +112,25 @@ export const resolvers = {
       const userId = requireAuth(ctx);
       return ctx.container.profiles.update(userId, args.input).then((r) => r.profile);
     },
+
+    // OAuth: frontend exchanges the backend handoff token for a real session.
+    oauthExchange: (_p: unknown, args: { handoff: string }, ctx: GraphQLContext) =>
+      ctx.container.auth.exchangeOAuthHandoff(args.handoff).then(normalizeAuth),
+
+    // Authenticated user starts a link flow: mint a short-lived link token.
+    oauthLinkToken: (_p: unknown, _a: unknown, ctx: GraphQLContext) => {
+      const userId = requireAuth(ctx);
+      return ctx.container.auth.issueOAuthLinkToken(userId);
+    },
+
+    unlinkProvider: (
+      _p: unknown,
+      args: { provider: 'github' | 'telegram' },
+      ctx: GraphQLContext,
+    ) => {
+      const userId = requireAuth(ctx);
+      return ctx.container.auth.unlinkProvider(userId, args.provider);
+    },
   },
 };
 

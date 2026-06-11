@@ -137,5 +137,13 @@ export const typeDefs = /* GraphQL */ `
     confirmTwoFactor(code: String!): Boolean!
     disableTwoFactor(code: String!): Boolean!
     updateProfile(input: UpdateProfileInput!): Profile!
+
+    # OAuth: exchange the backend handoff token for a real session (sets cookies
+    # on the frontend origin via the proxy).
+    oauthExchange(handoff: String!): AuthPayload!
+    # OAuth linking for authenticated users: get a short-lived token to start the
+    # provider flow with ?link=<token>, and unlink a provider.
+    oauthLinkToken: String!
+    unlinkProvider(provider: String!): User!
   }
 `;

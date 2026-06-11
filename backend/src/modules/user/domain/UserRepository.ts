@@ -16,13 +16,13 @@ export interface UpdateUserDto {
   name?: string;
   nickname?: string;
   phoneNumber?: string;
-  telegramId?: string;
   avatarUrl?: string;
   password?: string;
   emailVerified?: boolean;
   twoFactorEnabled?: boolean;
   twoFactorSecret?: string | null;
-  githubId?: string;
+  githubId?: string | null;
+  telegramId?: string | null;
 }
 
 /**

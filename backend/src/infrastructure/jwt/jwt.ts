@@ -47,3 +47,31 @@ export function refreshTokenExpiryDate(): Date {
   // Fallback: 30 days
   return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 }
+
+/* --------------------------- OAuth helper tokens --------------------------- */
+
+type OAuthPurpose = 'oauth_handoff' | 'oauth_link';
+
+/**
+ * Short-lived, purpose-scoped token used by the OAuth flows:
+ *  - 'oauth_handoff': issued after a successful OAuth login; the frontend
+ *    exchanges it for real session cookies (solves the cross-origin problem).
+ *  - 'oauth_link': issued to an authenticated user; carried through the OAuth
+ *    redirect so the callback knows which account to link the provider to.
+ */
+export function signOAuthToken(userId: string, purpose: OAuthPurpose, expiresIn = '10m'): string {
+  return jwt.sign({ sub: userId, purpose }, env.jwt.accessSecret, { expiresIn } as SignOptions);
+}
+
+export function verifyOAuthToken(token: string, purpose: OAuthPurpose): { sub: string } {
+  try {
+    const decoded = jwt.verify(token, env.jwt.accessSecret) as { sub: string; purpose?: string };
+    if (decoded.purpose !== purpose) {
+      throw new AppError(ErrorCodes.INVALID_TOKEN, 'Wrong token purpose', 401);
+    }
+    return { sub: decoded.sub };
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    throw new AppError(ErrorCodes.INVALID_TOKEN, 'Invalid or expired OAuth token', 401);
+  }
+}
