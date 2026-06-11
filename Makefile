@@ -88,7 +88,7 @@ docker-seed:
 	docker compose exec backend node dist/infrastructure/database/sqlite/seed.js
 
 docker-seed-mongo:
-	docker compose exec backend node dist/infrastructure/database/mongo/seed.js
+	docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml exec backend node dist/infrastructure/database/mongo/seed.js
 
 # Bring up the full stack on MongoDB (backend waits for mongo to be healthy),
 # then seed it.
@@ -96,7 +96,7 @@ db-mongo-up:
 	docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml up -d --build
 	@echo "⏳ waiting for backend to become healthy before seeding..."
 	@until [ "$$(docker inspect -f '{{.State.Health.Status}}' authora-backend-1 2>/dev/null)" = "healthy" ]; do sleep 2; done
-	docker compose -f docker-compose.yml -f docker-compose.mongo.yml exec backend node dist/infrastructure/database/mongo/seed.js
+	docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml exec backend node dist/infrastructure/database/mongo/seed.js
 	@echo "✅ MongoDB stack up and seeded"
 
 db-postgres-up:

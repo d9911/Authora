@@ -78,6 +78,29 @@ async function main() {
   const accessToken = auth?.accessToken;
   const refreshToken = auth?.refreshToken;
 
+  // email confirmation by 6-digit code
+  const crypto = await import('crypto');
+  const sha256 = (v: string) => crypto.createHash('sha256').update(v).digest('hex');
+  // wrong code rejected
+  const wrong = await gql(
+    `mutation($e:String!,$c:String!){ confirmEmailCode(email:$e, code:$c) }`,
+    { e: 'bob@example.com', c: '000000' },
+  );
+  check('confirmEmailCode rejects wrong code', wrong.errors?.[0]?.extensions?.code === 'INVALID_TOKEN', wrong.errors);
+  // inject a known code hash (server stores codes hashed) and confirm
+  const userRow: any = db.prepare('SELECT id FROM users WHERE email = ?').get('bob@example.com');
+  db.prepare(
+    `INSERT INTO email_tokens (userId, tokenHash, type, expiresAt, createdAt)
+     VALUES (?, ?, 'verify_email', ?, ?)`,
+  ).run(userRow.id, sha256('424242'), new Date(Date.now() + 600000).toISOString(), new Date().toISOString());
+  const confirmEmail = await gql(
+    `mutation($e:String!,$c:String!){ confirmEmailCode(email:$e, code:$c) }`,
+    { e: 'bob@example.com', c: '424242' },
+  );
+  check('confirmEmailCode accepts valid code', confirmEmail.data?.confirmEmailCode === true, confirmEmail.errors);
+  const meVerified = await gql(`query { me { emailVerified } }`, undefined, accessToken);
+  check('email now verified', meVerified.data?.me?.emailVerified === true, meVerified);
+
   // duplicate email
   const dup = await gql(`mutation($i: SignUpInput!){ signUp(input:$i){ accessToken } }`, {
     i: { email: 'bob@example.com', password: 'password123' },

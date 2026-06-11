@@ -19,3 +19,10 @@ export function sha256(value: string): string {
 export function randomToken(bytes = 32): string {
   return crypto.randomBytes(bytes).toString('hex');
 }
+
+/** Cryptographically-random numeric code, e.g. "048213" (default 6 digits). */
+export function randomNumericCode(digits = 6): string {
+  const max = 10 ** digits;
+  const n = crypto.randomInt(0, max);
+  return n.toString().padStart(digits, '0');
+}

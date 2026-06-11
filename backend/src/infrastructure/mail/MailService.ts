@@ -29,33 +29,48 @@ export class MailService {
     return this.transporter;
   }
 
+  private logToConsole(params: SendMailParams, note: string): void {
+    // eslint-disable-next-line no-console
+    console.log(
+      `\n[mail:${note}] ->\n  to: ${params.to}\n  subject: ${params.subject}\n  text: ${
+        params.text ?? '(html only)'
+      }\n`,
+    );
+  }
+
   async send(params: SendMailParams): Promise<void> {
     const transporter = this.getTransporter();
     if (!transporter) {
-      // eslint-disable-next-line no-console
-      console.log(
-        `\n[mail:DEV] (SMTP not configured) ->\n  to: ${params.to}\n  subject: ${params.subject}\n  text: ${
-          params.text ?? '(html only)'
-        }\n`,
-      );
+      this.logToConsole(params, 'DEV (SMTP not configured)');
       return;
     }
-    await transporter.sendMail({
-      from: env.mail.smtpUser || env.mail.ownerEmail,
-      to: params.to,
-      subject: params.subject,
-      html: params.html,
-      text: params.text,
-    });
+    try {
+      await transporter.sendMail({
+        from: env.mail.smtpUser || env.mail.ownerEmail,
+        to: params.to,
+        subject: params.subject,
+        html: params.html,
+        text: params.text,
+      });
+    } catch (err) {
+      // Never let a mail failure break the auth flow — log and fall back so the
+      // user can still read the code in the server logs.
+      // eslint-disable-next-line no-console
+      console.error('[mail] send failed, falling back to console:', err instanceof Error ? err.message : err);
+      this.logToConsole(params, 'FALLBACK (send failed)');
+    }
   }
 
-  async sendEmailVerification(to: string, token: string): Promise<void> {
-    const link = `${env.app.frontendUrl}/confirm-email?token=${token}`;
+  async sendEmailVerificationCode(to: string, code: string): Promise<void> {
     await this.send({
       to,
-      subject: 'Confirm your email',
-      text: `Confirm your email: ${link}`,
-      html: `<p>Welcome! Please confirm your email by clicking the link below:</p><p><a href="${link}">${link}</a></p>`,
+      subject: `Your Authora confirmation code: ${code}`,
+      text: `Your email confirmation code is ${code}. It expires in 15 minutes.`,
+      html: `
+        <p>Welcome to Authora!</p>
+        <p>Your email confirmation code is:</p>
+        <p style="font-size:28px;font-weight:700;letter-spacing:4px;margin:16px 0">${code}</p>
+        <p style="color:#5c6c75">This code expires in 15 minutes.</p>`,
     });
   }
 

@@ -128,7 +128,8 @@ export const typeDefs = /* GraphQL */ `
     signInTwoFactor(input: SignInTwoFactorInput!): AuthPayload!
     refreshToken(input: RefreshTokenInput!): AuthPayload!
     logout(refreshToken: String): Boolean!
-    confirmEmail(token: String!): Boolean!
+    confirmEmailCode(email: String!, code: String!): Boolean!
+    resendEmailCode(email: String!): Boolean!
     requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
     resetPassword(input: ResetPasswordInput!): Boolean!
     changePassword(oldPassword: String!, newPassword: String!): Boolean!

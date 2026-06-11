@@ -9,6 +9,7 @@ import { typeDefs } from './graphql/schema';
 import { resolvers } from './graphql/resolvers';
 import { buildContext } from './graphql/context';
 import { AppError, ErrorCodes } from '../core/errors/AppError';
+import { createOAuthRouter } from './oauthRoutes';
 
 /**
  * Lazily load the optional Ruru playground. It is a dev convenience and must
@@ -44,6 +45,9 @@ export function createApp(): Express {
   app.get('/health', (_req: Request, res: Response) => {
     res.json({ status: 'ok', db: env.dbType, time: new Date().toISOString() });
   });
+
+  // OAuth redirect routes (GitHub / Telegram) — REST, not GraphQL.
+  app.use(createOAuthRouter());
 
   // Friendly root: this is an API server; the UI lives on the frontend.
   app.get('/', (_req: Request, res: Response) => {

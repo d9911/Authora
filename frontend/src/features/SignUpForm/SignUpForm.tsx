@@ -29,7 +29,11 @@ export function SignUpForm() {
     dispatch(clearAuthError());
     const res = await dispatch(signUpThunk({ email, password, name: name || undefined }));
     setBusy(false);
-    if (signUpThunk.fulfilled.match(res)) router.push('/profile/edit');
+    // After sign-up the email is not yet verified — send the user to the
+    // code-entry page (a 6-digit code was emailed to them).
+    if (signUpThunk.fulfilled.match(res)) {
+      router.push(`/confirm-email?email=${encodeURIComponent(email)}`);
+    }
   };
 
   return (

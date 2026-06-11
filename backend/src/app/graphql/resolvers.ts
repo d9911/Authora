@@ -71,8 +71,14 @@ export const resolvers = {
     logout: (_p: unknown, args: { refreshToken?: string }, ctx: GraphQLContext) =>
       ctx.container.auth.logout(args.refreshToken),
 
-    confirmEmail: (_p: unknown, args: { token: string }, ctx: GraphQLContext) =>
-      ctx.container.auth.confirmEmail(args.token),
+    confirmEmailCode: (
+      _p: unknown,
+      args: { email: string; code: string },
+      ctx: GraphQLContext,
+    ) => ctx.container.auth.confirmEmailCode(args.email, args.code),
+
+    resendEmailCode: (_p: unknown, args: { email: string }, ctx: GraphQLContext) =>
+      ctx.container.auth.resendEmailCode(args.email),
 
     requestPasswordReset: (_p: unknown, args: { input: any }, ctx: GraphQLContext) =>
       ctx.container.auth.requestPasswordReset(args.input.email),

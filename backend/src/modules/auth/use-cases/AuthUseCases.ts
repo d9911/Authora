@@ -11,6 +11,7 @@ import { TwoFactorService } from '../services/TwoFactorService';
 import {
   comparePassword,
   hashPassword,
+  randomNumericCode,
   randomToken,
   sha256,
 } from '../../../infrastructure/jwt/hash';
@@ -53,7 +54,7 @@ export interface AuthDeps {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ONE_HOUR = 60 * 60 * 1000;
-const ONE_DAY = 24 * ONE_HOUR;
+const CODE_TTL = 15 * 60 * 1000; // email confirmation code valid for 15 min
 
 export class AuthUseCases {
   constructor(private readonly deps: AuthDeps) {}
@@ -100,15 +101,8 @@ export class AuthUseCases {
     // isVerified mirrors email confirmation status, stored on the profile.
     await this.deps.profiles.create({ userId: user.id, isVerified: false });
 
-    // Email confirmation token (stored hashed).
-    const rawToken = randomToken();
-    await this.deps.emailTokens.create(
-      user.id,
-      sha256(rawToken),
-      'verify_email',
-      new Date(Date.now() + ONE_DAY),
-    );
-    await this.deps.mail.sendEmailVerification(email, rawToken);
+    // Email confirmation CODE (6 digits, stored hashed).
+    await this.issueEmailCode(user.id, email);
 
     const tokens = await this.issueTokens(user.id, user.email);
     return { ...tokens, user: toPublicUser(user) };
@@ -116,12 +110,43 @@ export class AuthUseCases {
 
   /* --------------------------- confirm email -------------------------- */
 
-  async confirmEmail(token: string): Promise<boolean> {
-    const record = await this.deps.emailTokens.findValid(sha256(token), 'verify_email');
-    if (!record) throw new AppError(ErrorCodes.INVALID_TOKEN, 'Invalid or expired token', 400);
+  /** Generate a fresh 6-digit code, invalidate older ones, and email it. */
+  private async issueEmailCode(userId: string, email: string): Promise<void> {
+    await this.deps.emailTokens.invalidateForUser(userId, 'verify_email');
+    const code = randomNumericCode(6);
+    await this.deps.emailTokens.create(
+      userId,
+      sha256(code),
+      'verify_email',
+      new Date(Date.now() + CODE_TTL),
+    );
+    await this.deps.mail.sendEmailVerificationCode(email, code);
+  }
+
+  /** Confirm an email using the 6-digit code sent to that address. */
+  async confirmEmailCode(email: string, code: string): Promise<boolean> {
+    const normalized = email?.trim().toLowerCase();
+    const user = await this.deps.users.findByEmail(normalized);
+    if (!user) throw new AppError(ErrorCodes.INVALID_TOKEN, 'Invalid code', 400);
+    if (user.emailVerified) return true;
+
+    const record = await this.deps.emailTokens.findValid(sha256(code), 'verify_email');
+    if (!record || record.userId !== user.id) {
+      throw new AppError(ErrorCodes.INVALID_TOKEN, 'Invalid or expired code', 400);
+    }
     await this.deps.users.update(record.userId, { emailVerified: true });
     await this.deps.profiles.update(record.userId, { isVerified: true });
     await this.deps.emailTokens.markUsed(record.id);
+    return true;
+  }
+
+  /** Resend a confirmation code to the user's email. */
+  async resendEmailCode(email: string): Promise<boolean> {
+    const normalized = email?.trim().toLowerCase();
+    const user = await this.deps.users.findByEmail(normalized);
+    // Don't leak which emails exist; silently succeed.
+    if (!user || user.emailVerified) return true;
+    await this.issueEmailCode(user.id, user.email);
     return true;
   }
 
@@ -276,5 +301,78 @@ export class AuthUseCases {
       twoFactorSecret: null,
     });
     return true;
+  }
+
+  /* --------------------------- OAuth / external --------------------------- */
+
+  /**
+   * Find-or-create a user from a verified GitHub profile and issue tokens.
+   * Links by githubId first, then by email; creates a passwordless user
+   * otherwise. GitHub-verified emails mark the account as verified.
+   */
+  async loginWithGithub(profile: {
+    githubId: string;
+    email: string | null;
+    name?: string;
+    avatarUrl?: string;
+    emailVerified?: boolean;
+  }): Promise<AuthPayload> {
+    let user = await this.deps.users.findByGithubId(profile.githubId);
+
+    if (!user && profile.email) {
+      const byEmail = await this.deps.users.findByEmail(profile.email.toLowerCase());
+      if (byEmail) {
+        user = await this.deps.users.update(byEmail.id, { githubId: profile.githubId });
+      }
+    }
+
+    if (!user) {
+      // email is required by the model; synthesize a stable placeholder if GitHub
+      // did not expose one (the user can set a real email later in the profile).
+      const email = (profile.email ?? `gh_${profile.githubId}@users.noreply.github.com`).toLowerCase();
+      user = await this.deps.users.create({
+        email,
+        name: profile.name,
+        avatarUrl: profile.avatarUrl,
+        githubId: profile.githubId,
+        emailVerified: Boolean(profile.email && profile.emailVerified),
+      });
+      await this.deps.profiles.create({
+        userId: user.id,
+        isVerified: Boolean(profile.email && profile.emailVerified),
+      });
+    }
+
+    const tokens = await this.issueTokens(user.id, user.email);
+    return { ...tokens, user: toPublicUser(user) };
+  }
+
+  /**
+   * Find-or-create a user from verified Telegram login data and issue tokens.
+   * The signature MUST be validated by the caller before calling this.
+   */
+  async loginWithTelegram(data: {
+    telegramId: string;
+    name?: string;
+    username?: string;
+    avatarUrl?: string;
+  }): Promise<AuthPayload> {
+    let user = await this.deps.users.findByTelegramId(data.telegramId);
+
+    if (!user) {
+      const email = `tg_${data.telegramId}@telegram.local`;
+      user = await this.deps.users.create({
+        email,
+        name: data.name,
+        nickname: data.username,
+        avatarUrl: data.avatarUrl,
+        telegramId: data.telegramId,
+        emailVerified: false,
+      });
+      await this.deps.profiles.create({ userId: user.id, isVerified: false });
+    }
+
+    const tokens = await this.issueTokens(user.id, user.email);
+    return { ...tokens, user: toPublicUser(user) };
   }
 }

@@ -76,13 +76,24 @@ export async function resetPassword(token: string, newPassword: string): Promise
   return data.resetPassword;
 }
 
-export async function confirmEmail(token: string): Promise<boolean> {
-  const data = await gqlRequest<{ confirmEmail: boolean }>(
-    `mutation ConfirmEmail($token: String!) { confirmEmail(token: $token) }`,
-    { token },
+export async function confirmEmailCode(email: string, code: string): Promise<boolean> {
+  const data = await gqlRequest<{ confirmEmailCode: boolean }>(
+    `mutation ConfirmEmailCode($email: String!, $code: String!) {
+      confirmEmailCode(email: $email, code: $code)
+    }`,
+    { email, code },
     { retry: false },
   );
-  return data.confirmEmail;
+  return data.confirmEmailCode;
+}
+
+export async function resendEmailCode(email: string): Promise<boolean> {
+  const data = await gqlRequest<{ resendEmailCode: boolean }>(
+    `mutation ResendEmailCode($email: String!) { resendEmailCode(email: $email) }`,
+    { email },
+    { retry: false },
+  );
+  return data.resendEmailCode;
 }
 
 export async function enableTwoFactor(): Promise<TwoFactorSetupPayload> {

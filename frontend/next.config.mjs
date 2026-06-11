@@ -6,7 +6,7 @@ const nextConfig = {
   // The frontend talks to its own /api/* proxy routes, never to the backend
   // directly. BACKEND_INTERNAL_URL is only read on the server side.
   env: {
-    NEXT_PUBLIC_APP_NAME: 'FullstackApp',
+    NEXT_PUBLIC_APP_NAME: 'Authora',
   },
   async headers() {
     return [
