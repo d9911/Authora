@@ -67,6 +67,17 @@ export const typeDefs = /* GraphQL */ `
     otpauthUrl: String!
   }
 
+  type TelegramBotStartPayload {
+    token: String!
+    botUrl: String!
+  }
+
+  type TelegramBotPollPayload {
+    # pending | done | linked | expired
+    status: String!
+    auth: AuthPayload
+  }
+
   input SignUpInput {
     email: String!
     password: String!
@@ -141,6 +152,9 @@ export const typeDefs = /* GraphQL */ `
     # OAuth: exchange the backend handoff token for a real session (sets cookies
     # on the frontend origin via the proxy).
     oauthExchange(handoff: String!): AuthPayload!
+    # Telegram bot deep-link flow: start (optionally linking) and poll.
+    telegramBotStart(link: Boolean): TelegramBotStartPayload!
+    telegramBotPoll(token: String!): TelegramBotPollPayload!
     # OAuth linking for authenticated users: get a short-lived token to start the
     # provider flow with ?link=<token>, and unlink a provider.
     oauthLinkToken: String!

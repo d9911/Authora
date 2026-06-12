@@ -13,7 +13,7 @@ export interface TwoFactorSetup {
  * shown once during enrollment. Verification uses a small time window.
  */
 export class TwoFactorService {
-  async generate(accountLabel: string, issuer = 'Authora'): Promise<TwoFactorSetup> {
+  async generate(accountLabel: string, issuer = 'FullstackApp'): Promise<TwoFactorSetup> {
     const secret = speakeasy.generateSecret({
       name: `${issuer} (${accountLabel})`,
       issuer,

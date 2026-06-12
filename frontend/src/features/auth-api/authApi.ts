@@ -156,3 +156,42 @@ export async function unlinkProvider(provider: 'github' | 'telegram'): Promise<U
   );
   return data.unlinkProvider;
 }
+
+/* --------------------------- Telegram bot flow --------------------------- */
+
+export interface TelegramBotStart {
+  token: string;
+  botUrl: string;
+}
+
+/** Start a Telegram bot login (link=true links to the current authed user). */
+export async function telegramBotStart(link = false): Promise<TelegramBotStart> {
+  const data = await gqlRequest<{ telegramBotStart: TelegramBotStart }>(
+    `mutation TelegramBotStart($link: Boolean) {
+      telegramBotStart(link: $link) { token botUrl }
+    }`,
+    { link },
+    { retry: false },
+  );
+  return data.telegramBotStart;
+}
+
+export interface TelegramBotPoll {
+  status: 'pending' | 'done' | 'linked' | 'expired';
+  auth: AuthPayload | null;
+}
+
+/** Poll the Telegram bot login ticket. */
+export async function telegramBotPoll(token: string): Promise<TelegramBotPoll> {
+  const data = await gqlRequest<{ telegramBotPoll: TelegramBotPoll }>(
+    `mutation TelegramBotPoll($token: String!) {
+      telegramBotPoll(token: $token) {
+        status
+        auth { needTwoFactor user { id name email emailVerified twoFactorEnabled githubId telegramId } }
+      }
+    }`,
+    { token },
+    { retry: false },
+  );
+  return data.telegramBotPoll;
+}

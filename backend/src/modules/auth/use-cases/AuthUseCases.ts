@@ -8,6 +8,7 @@ import {
 } from '../../../infrastructure/database/mongo/MongoEmailTokenRepository';
 import { MailService } from '../../../infrastructure/mail/MailService';
 import { TwoFactorService } from '../services/TwoFactorService';
+import { TelegramTicketStore } from '../oauth/TelegramTicketStore';
 import {
   comparePassword,
   hashPassword,
@@ -52,6 +53,7 @@ export interface AuthDeps {
   emailTokens: EmailTokenRepository;
   mail: MailService;
   twoFactor: TwoFactorService;
+  telegramTickets: TelegramTicketStore;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -455,6 +457,60 @@ export class AuthUseCases {
     if (!user) throw AppError.unauthorized();
     const tokens = await this.issueTokens(user.id, user.email);
     return { ...tokens, user: toPublicUser(user) };
+  }
+
+  /* ----------------------- Telegram bot deep-link flow -------------------- */
+
+  /**
+   * Begin a Telegram bot login: create a ticket and return the deep-link the
+   * frontend opens (https://t.me/<bot>?start=<ticket>). If `linkUserId` is set,
+   * a successful tap links Telegram to that authenticated user.
+   */
+  startTelegramBotLogin(linkUserId?: string): { token: string; botUrl: string } {
+    const ticket = this.deps.telegramTickets.create(linkUserId);
+    const base = (process.env.TELEGRAM_BOT_URL ?? '').replace(/\/$/, '');
+    const botUrl = base ? `${base}?start=${ticket.token}` : '';
+    return { token: ticket.token, botUrl };
+  }
+
+  /**
+   * Poll a Telegram ticket. Returns status; when 'done' it either logs the user
+   * in (returns AuthPayload) or, for a link flow, attaches Telegram and returns
+   * { linked: true }.
+   */
+  async pollTelegramBotLogin(
+    token: string,
+  ): Promise<
+    | { status: 'pending' }
+    | { status: 'expired' }
+    | { status: 'done'; auth: AuthPayload }
+    | { status: 'linked' }
+  > {
+    const ticket = this.deps.telegramTickets.get(token);
+    if (!ticket) return { status: 'expired' };
+    if (ticket.status === 'expired') return { status: 'expired' };
+    if (ticket.status === 'pending' || !ticket.user) return { status: 'pending' };
+
+    const verified = ticket.user;
+    this.deps.telegramTickets.consume(token);
+
+    // Link flow: attach to the authenticated user.
+    if (ticket.linkUserId) {
+      await this.linkTelegram(ticket.linkUserId, {
+        telegramId: verified.telegramId,
+        name: verified.name,
+        username: verified.username,
+      });
+      return { status: 'linked' };
+    }
+
+    // Login flow: find-or-create and issue tokens.
+    const auth = await this.loginWithTelegram({
+      telegramId: verified.telegramId,
+      name: verified.name,
+      username: verified.username,
+    });
+    return { status: 'done', auth };
   }
 }
 

@@ -226,7 +226,7 @@ Postgres means adding one more set of repository implementations there.
 - [x] Frontend (Next.js, FSD, Redux) + PWA
 - [x] Docker Compose (backend + frontend)
 - [x] GitHub OAuth (login + account linking, cross-origin handoff)
-- [x] Telegram auth (signed Login Widget, login + linking)
+- [x] Telegram auth (bot deep-link flow, login + linking)
 - [ ] Postgres (Sequelize) repositories
 - [ ] PM2 production setup
 
@@ -242,10 +242,23 @@ backend issues a one-time **handoff token** and redirects to
 same-origin proxy, which sets the cookies on the frontend. This works in Docker
 where the two run on different hosts.
 
-**Linking:** an authenticated user mints a short-lived `oauthLinkToken`, the
-provider flow is started with `?link=<token>`, and the callback attaches the
-provider to the current account instead of logging in. `unlinkProvider` removes
-it (refusing to leave a passwordless account with no way to sign in).
+**GitHub linking:** an authenticated user mints a short-lived `oauthLinkToken`,
+the GitHub flow starts with `?link=<token>`, and the callback attaches the
+provider to the current account instead of logging in.
+
+**Telegram = bot deep-link flow** (works on localhost — no HTTPS widget domain
+needed):
+
+1. Click _Continue with Telegram_ → `telegramBotStart` creates a one-time
+   ticket and returns `https://t.me/<bot>?start=<ticket>`, opened in a new tab.
+2. The user taps **Start**; Telegram delivers `/start <ticket>` to the bot,
+   which the backend long-polls (`getUpdates`) and resolves with the
+   Telegram-verified user (the bot token authenticates the identity).
+3. The frontend polls `telegramBotPoll`; on `done` it logs in (tokens → cookies
+   via the proxy), on `linked` it attaches Telegram to the current user.
+
+`unlinkProvider` removes a provider (refusing to leave a passwordless account
+with no way to sign in).
 
 Required env:
 
@@ -253,11 +266,11 @@ Required env:
 # backend (.env / .env.docker)
 GITHUB_CLIENT_ID=...        GITHUB_CLIENT_SECRET=...
 GITHUB_CALLBACK_URL=http://localhost:3010/api/auth/github/callback
-TELEGRAM_BOT_TOKEN=...
+TELEGRAM_BOT_TOKEN=8460081839:...           # from BotFather
+TELEGRAM_BOT_URL=https://t.me/AuthAuraBot   # bot deep-link base
 
 # frontend (.env) — browser-facing
-NEXT_PUBLIC_BACKEND_URL=http://localhost:3010   # full-page OAuth redirects
-NEXT_PUBLIC_TELEGRAM_BOT=your_bot_username       # enables the Telegram widget
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3010   # full-page GitHub redirect
 ```
 
 ```

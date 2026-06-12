@@ -1,5 +1,6 @@
 import { env } from '../config/env';
 import { createApp } from './express';
+import { getContainer } from './container';
 import { connectMongo, disconnectMongo } from '../infrastructure/database/mongo/connection';
 import { connectSqlite, disconnectSqlite } from '../infrastructure/database/sqlite/connection';
 
@@ -14,6 +15,9 @@ async function bootstrap(): Promise<void> {
       `DB_TYPE="${env.dbType}" not supported. Use DB_TYPE=mongo or DB_TYPE=sqlite.`,
     );
   }
+
+  // Start the Telegram bot long-poller (no-op if TELEGRAM_BOT_TOKEN is unset).
+  getContainer().telegramBot.start();
 
   const app = createApp();
   // Bind to 0.0.0.0 so the server is reachable from outside the container.

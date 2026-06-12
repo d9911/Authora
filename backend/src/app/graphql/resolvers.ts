@@ -131,6 +131,20 @@ export const resolvers = {
       const userId = requireAuth(ctx);
       return ctx.container.auth.unlinkProvider(userId, args.provider);
     },
+
+    // Telegram bot deep-link: start (link=true requires auth) and poll.
+    telegramBotStart: (_p: unknown, args: { link?: boolean }, ctx: GraphQLContext) => {
+      const linkUserId = args.link ? requireAuth(ctx) : undefined;
+      return ctx.container.auth.startTelegramBotLogin(linkUserId);
+    },
+
+    telegramBotPoll: async (_p: unknown, args: { token: string }, ctx: GraphQLContext) => {
+      const result = await ctx.container.auth.pollTelegramBotLogin(args.token);
+      if (result.status === 'done') {
+        return { status: 'done', auth: normalizeAuth(result.auth) };
+      }
+      return { status: result.status, auth: null };
+    },
   },
 };
 

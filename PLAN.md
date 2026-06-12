@@ -34,7 +34,6 @@ env BACKEND_PORT=3010
 - MongoDB
 - PostgreSQL + Sequelize
 - SQLite
-- swagger
 Email-настройки:
 env OWNER_EMAIL=test@d9911.org SMTP_HOST=smtp.mail.ru SMTP_PORT=465 SMTP_USER=d.9911@mail.ru SMTP_PASS=
 ## Frontend
@@ -90,37 +89,31 @@ backend/
         infrastructure/
         graphql/
         services/
-        swagger.ts
 
       user/
         domain/
         use-cases/
         infrastructure/
         graphql/
-        swagger.ts
 
       profile/
         domain/
         use-cases/
         infrastructure/
         graphql/
-        swagger.ts
 
       location/
         country/
         region/
         city/
-        swagger.ts
 
       mail/
         services/
         templates/
-        swagger.ts
 
       two-factor/
         services/
         graphql/
-        swagger.ts
 
 
     infrastructure/

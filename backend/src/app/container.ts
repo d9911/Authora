@@ -3,6 +3,8 @@ import { MailService } from '../infrastructure/mail/MailService';
 import { TwoFactorService } from '../modules/auth/services/TwoFactorService';
 import { GithubOAuthService } from '../modules/auth/oauth/GithubOAuthService';
 import { TelegramAuthService } from '../modules/auth/oauth/TelegramAuthService';
+import { TelegramTicketStore } from '../modules/auth/oauth/TelegramTicketStore';
+import { TelegramBotService } from '../modules/auth/oauth/TelegramBotService';
 import { AuthUseCases } from '../modules/auth/use-cases/AuthUseCases';
 import { UserUseCases } from '../modules/user/use-cases/UserUseCases';
 import { ProfileUseCases } from '../modules/profile/use-cases/ProfileUseCases';
@@ -14,6 +16,7 @@ export interface Container {
   twoFactor: TwoFactorService;
   github: GithubOAuthService;
   telegram: TelegramAuthService;
+  telegramBot: TelegramBotService;
   auth: AuthUseCases;
   users: UserUseCases;
   profiles: ProfileUseCases;
@@ -31,6 +34,8 @@ export function getContainer(): Container {
   const twoFactor = new TwoFactorService();
   const github = new GithubOAuthService();
   const telegram = new TelegramAuthService();
+  const telegramTickets = new TelegramTicketStore();
+  const telegramBot = new TelegramBotService(telegramTickets);
 
   const auth = new AuthUseCases({
     users: repos.users,
@@ -39,11 +44,23 @@ export function getContainer(): Container {
     emailTokens: repos.emailTokens,
     mail,
     twoFactor,
+    telegramTickets,
   });
   const users = new UserUseCases(repos.users);
   const profiles = new ProfileUseCases(repos.profiles, repos.users);
   const locations = new LocationUseCases(repos.locations);
 
-  container = { repos, mail, twoFactor, github, telegram, auth, users, profiles, locations };
+  container = {
+    repos,
+    mail,
+    twoFactor,
+    github,
+    telegram,
+    telegramBot,
+    auth,
+    users,
+    profiles,
+    locations,
+  };
   return container;
 }

@@ -65,5 +65,7 @@ export const env = {
 
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN ?? '',
+    // e.g. https://t.me/AuthAuraBot — used to build the bot deep-link.
+    botUrl: process.env.TELEGRAM_BOT_URL ?? '',
   },
 };

@@ -96,13 +96,26 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
   let setRefresh: string | null = null;
 
   const data = json.data ?? {};
-  for (const key of ['signUp', 'signIn', 'signInTwoFactor', 'refreshToken']) {
-    const payload = data[key] as { accessToken?: string; refreshToken?: string } | undefined;
-    if (payload?.accessToken) {
+
+  // Auth payloads can be top-level (signIn, oauthExchange, …) or nested
+  // (telegramBotPoll.auth). Collect all candidate payloads and strip tokens.
+  const candidates: Array<{ accessToken?: string; refreshToken?: string } | undefined> = [
+    data.signUp,
+    data.signIn,
+    data.signInTwoFactor,
+    data.refreshToken,
+    data.oauthExchange,
+    (data.telegramBotPoll as { auth?: { accessToken?: string; refreshToken?: string } } | undefined)
+      ?.auth,
+  ] as Array<{ accessToken?: string; refreshToken?: string } | undefined>;
+
+  for (const payload of candidates) {
+    if (!payload) continue;
+    if (payload.accessToken) {
       setAccess = payload.accessToken;
       delete (payload as Record<string, unknown>).accessToken;
     }
-    if (payload?.refreshToken) {
+    if (payload.refreshToken) {
       setRefresh = payload.refreshToken;
       delete (payload as Record<string, unknown>).refreshToken;
     }

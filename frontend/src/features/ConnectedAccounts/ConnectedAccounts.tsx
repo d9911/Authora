@@ -23,10 +23,8 @@ export function ConnectedAccounts() {
   const [busy, setBusy] = useState<Provider | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
-  // When set, the Telegram widget is shown pre-loaded with a link token.
-  const [tgLinkToken, setTgLinkToken] = useState<string | null>(null);
 
-  // Show a confirmation when returning from a successful link (?linked=github).
+  // Confirmation when returning from a GitHub link (?linked=github).
   useEffect(() => {
     const linked = params.get('linked');
     if (linked === 'github' || linked === 'telegram') {
@@ -35,20 +33,14 @@ export function ConnectedAccounts() {
     }
   }, [params, dispatch]);
 
-  const startLink = async (provider: Provider) => {
+  // GitHub linking = full-page redirect to the backend with a link token.
+  const startGithubLink = async () => {
     setError(null);
     setMsg(null);
-    setBusy(provider);
+    setBusy('github');
     try {
       const token = await getOAuthLinkToken();
-      if (provider === 'github') {
-        // Full-page redirect to the backend GitHub flow with the link token.
-        window.location.href = `${config.backendPublicUrl}/api/auth/github?link=${encodeURIComponent(token)}`;
-        return;
-      }
-      // Telegram must go through its signed widget; reveal it with the link token.
-      setTgLinkToken(token);
-      setBusy(null);
+      window.location.href = `${config.backendPublicUrl}/api/auth/github?link=${encodeURIComponent(token)}`;
     } catch (e) {
       setError(handle(e));
       setBusy(null);
@@ -70,10 +62,43 @@ export function ConnectedAccounts() {
     }
   };
 
-  const rows: { provider: Provider; label: string; connected: boolean }[] = [
-    { provider: 'github', label: 'GitHub', connected: Boolean(user?.githubId) },
-    { provider: 'telegram', label: 'Telegram', connected: Boolean(user?.telegramId) },
-  ];
+  const githubConnected = Boolean(user?.githubId);
+  const telegramConnected = Boolean(user?.telegramId);
+
+  const Row = ({
+    label,
+    connected,
+    children,
+  }: {
+    label: string;
+    connected: boolean;
+    children: React.ReactNode;
+  }) => (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        padding: '12px 0',
+        borderBottom: '1px solid var(--hairline-soft)',
+      }}
+    >
+      <div>
+        <strong>{label}</strong>{' '}
+        {connected ? (
+          <span className="badge-green-soft" style={{ marginLeft: 6 }}>
+            Connected
+          </span>
+        ) : (
+          <span className="muted" style={{ marginLeft: 6, fontSize: 13 }}>
+            Not connected
+          </span>
+        )}
+      </div>
+      <div style={{ minWidth: 180, display: 'flex', justifyContent: 'flex-end' }}>{children}</div>
+    </div>
+  );
 
   return (
     <div className="card">
@@ -82,46 +107,39 @@ export function ConnectedAccounts() {
         Link external accounts to sign in with one click.
       </p>
 
-      {rows.map((r) => (
-        <div
-          key={r.provider}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px 0',
-            borderBottom: '1px solid var(--hairline-soft)',
-          }}
-        >
-          <div>
-            <strong>{r.label}</strong>{' '}
-            {r.connected ? (
-              <span className="badge-green-soft" style={{ marginLeft: 6 }}>
-                Connected
-              </span>
-            ) : (
-              <span className="muted" style={{ marginLeft: 6, fontSize: 13 }}>
-                Not connected
-              </span>
-            )}
-          </div>
-          {r.connected ? (
-            <ButtonMain
-              variant="secondary"
-              loading={busy === r.provider}
-              onClick={() => disconnect(r.provider)}
-            >
-              Disconnect
-            </ButtonMain>
-          ) : r.provider === 'telegram' && tgLinkToken ? (
-            <TelegramLoginButton linkToken={tgLinkToken} />
-          ) : (
-            <ButtonMain loading={busy === r.provider} onClick={() => startLink(r.provider)}>
-              Connect
-            </ButtonMain>
-          )}
-        </div>
-      ))}
+      <Row label="GitHub" connected={githubConnected}>
+        {githubConnected ? (
+          <ButtonMain
+            variant="secondary"
+            loading={busy === 'github'}
+            onClick={() => disconnect('github')}
+          >
+            Disconnect
+          </ButtonMain>
+        ) : (
+          <ButtonMain loading={busy === 'github'} onClick={startGithubLink}>
+            Connect
+          </ButtonMain>
+        )}
+      </Row>
+
+      <Row label="Telegram" connected={telegramConnected}>
+        {telegramConnected ? (
+          <ButtonMain
+            variant="secondary"
+            loading={busy === 'telegram'}
+            onClick={() => disconnect('telegram')}
+          >
+            Disconnect
+          </ButtonMain>
+        ) : (
+          // Bot deep-link flow; links to the current user on success.
+          <TelegramLoginButton
+            mode="link"
+            onLinked={() => setMsg('Telegram account linked ✓')}
+          />
+        )}
+      </Row>
 
       {error && <p className="error-text">{error}</p>}
       {msg && <p className="success-text">{msg}</p>}
