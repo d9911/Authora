@@ -18,11 +18,16 @@ interface GraphQLBody {
   operationName?: string;
 }
 
+// `secure` cookies are dropped by browsers over plain HTTP (e.g. http://localhost),
+// which silently breaks the session in production builds served without TLS.
+// Only mark cookies Secure when we are actually behind HTTPS, controllable via
+// COOKIE_SECURE=true|false. Default: off (works on http://localhost out of the box).
+const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
 const COOKIE_BASE = {
   httpOnly: true,
   sameSite: 'lax' as const,
   path: '/',
-  secure: process.env.NODE_ENV === 'production',
+  secure: COOKIE_SECURE,
 };
 
 function isOperation(query: string, name: string): boolean {
@@ -33,6 +38,12 @@ function isOperation(query: string, name: string): boolean {
 // NOT a field of the same name inside a selection set (e.g. `signUp { refreshToken }`).
 function callsMutation(query: string, name: string): boolean {
   return new RegExp(`\\b${name}\\s*\\(`).test(query);
+}
+
+// Extracts the variable bound to `input:` in `refreshToken(input: $xxx)`.
+function refreshInputVarName(query: string): string | null {
+  const m = query.match(/refreshToken\s*\(\s*input\s*:\s*\$(\w+)/);
+  return m ? m[1] : null;
 }
 
 export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
@@ -54,9 +65,14 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
   // Inject the httpOnly refresh token into the refreshToken mutation only.
   // We match the mutation CALL `refreshToken(...)`, never the field selection
   // `refreshToken` that appears inside signUp/signIn payloads.
+  //
+  // The mutation takes `input: RefreshTokenInput!`. The GraphQL *variable* may be
+  // named anything (e.g. `$input`, `$i`), so we set it on whichever variable the
+  // operation actually binds to `input:` — falling back to `variables.input`.
   if (callsMutation(query, 'refreshToken')) {
-    const input = (variables.input as Record<string, unknown>) ?? {};
-    variables.input = { ...input, refreshToken: refreshToken ?? '' };
+    const varName = refreshInputVarName(query) ?? 'input';
+    const existing = (variables[varName] as Record<string, unknown>) ?? {};
+    variables[varName] = { ...existing, refreshToken: refreshToken ?? '' };
   }
   if (isOperation(query, 'logout') && refreshToken && variables.refreshToken === undefined) {
     variables.refreshToken = refreshToken;

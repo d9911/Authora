@@ -10,6 +10,11 @@ import { resolvers } from './graphql/resolvers';
 import { buildContext } from './graphql/context';
 import { AppError, ErrorCodes } from '../core/errors/AppError';
 import { createOAuthRouter } from './oauthRoutes';
+import {
+  authRateLimit,
+  rateLimit,
+  securityHeaders,
+} from '../shared/middlewares/security';
 
 /**
  * Lazily load the optional Ruru playground. It is a dev convenience and must
@@ -33,6 +38,10 @@ function renderPlayground(): string | null {
 export function createApp(): Express {
   const app = express();
 
+  // Trust the first proxy hop so rate-limiting sees the real client IP.
+  app.set('trust proxy', 1);
+
+  app.use(securityHeaders());
   app.use(
     cors({
       origin: env.app.corsOrigins.length ? env.app.corsOrigins : true,
@@ -40,6 +49,9 @@ export function createApp(): Express {
     }),
   );
   app.use(express.json({ limit: '1mb' }));
+  // General + auth-specific rate limiting (auth limiter reads the parsed body).
+  app.use(rateLimit());
+  app.use(authRateLimit());
 
   // Health check
   app.get('/health', (_req: Request, res: Response) => {
@@ -116,6 +128,16 @@ export function createApp(): Express {
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof AppError) {
       res.status(err.statusCode).json({ message: err.message, code: err.code });
+      return;
+    }
+    // body-parser errors (e.g. oversized payload / malformed JSON) carry a status.
+    const e = err as { type?: string; status?: number; statusCode?: number };
+    if (e?.type === 'entity.too.large') {
+      res.status(413).json({ message: 'Payload too large', code: 'PAYLOAD_TOO_LARGE' });
+      return;
+    }
+    if (e?.status === 400 || e?.type === 'entity.parse.failed') {
+      res.status(400).json({ message: 'Invalid request body', code: ErrorCodes.VALIDATION });
       return;
     }
     // eslint-disable-next-line no-console

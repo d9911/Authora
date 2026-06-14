@@ -29,6 +29,11 @@ services:
       JWT_ACCESS_SECRET: "docker_access_secret_change_me"
       JWT_REFRESH_SECRET: "docker_refresh_secret_change_me"
       CORS_ORIGINS: "http://localhost:5178"
+      COOKIE_SECURE: "${COOKIE_SECURE:-false}"
+      # OAuth/Telegram secrets (GITHUB_*, TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_URL,
+      # FRONTEND_URL, SMTP_*) come from backend/.env.docker via env_file above.
+      # They are intentionally NOT redeclared here so empty shell vars can't
+      # shadow the file values (environment overrides env_file in Compose).
     volumes:
       - sqlite_data:/data
     healthcheck:

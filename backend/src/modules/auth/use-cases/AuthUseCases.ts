@@ -465,10 +465,13 @@ export class AuthUseCases {
    * Begin a Telegram bot login: create a ticket and return the deep-link the
    * frontend opens (https://t.me/<bot>?start=<ticket>). If `linkUserId` is set,
    * a successful tap links Telegram to that authenticated user.
+   *
+   * `botBase` is the resolved deep-link base (from TELEGRAM_BOT_URL or getMe);
+   * the caller passes it because URL resolution lives in the bot service.
    */
-  startTelegramBotLogin(linkUserId?: string): { token: string; botUrl: string } {
+  startTelegramBotLogin(linkUserId?: string, botBase = ''): { token: string; botUrl: string } {
     const ticket = this.deps.telegramTickets.create(linkUserId);
-    const base = (process.env.TELEGRAM_BOT_URL ?? '').replace(/\/$/, '');
+    const base = botBase.replace(/\/$/, '');
     const botUrl = base ? `${base}?start=${ticket.token}` : '';
     return { token: ticket.token, botUrl };
   }

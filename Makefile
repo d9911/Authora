@@ -1,6 +1,7 @@
 # ---- Root Makefile for the Authora monorepo ----
 .PHONY: setup init install dev backend-dev frontend-dev backend-build frontend-build \
-        backend-start backend-test backend-test-sqlite seed seed-mongo seed-sqlite docker-up docker-down \
+        backend-start backend-test backend-test-sqlite security-audit load-test test-all \
+        seed seed-mongo seed-sqlite docker-up docker-down \
         db-mongo-up db-postgres-up db-sqlite-up clean-ports
 
 BACKEND_DIR = backend
@@ -64,6 +65,16 @@ backend-test:
 
 backend-test-sqlite:
 	cd backend && npx ts-node-dev --transpile-only smoke-test-sqlite.ts
+
+# --- security & load testing ---
+security-audit:        ## OWASP-style security checks (boots its own server)
+	node tests/security/audit.mjs
+
+load-test:             ## k6 (auth + oauth) + autocannon throughput
+	bash tests/run-tests.sh load
+
+test-all:              ## security audit + load tests
+	bash tests/run-tests.sh all
 
 # --- seed ---
 seed:

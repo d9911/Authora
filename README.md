@@ -227,8 +227,27 @@ Postgres means adding one more set of repository implementations there.
 - [x] Docker Compose (backend + frontend)
 - [x] GitHub OAuth (login + account linking, cross-origin handoff)
 - [x] Telegram auth (bot deep-link flow, login + linking)
+- [x] Security audit + load testing (k6 / autocannon) + hardening
 - [ ] Postgres (Sequelize) repositories
 - [ ] PM2 production setup
+
+## Testing, security & load
+
+A dedicated harness lives in [`tests/`](tests/README.md):
+
+```bash
+make security-audit   # 22 OWASP-style checks (auth gating, JWT tampering,
+                      # token leakage, injection, CSRF/signature, CORS, headers,
+                      # brute-force rate-limiting)
+make load-test        # k6 functional+load (auth & GitHub/Telegram flows) +
+                      # autocannon throughput benchmark
+make test-all
+```
+
+Latest results: **security 22/22**, **k6 auth checks 100% / 0 failed**,
+**k6 oauth 13/13**, **autocannon ~700 req/s** on the authed hot path.
+Hardening added from the audit (rate limiting, security headers, 413 on oversized
+bodies) lives in `backend/src/shared/middlewares/security.ts`.
 
 ## Social login & account linking (GitHub / Telegram)
 

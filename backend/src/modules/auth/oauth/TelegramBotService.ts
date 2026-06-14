@@ -34,6 +34,7 @@ export class TelegramBotService {
   private offset = 0;
   private running = false;
   private api = '';
+  private username: string | null = null;
 
   constructor(private readonly tickets: TelegramTicketStore) {
     if (env.telegram.botToken) {
@@ -45,12 +46,39 @@ export class TelegramBotService {
     return Boolean(env.telegram.botToken);
   }
 
+  /**
+   * Resolve the public bot deep-link base (https://t.me/<username>).
+   * Priority: explicit TELEGRAM_BOT_URL, else derived from the token via getMe.
+   * Cached after the first successful lookup.
+   */
+  async getBotUrl(): Promise<string> {
+    const explicit = (env.telegram.botUrl ?? '').replace(/\/$/, '');
+    if (explicit) return explicit;
+    if (!this.isConfigured()) return '';
+    if (this.username) return `https://t.me/${this.username}`;
+    try {
+      const res = await fetch(`${this.api}/getMe`, { signal: AbortSignal.timeout(8000) });
+      const json = (await res.json()) as { ok: boolean; result?: { username?: string } };
+      if (json.ok && json.result?.username) {
+        this.username = json.result.username;
+        return `https://t.me/${this.username}`;
+      }
+    } catch {
+      /* network/timeout — fall through */
+    }
+    return '';
+  }
+
   /** Start the long-poll loop (no-op if the bot token is not configured). */
   start(): void {
     if (!this.isConfigured() || this.running) return;
     this.running = true;
     // eslint-disable-next-line no-console
     console.log('[telegram-bot] long-poll started');
+    // Warm the username cache so deep-links work without TELEGRAM_BOT_URL.
+    void this.getBotUrl().then((u) => {
+      if (u) console.log(`[telegram-bot] deep-link base: ${u}`);
+    });
     void this.loop();
   }
 

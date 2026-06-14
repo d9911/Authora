@@ -16,6 +16,10 @@ export type DbType = 'mongo' | 'postgres' | 'sqlite';
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   isProd: process.env.NODE_ENV === 'production',
+  // Mark cookies Secure only behind HTTPS. Browsers drop Secure cookies over
+  // plain HTTP (http://localhost), which silently breaks OAuth/session cookies.
+  // Default off; set COOKIE_SECURE=true when serving over TLS.
+  cookieSecure: process.env.COOKIE_SECURE === 'true',
 
   backendPort: Number(process.env.BACKEND_PORT ?? 3010),
 

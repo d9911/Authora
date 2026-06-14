@@ -9,7 +9,7 @@ const COOKIE_BASE = {
   httpOnly: true,
   sameSite: 'lax' as const,
   path: '/',
-  secure: env.isProd,
+  secure: env.cookieSecure,
 };
 
 /** Read a single cookie value from the raw Cookie header (no cookie-parser dep). */

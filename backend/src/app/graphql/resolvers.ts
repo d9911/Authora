@@ -1,11 +1,16 @@
 import { GraphQLScalarType, Kind } from 'graphql';
 import { GraphQLContext } from './context';
-import { AppError } from '../../core/errors/AppError';
+import { AppError, ErrorCodes } from '../../core/errors/AppError';
 import { verifyAccessToken } from '../../infrastructure/jwt/jwt';
 
 function requireAuth(ctx: GraphQLContext): string {
-  if (!ctx.userId) throw AppError.unauthorized();
-  return ctx.userId;
+  if (ctx.userId) return ctx.userId;
+  // A token was sent but failed verification → tell the client to refresh+retry,
+  // instead of a generic UNAUTHORIZED that looks like "logged out".
+  if (ctx.tokenInvalid) {
+    throw new AppError(ErrorCodes.INVALID_TOKEN, 'Access token expired', 401);
+  }
+  throw AppError.unauthorized();
 }
 
 const DateTime = new GraphQLScalarType({
@@ -32,8 +37,14 @@ export const resolvers = {
   },
 
   Query: {
-    me: (_p: unknown, _a: unknown, ctx: GraphQLContext) =>
-      ctx.userId ? ctx.container.users.getById(ctx.userId) : null,
+    me: (_p: unknown, _a: unknown, ctx: GraphQLContext) => {
+      if (ctx.userId) return ctx.container.users.getById(ctx.userId);
+      // Expired/invalid token → signal refresh; truly anonymous → null.
+      if (ctx.tokenInvalid) {
+        throw new AppError(ErrorCodes.INVALID_TOKEN, 'Access token expired', 401);
+      }
+      return null;
+    },
     myProfile: (_p: unknown, _a: unknown, ctx: GraphQLContext) => {
       const userId = requireAuth(ctx);
       return ctx.container.profiles.getByUserId(userId);
@@ -133,9 +144,10 @@ export const resolvers = {
     },
 
     // Telegram bot deep-link: start (link=true requires auth) and poll.
-    telegramBotStart: (_p: unknown, args: { link?: boolean }, ctx: GraphQLContext) => {
+    telegramBotStart: async (_p: unknown, args: { link?: boolean }, ctx: GraphQLContext) => {
       const linkUserId = args.link ? requireAuth(ctx) : undefined;
-      return ctx.container.auth.startTelegramBotLogin(linkUserId);
+      const botBase = await ctx.container.telegramBot.getBotUrl();
+      return ctx.container.auth.startTelegramBotLogin(linkUserId, botBase);
     },
 
     telegramBotPoll: async (_p: unknown, args: { token: string }, ctx: GraphQLContext) => {
