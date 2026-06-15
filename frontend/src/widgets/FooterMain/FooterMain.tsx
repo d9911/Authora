@@ -40,10 +40,10 @@ export function FooterMain() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer style={{ background: 'var(--brand-teal-deep)', color: 'var(--on-dark)' }}>
+    <footer style={{ background: 'var(--ink)', color: 'var(--on-ink)' }}>
       {/* hover effects (inline styles can't express pseudo-classes) */}
       <style>{`
-        .footer-link:hover { color: var(--on-dark) !important; opacity: 1 !important; }
+        .footer-link:hover { color: var(--on-ink) !important; opacity: 1 !important; }
         .footer-social-link:hover { opacity: 0.8 !important; }
       `}</style>
 
@@ -65,7 +65,7 @@ export function FooterMain() {
             </div>
             <p
               style={{
-                color: 'var(--on-dark-muted)',
+                color: 'var(--on-ink-mist)',
                 fontSize: 14,
                 lineHeight: 1.6,
                 margin: 0,
@@ -77,7 +77,7 @@ export function FooterMain() {
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
               <span
-                style={{ fontSize: 13, fontWeight: 500, color: 'var(--on-dark)', opacity: 0.9 }}
+                style={{ fontSize: 13, fontWeight: 500, color: 'var(--on-ink)', opacity: 0.9 }}
               >
                 Denis Gutsuliak
               </span>
@@ -85,7 +85,7 @@ export function FooterMain() {
                 href="mailto:admin@d9911.org"
                 className="footer-social-link"
                 style={{
-                  color: 'var(--on-dark-muted)',
+                  color: 'var(--on-ink-mist)',
                   fontSize: 13,
                   textDecoration: 'none',
                   transition: 'opacity 0.2s',
@@ -99,7 +99,7 @@ export function FooterMain() {
                 rel="noopener noreferrer"
                 className="footer-social-link"
                 style={{
-                  color: 'var(--on-dark-muted)',
+                  color: 'var(--on-ink-mist)',
                   fontSize: 13,
                   textDecoration: 'none',
                   transition: 'opacity 0.2s',
@@ -135,7 +135,7 @@ export function FooterMain() {
                       rel="noopener noreferrer"
                       className="footer-link"
                       style={{
-                        color: 'var(--on-dark-muted)',
+                        color: 'var(--on-ink-mist)',
                         fontSize: 14,
                         textDecoration: 'none',
                         transition: 'color 0.2s, opacity 0.2s',
@@ -149,7 +149,7 @@ export function FooterMain() {
                       href={l.href}
                       className="footer-link"
                       style={{
-                        color: 'var(--on-dark-muted)',
+                        color: 'var(--on-ink-mist)',
                         fontSize: 14,
                         textDecoration: 'none',
                         transition: 'color 0.2s, opacity 0.2s',
@@ -169,7 +169,7 @@ export function FooterMain() {
           style={{
             marginTop: 56,
             paddingTop: 24,
-            borderTop: '1px solid var(--hairline-dark)',
+            borderTop: '1px solid var(--line-dark)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -177,18 +177,18 @@ export function FooterMain() {
             gap: 16,
           }}
         >
-          <span style={{ color: 'var(--on-dark-muted)', fontSize: 13 }}>
+          <span style={{ color: 'var(--on-ink-mist)', fontSize: 13 }}>
             © {currentYear} {config.appName}. All rights reserved.
           </span>
 
           <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-            <a href="#" style={{ color: 'var(--on-dark-muted)', fontSize: 13, textDecoration: 'none' }}>
+            <a href="#" style={{ color: 'var(--on-ink-mist)', fontSize: 13, textDecoration: 'none' }}>
               Privacy Policy
             </a>
-            <a href="#" style={{ color: 'var(--on-dark-muted)', fontSize: 13, textDecoration: 'none' }}>
+            <a href="#" style={{ color: 'var(--on-ink-mist)', fontSize: 13, textDecoration: 'none' }}>
               Terms of Use
             </a>
-            <span style={{ color: 'var(--hairline-dark)', fontSize: 13 }}>
+            <span style={{ color: 'var(--line-dark)', fontSize: 13 }}>
               Built with Next.js · FSD
             </span>
           </div>

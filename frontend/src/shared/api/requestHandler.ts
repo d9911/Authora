@@ -8,6 +8,8 @@ import { config } from '../config';
  *  - hides the backend URL from the browser;
  *  - stores JWTs in httpOnly cookies (tokens never reach client JS);
  *  - injects `Authorization: Bearer <access>` on every request;
+ *  - PROACTIVELY mints a new access token from the refresh token when the
+ *    access cookie is missing/expired, so a valid session never breaks;
  *  - injects the httpOnly refresh token into refresh/logout operations;
  *  - centralizes error handling and cookie lifecycle.
  */
@@ -18,10 +20,14 @@ interface GraphQLBody {
   operationName?: string;
 }
 
+interface TokenPair {
+  accessToken?: string;
+  refreshToken?: string;
+}
+
 // `secure` cookies are dropped by browsers over plain HTTP (e.g. http://localhost),
 // which silently breaks the session in production builds served without TLS.
-// Only mark cookies Secure when we are actually behind HTTPS, controllable via
-// COOKIE_SECURE=true|false. Default: off (works on http://localhost out of the box).
+// Only mark cookies Secure when actually behind HTTPS, controllable via COOKIE_SECURE.
 const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
 const COOKIE_BASE = {
   httpOnly: true,
@@ -29,6 +35,8 @@ const COOKIE_BASE = {
   path: '/',
   secure: COOKIE_SECURE,
 };
+const ACCESS_MAX_AGE = 60 * 60; // 1h
+const REFRESH_MAX_AGE = 60 * 60 * 24 * 30; // 30d
 
 function isOperation(query: string, name: string): boolean {
   return new RegExp(`\\b${name}\\b`).test(query);
@@ -40,10 +48,35 @@ function callsMutation(query: string, name: string): boolean {
   return new RegExp(`\\b${name}\\s*\\(`).test(query);
 }
 
-// Extracts the variable bound to `input:` in `refreshToken(input: $xxx)`.
-function refreshInputVarName(query: string): string | null {
-  const m = query.match(/refreshToken\s*\(\s*input\s*:\s*\$(\w+)/);
-  return m ? m[1] : null;
+const SERVER_REFRESH = /* GraphQL */ `
+  mutation ProxyRefresh($input: RefreshTokenInput!) {
+    refreshToken(input: $input) { accessToken refreshToken }
+  }
+`;
+
+/**
+ * Exchange a refresh token for a fresh access/refresh pair by calling the
+ * backend directly. Returns the new pair, or null if the refresh token is
+ * invalid/expired/revoked (caller should treat the user as logged out).
+ */
+async function serverRefresh(refreshToken: string): Promise<TokenPair | null> {
+  try {
+    const res = await fetch(`${config.backendInternalUrl}/graphql`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query: SERVER_REFRESH, variables: { input: { refreshToken } } }),
+      cache: 'no-store',
+    });
+    const json = (await res.json()) as {
+      data?: { refreshToken?: TokenPair };
+      errors?: unknown;
+    };
+    const pair = json.data?.refreshToken;
+    if (!pair?.accessToken) return null;
+    return pair;
+  } catch {
+    return null;
+  }
 }
 
 export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
@@ -57,19 +90,35 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const accessToken = req.cookies.get(config.cookies.accessToken)?.value;
-  const refreshToken = req.cookies.get(config.cookies.refreshToken)?.value;
+  let accessToken = req.cookies.get(config.cookies.accessToken)?.value;
+  let refreshToken = req.cookies.get(config.cookies.refreshToken)?.value;
   const query = body.query ?? '';
   const variables = { ...(body.variables ?? {}) } as Record<string, unknown>;
 
-  // Inject the httpOnly refresh token into the refreshToken mutation only.
-  // We match the mutation CALL `refreshToken(...)`, never the field selection
-  // `refreshToken` that appears inside signUp/signIn payloads.
-  //
-  // The mutation takes `input: RefreshTokenInput!`. The GraphQL *variable* may be
-  // named anything (e.g. `$input`, `$i`), so we set it on whichever variable the
-  // operation actually binds to `input:` — falling back to `variables.input`.
-  if (callsMutation(query, 'refreshToken')) {
+  // Cookies to (re)write on the response, e.g. after a proactive refresh.
+  let setAccess: string | null = null;
+  let setRefresh: string | null = null;
+
+  const isRefreshCall = callsMutation(query, 'refreshToken');
+
+  // PROACTIVE REFRESH: no access token but we have a refresh token → mint a new
+  // access token before forwarding, so the request is authenticated. Skip when
+  // the request itself is the refresh mutation (handled below) or logout.
+  if (!accessToken && refreshToken && !isRefreshCall && !isOperation(query, 'logout')) {
+    const pair = await serverRefresh(refreshToken);
+    if (pair) {
+      accessToken = pair.accessToken;
+      setAccess = pair.accessToken ?? null;
+      if (pair.refreshToken) {
+        refreshToken = pair.refreshToken;
+        setRefresh = pair.refreshToken;
+      }
+    }
+  }
+
+  // Inject the httpOnly refresh token into the refreshToken mutation. The
+  // GraphQL variable bound to `input:` may be named anything (`$input`, `$i`).
+  if (isRefreshCall) {
     const varName = refreshInputVarName(query) ?? 'input';
     const existing = (variables[varName] as Record<string, unknown>) ?? {};
     variables[varName] = { ...existing, refreshToken: refreshToken ?? '' };
@@ -105,26 +154,17 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
     errors?: unknown;
   };
 
-  // IMPORTANT: mutate the body (strip tokens) BEFORE building NextResponse.json,
-  // because NextResponse.json serializes the object immediately — later mutations
-  // would not affect the already-serialized body.
-  let setAccess: string | null = null;
-  let setRefresh: string | null = null;
-
+  // Strip any tokens returned by auth mutations (top-level or nested) and turn
+  // them into cookies. Mutate BEFORE NextResponse.json (which serializes now).
   const data = json.data ?? {};
-
-  // Auth payloads can be top-level (signIn, oauthExchange, …) or nested
-  // (telegramBotPoll.auth). Collect all candidate payloads and strip tokens.
-  const candidates: Array<{ accessToken?: string; refreshToken?: string } | undefined> = [
-    data.signUp,
-    data.signIn,
-    data.signInTwoFactor,
-    data.refreshToken,
-    data.oauthExchange,
-    (data.telegramBotPoll as { auth?: { accessToken?: string; refreshToken?: string } } | undefined)
-      ?.auth,
-  ] as Array<{ accessToken?: string; refreshToken?: string } | undefined>;
-
+  const candidates: Array<TokenPair | undefined> = [
+    data.signUp as TokenPair,
+    data.signIn as TokenPair,
+    data.signInTwoFactor as TokenPair,
+    data.refreshToken as TokenPair,
+    data.oauthExchange as TokenPair,
+    (data.telegramBotPoll as { auth?: TokenPair } | undefined)?.auth,
+  ];
   for (const payload of candidates) {
     if (!payload) continue;
     if (payload.accessToken) {
@@ -139,28 +179,27 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
 
   const clearCookies = isOperation(query, 'logout') && data.logout === true;
 
-  // Now serialize the (token-stripped) body.
   const res = NextResponse.json(json, { status: upstream.status });
 
-  // Persist tokens as httpOnly cookies (never exposed to client JS).
   if (setAccess) {
-    res.cookies.set(config.cookies.accessToken, setAccess, {
-      ...COOKIE_BASE,
-      maxAge: 60 * 60, // 1h safety cap; refreshed via refresh flow
-    });
+    res.cookies.set(config.cookies.accessToken, setAccess, { ...COOKIE_BASE, maxAge: ACCESS_MAX_AGE });
   }
   if (setRefresh) {
     res.cookies.set(config.cookies.refreshToken, setRefresh, {
       ...COOKIE_BASE,
-      maxAge: 60 * 60 * 24 * 30, // 30d
+      maxAge: REFRESH_MAX_AGE,
     });
   }
-
-  // Clear cookies on logout.
   if (clearCookies) {
     res.cookies.set(config.cookies.accessToken, '', { ...COOKIE_BASE, maxAge: 0 });
     res.cookies.set(config.cookies.refreshToken, '', { ...COOKIE_BASE, maxAge: 0 });
   }
 
   return res;
+}
+
+// Extracts the variable bound to `input:` in `refreshToken(input: $xxx)`.
+function refreshInputVarName(query: string): string | null {
+  const m = query.match(/refreshToken\s*\(\s*input\s*:\s*\$(\w+)/);
+  return m ? m[1] : null;
 }

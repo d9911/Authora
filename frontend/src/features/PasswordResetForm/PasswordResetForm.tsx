@@ -48,8 +48,7 @@ export function PasswordResetForm({ token }: { token?: string }) {
   return (
     <form
       onSubmit={isReset ? onReset : onRequest}
-      className="card"
-      style={{ maxWidth: 380, margin: '0 auto' }}
+      className="auth-card"
     >
       <h2>{isReset ? 'Set new password' : 'Reset password'}</h2>
       {isReset ? (

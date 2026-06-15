@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Authora — design preview</title>
+    <style>
+      :root {
+        --ink:#17141f; --ink-soft:#221d2e; --paper:#f5f4f8; --card:#fff;
+        --iris:#5b4bff; --halo:#9f8cff; --mist:#6b6878; --signal:#12b886; --line:#e5e3ee;
+        --font-display:"Space Grotesk",system-ui,sans-serif; --font-body:Inter,system-ui,sans-serif;
+        --font-mono:"IBM Plex Mono",ui-monospace,monospace;
+      }
+      * { box-sizing:border-box; }
+      body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+      .container { max-width:1120px; margin:0 auto; padding:0 24px; }
+      header { border-bottom:1px solid var(--line); background:var(--card); }
+      .bar { height:64px; display:flex; align-items:center; justify-content:space-between; }
+      .brand { display:flex; align-items:center; gap:9px; font-family:var(--font-display); font-weight:700; font-size:19px; letter-spacing:-.02em; }
+      .nav a { color:var(--mist); text-decoration:none; font-size:14px; margin-left:22px; }
+      .pill { background:var(--iris); color:#fff; font-family:var(--font-display); font-weight:600; font-size:14px; padding:11px 22px; border-radius:999px; border:none; box-shadow:0 10px 24px -12px rgba(91,75,255,.7); }
+      .pill.ghost { background:transparent; color:var(--ink); border:1px solid var(--line); box-shadow:none; }
+      .eyebrow { font-family:var(--font-mono); font-size:.72rem; font-weight:500; letter-spacing:.22em; text-transform:uppercase; color:var(--iris); }
+      h1 { font-family:var(--font-display); font-weight:600; letter-spacing:-.02em; line-height:1.08; font-size:clamp(2.4rem,5vw,3.6rem); margin:18px 0 8px; }
+      .sub { color:var(--mist); font-size:1.1rem; max-width:460px; }
+      .hero { display:grid; grid-template-columns:1.15fr .85fr; gap:40px; align-items:center; min-height:520px; }
+      .credstrip { font-family:var(--font-mono); font-size:12.5px; color:var(--mist); margin-top:34px; display:flex; gap:18px; flex-wrap:wrap; }
+      .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:18px; margin-top:24px; }
+      .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:26px; box-shadow:0 1px 2px rgba(23,20,31,.04),0 8px 30px -16px rgba(23,20,31,.18); }
+      .card h4 { font-family:var(--font-display); margin:12px 0 8px; font-size:1.1rem; }
+      .card p { color:var(--mist); font-size:14.5px; margin:0; }
+      .auth { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:32px 28px; max-width:380px; position:relative; overflow:hidden; box-shadow:0 0 0 1px rgba(91,75,255,.18),0 18px 50px -20px rgba(91,75,255,.55); }
+      .auth::before { content:""; position:absolute; inset:0 0 auto 0; height:3px; background:linear-gradient(90deg,transparent,var(--iris),var(--halo),transparent); }
+      .auth h2 { font-family:var(--font-display); margin:10px 0 16px; }
+      .field { font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--mist); display:block; margin:14px 0 7px; }
+      .input { width:100%; height:46px; border:1px solid var(--line); border-radius:10px; padding:0 13px; font-size:15px; font-family:var(--font-body); }
+      .ring { transform-origin:100px 100px; }
+      .core { transform-origin:100px 100px; animation:breathe 4.5s ease-in-out infinite; }
+      @keyframes breathe { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+      .section { padding:56px 0; }
+      @media (max-width:760px){ .hero{grid-template-columns:1fr;} }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="container bar">
+        <div class="brand">
+          <svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="#5b4bff" stroke-opacity=".3"/><circle cx="12" cy="12" r="7" fill="none" stroke="#5b4bff" stroke-opacity=".55"/><circle cx="12" cy="12" r="3.4" fill="#5b4bff"/></svg>
+          Authora
+        </div>
+        <nav class="nav">
+          <a href="#">Countries</a><a href="#">About</a><a href="#">Sign In</a>
+          <button class="pill" style="margin-left:22px">Get started</button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container section">
+      <section class="hero">
+        <div>
+          <span class="eyebrow">Authora · identity platform</span>
+          <h1>Your identity,<br/>wrapped in an <span style="color:var(--iris)">aura</span>.</h1>
+          <p class="sub">Authentication that protects without getting in the way — confirmation codes, recovery, two-factor and social linking, all in one calm surface.</p>
+          <div style="display:flex;gap:12px;margin-top:28px;flex-wrap:wrap">
+            <button class="pill">Create your identity</button>
+            <button class="pill ghost">Explore the atlas</button>
+          </div>
+          <div class="credstrip"><span>jwt · access+refresh</span><span style="color:var(--line)">/</span><span>totp · 2fa</span><span style="color:var(--line)">/</span><span>oauth · github·telegram</span></div>
+        </div>
+        <div style="display:flex;justify-content:center">
+          <svg viewBox="0 0 200 200" width="300" height="300">
+            <defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#9F8CFF"/><stop offset="100%" stop-color="#5B4BFF"/></radialGradient></defs>
+            <circle class="ring" cx="100" cy="100" r="88" fill="none" stroke="#5B4BFF" stroke-opacity=".14"/>
+            <circle class="ring" cx="100" cy="100" r="68" fill="none" stroke="#5B4BFF" stroke-opacity=".26"/>
+            <circle class="ring" cx="100" cy="100" r="48" fill="none" stroke="#5B4BFF" stroke-opacity=".38"/>
+            <circle class="core" cx="100" cy="100" r="22" fill="url(#g)"/>
+            <circle cx="100" cy="12" r="4" fill="#9F8CFF"/>
+          </svg>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card"><span class="eyebrow">AUTH</span><h4>Sessions that hold</h4><p>JWT access &amp; refresh, rotated and restored automatically before they lapse.</p></div>
+        <div class="card"><span class="eyebrow">2FA</span><h4>A second factor</h4><p>Time-based codes from any authenticator app.</p></div>
+        <div class="card"><span class="eyebrow">OAUTH</span><h4>Bring your accounts</h4><p>Link GitHub and Telegram to one identity.</p></div>
+        <div class="card"><span class="eyebrow">ATLAS</span><h4>A public atlas</h4><p>Countries, regions and cities from the GraphQL API.</p></div>
+      </section>
+
+      <section class="section" style="display:flex;justify-content:center">
+        <form class="auth" onsubmit="return false">
+          <span class="eyebrow">Welcome back</span>
+          <h2>Sign in</h2>
+          <label class="field">Email</label><input class="input" placeholder="you@authora.dev"/>
+          <label class="field">Password</label><input class="input" type="password" placeholder="••••••••"/>
+          <button class="pill" style="width:100%;margin-top:18px">Sign in</button>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>

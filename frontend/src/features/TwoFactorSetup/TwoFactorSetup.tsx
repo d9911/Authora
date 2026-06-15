@@ -69,7 +69,7 @@ export function TwoFactorSetup() {
     <div className="card">
       <h2>Two-factor authentication</h2>
       <p className="muted">
-        Status: {enabled ? <strong style={{ color: 'var(--success)' }}>Enabled</strong> : 'Disabled'}
+        Status: {enabled ? <strong style={{ color: 'var(--signal)' }}>Enabled</strong> : 'Disabled'}
       </p>
 
       {!enabled && !qr && (

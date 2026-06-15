@@ -50,7 +50,7 @@ export function SignInForm() {
 
   if (twoFactorToken) {
     return (
-      <form onSubmit={onSubmit2fa} className="card" style={{ maxWidth: 380, margin: '0 auto' }}>
+      <form onSubmit={onSubmit2fa} className="auth-card">
         <h2>Two-factor code</h2>
         <p className="muted">Enter the 6-digit code from your authenticator app.</p>
         <InputMain
@@ -79,8 +79,9 @@ export function SignInForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="card" style={{ maxWidth: 380, margin: '0 auto' }}>
-      <h2>Sign in</h2>
+    <form onSubmit={onSubmit} className="auth-card">
+      <span className="eyebrow">Welcome back</span>
+      <h2 style={{ marginTop: 10 }}>Sign in</h2>
       <InputMain
         label="Email"
         type="email"

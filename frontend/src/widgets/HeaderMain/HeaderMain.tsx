@@ -9,23 +9,19 @@ import { loadMeThunk, logoutThunk } from '@/processes/store/slices/authSlice';
 import { ButtonMain } from '@/shared/ui';
 
 const navLinkStyle: React.CSSProperties = {
-  color: 'var(--slate)',
+  color: 'var(--mist)',
   fontSize: 14,
   fontWeight: 500,
   textDecoration: 'none',
 };
 
-function LeafLogo() {
+function AuraMark() {
+  // Mini version of the hero sigil: concentric rings + core.
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M12 1.5c1.6 3 5 5.6 5 11 0 4.2-2.4 7-4.3 8.2l-.4 1.3h-.6l-.4-1.3C9.4 19.5 7 16.7 7 12.5c0-5.4 3.4-8 5-11z"
-        fill="var(--brand-green-mid)"
-      />
-      <path
-        d="M12 1.5c1.6 3 5 5.6 5 11 0 4.2-2.4 7-4.3 8.2l-.4 1.3H12V1.5z"
-        fill="var(--brand-green-dark)"
-      />
+      <circle cx="12" cy="12" r="10.5" fill="none" stroke="var(--iris)" strokeOpacity="0.3" />
+      <circle cx="12" cy="12" r="7" fill="none" stroke="var(--iris)" strokeOpacity="0.55" />
+      <circle cx="12" cy="12" r="3.4" fill="var(--iris)" />
     </svg>
   );
 }
@@ -47,8 +43,8 @@ export function HeaderMain() {
   return (
     <header
       style={{
-        borderBottom: '1px solid var(--hairline)',
-        background: 'var(--canvas)',
+        borderBottom: '1px solid var(--line)',
+        background: 'var(--card)',
         position: 'sticky',
         top: 0,
         zIndex: 50,
@@ -68,14 +64,16 @@ export function HeaderMain() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 8,
-            fontWeight: 600,
-            fontSize: 18,
+            gap: 9,
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: 19,
+            letterSpacing: '-0.02em',
             color: 'var(--ink)',
             textDecoration: 'none',
           }}
         >
-          <LeafLogo />
+          <AuraMark />
           {config.appName}
         </Link>
         <nav style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
@@ -99,7 +97,7 @@ export function HeaderMain() {
               <Link href="/sign-in" style={navLinkStyle}>
                 Sign In
               </Link>
-              <ButtonMain onClick={() => router.push('/sign-up')}>Try Free</ButtonMain>
+              <ButtonMain onClick={() => router.push('/sign-up')}>Get started</ButtonMain>
             </>
           )}
         </nav>

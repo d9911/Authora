@@ -29,11 +29,25 @@ export default async function CityPage({ params }: { params: Promise<{ id: strin
           ← Back to region
         </Link>
       )}
-      <h1 style={{ marginTop: 8 }}>{city.name}</h1>
+      <span className="eyebrow">City</span>
+      <h1 style={{ marginTop: 10 }}>{city.name}</h1>
       <div className="card" style={{ maxWidth: 420 }}>
-        <p className="muted">City ID: {city.id}</p>
-        {city.countryId && <p className="muted">Country: {city.countryId}</p>}
-        {city.regionId && <p className="muted">Region: {city.regionId}</p>}
+        <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '10px 18px' }}>
+          <dt className="mono" style={{ fontSize: 12, color: 'var(--mist)' }}>city_id</dt>
+          <dd className="mono" style={{ margin: 0, fontSize: 12 }}>{city.id}</dd>
+          {city.countryId && (
+            <>
+              <dt className="mono" style={{ fontSize: 12, color: 'var(--mist)' }}>country_id</dt>
+              <dd className="mono" style={{ margin: 0, fontSize: 12 }}>{city.countryId}</dd>
+            </>
+          )}
+          {city.regionId && (
+            <>
+              <dt className="mono" style={{ fontSize: 12, color: 'var(--mist)' }}>region_id</dt>
+              <dd className="mono" style={{ margin: 0, fontSize: 12 }}>{city.regionId}</dd>
+            </>
+          )}
+        </dl>
       </div>
     </div>
   );

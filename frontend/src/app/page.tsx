@@ -1,155 +1,120 @@
 import Link from 'next/link';
 import { config } from '@/shared/config';
+import { AuraSigil } from '@/shared/ui';
 
-// Full-bleed wrapper: breaks out of the layout's centered container.
-const fullBleed: React.CSSProperties = {
-  position: 'relative',
-  left: '50%',
-  right: '50%',
-  marginLeft: '-50vw',
-  marginRight: '-50vw',
-  width: '100vw',
-};
-
-const features = [
+const capabilities = [
   {
-    title: 'Secure auth',
-    body: 'Email/password with JWT access & refresh, rotation and httpOnly cookies.',
+    code: 'AUTH',
+    title: 'Sessions that hold',
+    desc: 'Email + password with JWT access & refresh, rotated and stored in httpOnly cookies. The token restores itself before you notice it lapsed.',
   },
   {
-    title: 'Two-factor',
-    body: 'TOTP 2FA via authenticator apps, QR enrollment and gated sign-in.',
+    code: '2FA',
+    title: 'A second factor',
+    desc: 'Time-based codes from any authenticator app, enrolled with a QR and verified on sign-in.',
   },
   {
-    title: 'Public data',
-    body: 'Browse countries, regions and cities served from a GraphQL API.',
+    code: 'OAUTH',
+    title: 'Bring your accounts',
+    desc: 'Sign in or link GitHub and Telegram to one identity — connect and disconnect at will.',
+  },
+  {
+    code: 'ATLAS',
+    title: 'A public atlas',
+    desc: 'Browse countries, regions and cities served straight from the GraphQL API.',
   },
 ];
 
 export default function HomePage() {
   return (
     <div>
-      {/* Hero band */}
-      <section style={{ ...fullBleed, background: 'var(--brand-teal-deep)', marginTop: -48 }}>
-        <div className="container" style={{ padding: '96px 32px', textAlign: 'center' }}>
-          <span
-            className="eyebrow"
-            style={{ color: 'var(--brand-green)', display: 'block', marginBottom: 16 }}
-          >
-            {config.appName}
-          </span>
-          <h1
-            style={{
-              color: 'var(--on-dark)',
-              fontSize: 64,
-              lineHeight: 1.1,
-              letterSpacing: '-1.5px',
-              maxWidth: 820,
-              margin: '0 auto 20px',
-            }}
-          >
-            One identity platform. Unlimited potential.
+      {/* Hero — the thesis: an identity inside its aura. */}
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0,1.15fr) minmax(0,0.85fr)',
+          gap: 40,
+          alignItems: 'center',
+          minHeight: 'min(64vh, 560px)',
+        }}
+      >
+        <div>
+          <span className="eyebrow">{config.appName} · identity platform</span>
+          <h1 style={{ marginTop: 18 }}>
+            Your identity,
+            <br />
+            wrapped in an&nbsp;
+            <span style={{ color: 'var(--iris)' }}>aura</span>.
           </h1>
-          <p
-            className="subtitle"
-            style={{ color: 'var(--on-dark-muted)', maxWidth: 600, margin: '0 auto 32px' }}
-          >
-            Authentication, profiles and public location data — JWT, email
-            confirmation, password recovery and two-factor security out of the box.
+          <p className="subtitle" style={{ maxWidth: 460, marginTop: 6 }}>
+            Authentication that protects without getting in the way — confirmation
+            codes, recovery, two-factor and social linking, all in one calm surface.
           </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 12, marginTop: 28, flexWrap: 'wrap' }}>
             <Link
               href="/sign-up"
               style={{
-                background: 'var(--brand-green)',
-                color: 'var(--on-primary)',
+                background: 'var(--iris)',
+                color: '#fff',
+                fontFamily: 'var(--font-display)',
                 fontWeight: 600,
-                fontSize: 14,
-                padding: '12px 24px',
-                borderRadius: 'var(--r-full)',
-                textDecoration: 'none',
+                fontSize: 15,
+                padding: '13px 26px',
+                borderRadius: 'var(--r-pill)',
+                boxShadow: '0 12px 30px -12px rgba(91,75,255,0.7)',
               }}
             >
-              Try Free
+              Create your identity
             </Link>
             <Link
               href="/country"
               style={{
-                background: 'transparent',
-                color: 'var(--on-dark)',
+                border: '1px solid var(--line)',
+                color: 'var(--ink)',
+                fontFamily: 'var(--font-display)',
                 fontWeight: 600,
-                fontSize: 14,
-                padding: '12px 24px',
-                borderRadius: 'var(--r-full)',
-                border: '1px solid var(--hairline-dark)',
-                textDecoration: 'none',
+                fontSize: 15,
+                padding: '13px 26px',
+                borderRadius: 'var(--r-pill)',
               }}
             >
-              Browse countries
+              Explore the atlas
             </Link>
           </div>
-
-          {/* Code mockup card */}
+          {/* credential strip — data as material */}
           <div
+            className="mono"
             style={{
-              maxWidth: 560,
-              margin: '48px auto 0',
-              background: 'var(--canvas-dark)',
-              border: '1px solid var(--hairline-dark)',
-              borderRadius: 'var(--r-lg)',
-              boxShadow: 'var(--shadow-3)',
-              textAlign: 'left',
-              overflow: 'hidden',
+              marginTop: 34,
+              fontSize: 12.5,
+              color: 'var(--mist)',
+              display: 'flex',
+              gap: 18,
+              flexWrap: 'wrap',
             }}
           >
-            <div
-              style={{
-                display: 'flex',
-                gap: 6,
-                padding: '12px 16px',
-                borderBottom: '1px solid var(--hairline-dark)',
-              }}
-            >
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57' }} />
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#febc2e' }} />
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840' }} />
-            </div>
-            <pre
-              style={{
-                margin: 0,
-                padding: 20,
-                fontFamily: 'var(--font-mono)',
-                fontSize: 13.5,
-                lineHeight: 1.6,
-                color: 'var(--on-dark)',
-                overflowX: 'auto',
-              }}
-            >
-              <span style={{ color: 'var(--brand-green)' }}>mutation</span>{' '}
-              {'signUp(input: {\n'}
-              {'  email: '}
-              <span style={{ color: '#7fd1ff' }}>&quot;you@authora.dev&quot;</span>
-              {',\n'}
-              {'  password: '}
-              <span style={{ color: '#7fd1ff' }}>&quot;••••••••&quot;</span>
-              {'\n}) {\n'}
-              {'  accessToken\n'}
-              {'  user { '}
-              <span style={{ color: 'var(--brand-green)' }}>id email</span>
-              {' }\n}'}
-            </pre>
+            <span>jwt · access+refresh</span>
+            <span style={{ color: 'var(--line)' }}>/</span>
+            <span>totp · 2fa</span>
+            <span style={{ color: 'var(--line)' }}>/</span>
+            <span>oauth · github·telegram</span>
           </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <AuraSigil size={300} />
         </div>
       </section>
 
-      {/* Feature cards */}
-      <section style={{ paddingTop: 64 }}>
+      {/* Capabilities — a real list, labelled by domain (not decorative 01/02/03) */}
+      <section style={{ marginTop: 24 }}>
         <div className="grid grid-3">
-          {features.map((f) => (
-            <div key={f.title} className="card">
-              <h4>{f.title}</h4>
-              <p className="muted" style={{ margin: 0 }}>
-                {f.body}
+          {capabilities.map((c) => (
+            <div key={c.code} className="card">
+              <span className="eyebrow">{c.code}</span>
+              <h4 style={{ marginTop: 12 }}>{c.title}</h4>
+              <p className="muted" style={{ margin: 0, fontSize: 14.5 }}>
+                {c.desc}
               </p>
             </div>
           ))}

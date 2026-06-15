@@ -81,13 +81,13 @@ export function ConnectedAccounts() {
         justifyContent: 'space-between',
         gap: 12,
         padding: '12px 0',
-        borderBottom: '1px solid var(--hairline-soft)',
+        borderBottom: '1px solid var(--line)',
       }}
     >
       <div>
         <strong>{label}</strong>{' '}
         {connected ? (
-          <span className="badge-green-soft" style={{ marginLeft: 6 }}>
+          <span className="tag tag-verified" style={{ marginLeft: 6 }}>
             Connected
           </span>
         ) : (

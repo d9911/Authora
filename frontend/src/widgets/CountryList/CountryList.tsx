@@ -1,55 +1,28 @@
-import Link from 'next/link';
-import { Country } from '@/shared/types';
-
-// Category-accent palette — the only place saturated color appears beyond brand green.
-const tagColors = [
-  'var(--accent-purple)',
-  'var(--accent-orange)',
-  'var(--accent-blue)',
-  'var(--brand-green-mid)',
-  'var(--accent-pink)',
-];
+import Link from 'next/link'
+import { Country } from '@/shared/types'
 
 export function CountryList({ countries }: { countries: Country[] }) {
   if (!countries.length) {
-    return <p className="muted">No countries found. Did you run the backend seed?</p>;
+    return <p className="muted">No countries yet. Seed the backend to populate the atlas.</p>
   }
   return (
     <div className="grid grid-3">
-      {countries.map((c, i) => (
+      {countries.map((c) => (
         <Link key={c.id} href={`/country/${c.id}`} style={{ textDecoration: 'none' }}>
-          <div className="card card-hover" style={{ height: '100%' }}>
-            <span
-              style={{
-                display: 'inline-block',
-                background: tagColors[i % tagColors.length],
-                color: 'var(--on-dark)',
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: 1,
-                textTransform: 'uppercase',
-                borderRadius: 'var(--r-xs)',
-                padding: '2px 8px',
-                marginBottom: 12,
-              }}
-            >
-              {c.code ?? 'Country'}
-            </span>
-            <h4 style={{ margin: 0, color: 'var(--ink)' }}>{c.name}</h4>
-            <span
-              style={{
-                display: 'inline-block',
-                marginTop: 12,
-                color: 'var(--brand-green-dark)',
-                fontSize: 14,
-                fontWeight: 500,
-              }}
-            >
-              Explore →
+          <div className="card card-link" style={{ height: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h4 style={{ margin: 0 }}>{c.name}</h4>
+              {/* ISO code as credential-style data */}
+              <span className="mono" style={{ fontSize: 12, color: 'var(--iris)', letterSpacing: '0.08em' }}>
+                {c.code ?? '—'}
+              </span>
+            </div>
+            <span className="mono" style={{ display: 'block', marginTop: 14, fontSize: 12, color: 'var(--mist)' }}>
+              view regions →
             </span>
           </div>
         </Link>
       ))}
     </div>
-  );
+  )
 }

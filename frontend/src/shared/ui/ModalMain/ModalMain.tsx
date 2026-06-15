@@ -30,8 +30,8 @@ export function ModalMain({ open, title, onClose, children }: ModalMainProps) {
         style={{
           width: '100%',
           maxWidth: 460,
-          background: 'var(--canvas)',
-          border: '1px solid var(--hairline)',
+          background: 'var(--card)',
+          border: '1px solid var(--line)',
           borderRadius: 'var(--r-lg)',
           padding: 24,
           boxShadow: 'var(--shadow-4)',

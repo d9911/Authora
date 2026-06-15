@@ -9,8 +9,8 @@ export function ProfileCard({ user, profile }: { user: User; profile: Profile | 
             width: 64,
             height: 64,
             borderRadius: '50%',
-            background: 'var(--surface-feature)',
-            color: 'var(--brand-green-dark)',
+            background: 'rgba(91,75,255,0.08)',
+            color: 'var(--iris)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -36,7 +36,7 @@ export function ProfileCard({ user, profile }: { user: User; profile: Profile | 
           <span className="muted" style={{ fontSize: 14 }}>
             {user.email}{' '}
             {user.emailVerified ? (
-              <span className="badge-green-soft" style={{ marginLeft: 4 }}>
+              <span className="tag tag-verified" style={{ marginLeft: 4 }}>
                 ✓ verified
               </span>
             ) : (
@@ -45,7 +45,7 @@ export function ProfileCard({ user, profile }: { user: User; profile: Profile | 
           </span>
         </div>
       </div>
-      {profile?.bio && <p style={{ marginTop: 16, color: 'var(--slate)' }}>{profile.bio}</p>}
+      {profile?.bio && <p style={{ marginTop: 16, color: 'var(--mist)' }}>{profile.bio}</p>}
     </div>
   );
 }

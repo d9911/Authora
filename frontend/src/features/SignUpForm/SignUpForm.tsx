@@ -37,8 +37,9 @@ export function SignUpForm() {
   };
 
   return (
-    <form onSubmit={onSubmit} className="card" style={{ maxWidth: 380, margin: '0 auto' }}>
-      <h2>Create account</h2>
+    <form onSubmit={onSubmit} className="auth-card">
+      <span className="eyebrow">New identity</span>
+      <h2 style={{ marginTop: 10 }}>Create account</h2>
       <InputMain label="Name" value={name} onChange={(e) => setName(e.target.value)} />
       <InputMain
         label="Email"

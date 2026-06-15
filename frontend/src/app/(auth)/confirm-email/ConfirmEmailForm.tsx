@@ -56,8 +56,9 @@ export function ConfirmEmailForm() {
   };
 
   return (
-    <form onSubmit={onSubmit} className="card" style={{ maxWidth: 420, margin: '0 auto' }}>
-      <h2>Confirm your email</h2>
+    <form onSubmit={onSubmit} className="auth-card">
+      <span className="eyebrow">Verify</span>
+      <h2 style={{ marginTop: 10 }}>Confirm your email</h2>
       <p className="muted" style={{ marginTop: -4 }}>
         We sent a 6-digit code to <strong>{email || 'your email'}</strong>. Enter it below.
       </p>
