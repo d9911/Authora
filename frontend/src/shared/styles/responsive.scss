@@ -1,0 +1,128 @@
+/* ============================================================
+   Responsive Styles for < 1200px
+   ============================================================ */
+
+@import './breakpoints.scss';
+
+/* --- Container & Layout --- */
+@include media(xl) {
+  :root {
+    --maxw: 960px;
+  }
+
+  .container {
+    padding: 0 20px;
+  }
+
+  .page {
+    padding: 40px 0;
+    min-height: calc(100vh - 120px);
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+  }
+}
+
+@include media(lg) {
+  :root {
+    --maxw: 100%;
+  }
+
+  .container {
+    padding: 0 18px;
+  }
+
+  .page {
+    padding: 32px 0;
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+
+  /* Cards stack better on tablets */
+  .card {
+    padding: 20px;
+  }
+
+  .auth-card {
+    max-width: 360px;
+    padding: 28px 22px;
+  }
+}
+
+@include media(md) {
+  html, body {
+    font-size: 15px;
+  }
+
+  h1 { font-size: clamp(2rem, 6vw, 2.8rem); }
+  h2 { font-size: clamp(1.5rem, 4vw, 2rem); }
+  h3 { font-size: 1.2rem; }
+  h4 { font-size: 1rem; }
+
+  .subtitle {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .grid-3 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Auth card mobile adjustments */
+  .auth-card {
+    max-width: 100%;
+    padding: 24px 18px;
+    margin: 0 12px;
+  }
+}
+
+@include media(sm) {
+  .container {
+    padding: 0 14px;
+  }
+
+  .page {
+    padding: 24px 0;
+    min-height: calc(100vh - 100px);
+  }
+
+  .card {
+    padding: 16px;
+    border-radius: var(--r);
+  }
+
+  .auth-card {
+    padding: 20px 16px;
+    margin: 0 8px;
+    border-radius: var(--r);
+  }
+
+  /* Tighter spacing on mobile */
+  .grid {
+    gap: 10px;
+  }
+
+  .eyebrow {
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+  }
+}
+
+@include media(xs) {
+  .container {
+    padding: 0 12px;
+  }
+
+  .page {
+    padding: 20px 0;
+  }
+
+  .auth-card {
+    margin: 0;
+  }
+}

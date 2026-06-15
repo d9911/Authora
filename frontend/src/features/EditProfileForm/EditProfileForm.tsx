@@ -27,15 +27,17 @@ const emptyForm = {
 
 export function EditProfileForm() {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((s) => s.auth);
+  const { user, status } = useAppSelector((s) => s.auth);
   const { profile, saving, saved, error, loading } = useAppSelector((s) => s.profile);
 
   const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
-    void dispatch(loadMeThunk());
-    void dispatch(loadMyProfileThunk());
-  }, [dispatch]);
+    if (status === 'idle') {
+      void dispatch(loadMeThunk());
+      void dispatch(loadMyProfileThunk());
+    }
+  }, [dispatch, status]);
 
   useEffect(() => {
     setForm((f) => ({

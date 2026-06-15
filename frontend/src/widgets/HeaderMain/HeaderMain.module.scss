@@ -1,0 +1,174 @@
+/* ============================================================
+   HeaderMain - Responsive Styles
+   ============================================================ */
+
+@import '../../shared/styles/breakpoints.scss';
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+  gap: 20px;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--ink);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.header-links {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.header-link {
+  font-size: 15px;
+  color: var(--mist);
+  text-decoration: none;
+  transition: color 0.2s;
+
+  &:hover {
+    color: var(--iris);
+    text-decoration: none;
+  }
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.header-mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--ink);
+  font-size: 24px;
+}
+
+@include media(xl) {
+  .header-container {
+    height: 68px;
+  }
+
+  .header-nav {
+    gap: 24px;
+  }
+
+  .header-links {
+    gap: 20px;
+  }
+}
+
+@include media(lg) {
+  .header-container {
+    height: 64px;
+  }
+
+  .header-logo {
+    font-size: 18px;
+    gap: 8px;
+  }
+
+  .header-nav {
+    gap: 20px;
+  }
+
+  .header-links {
+    gap: 16px;
+  }
+
+  .header-link {
+    font-size: 14px;
+  }
+}
+
+@include media(md) {
+  .header-container {
+    height: 60px;
+  }
+
+  .header-mobile-toggle {
+    display: flex;
+  }
+
+  .header-links {
+    display: none;
+  }
+
+  // Mobile menu
+  .header-nav.mobile-open {
+    .header-links {
+      display: flex;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 20px;
+      gap: 12px;
+      box-shadow: var(--shadow-soft);
+    }
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+}
+
+@include media(sm) {
+  .header-container {
+    height: 56px;
+    gap: 12px;
+  }
+
+  .header-logo {
+    font-size: 16px;
+    gap: 6px;
+
+    span:last-child {
+      display: none; // Hide text on very small screens
+    }
+  }
+
+  .header-nav.mobile-open {
+    .header-links {
+      padding: 12px 16px;
+    }
+  }
+}

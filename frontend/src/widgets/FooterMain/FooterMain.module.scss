@@ -1,0 +1,266 @@
+/* ============================================================
+   FooterMain - Responsive Styles
+   ============================================================ */
+
+@import '../../shared/styles/breakpoints.scss';
+
+.footer {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.footer-container {
+  padding: 64px 32px 32px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 40px;
+}
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.footer-description {
+  color: var(--on-ink-mist);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 320px;
+}
+
+.footer-contacts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.footer-contact-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--on-ink);
+  opacity: 0.9;
+}
+
+.footer-social-link {
+  color: var(--on-ink-mist);
+  font-size: 13px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.footer-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-column-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.footer-column-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer-link {
+  color: var(--on-ink-mist);
+  font-size: 14px;
+  text-decoration: none;
+  transition: color 0.2s, opacity 0.2s;
+
+  &:hover {
+    color: var(--on-ink);
+    opacity: 1;
+  }
+}
+
+.footer-bottom {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line-dark);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.footer-copyright {
+  color: var(--on-ink-mist);
+  font-size: 13px;
+}
+
+.footer-bottom-links {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.footer-bottom-link {
+  color: var(--on-ink-mist);
+  font-size: 13px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.footer-meta {
+  color: var(--line-dark);
+  font-size: 13px;
+}
+
+@include media(xl) {
+  .footer-container {
+    padding: 56px 28px 28px;
+  }
+
+  .footer-grid {
+    gap: 36px;
+  }
+}
+
+@include media(lg) {
+  .footer-container {
+    padding: 48px 24px 24px;
+  }
+
+  .footer-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 32px;
+  }
+
+  .footer-bottom {
+    margin-top: 48px;
+    padding-top: 20px;
+  }
+}
+
+@include media(md) {
+  .footer-container {
+    padding: 40px 20px 20px;
+  }
+
+  .footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+  }
+
+  .footer-logo {
+    font-size: 18px;
+  }
+
+  .footer-description {
+    font-size: 13px;
+    max-width: 100%;
+  }
+
+  .footer-bottom {
+    margin-top: 40px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .footer-bottom-links {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+}
+
+@include media(sm) {
+  .footer-container {
+    padding: 32px 16px 16px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .footer-brand {
+    gap: 12px;
+  }
+
+  .footer-logo {
+    font-size: 16px;
+    gap: 6px;
+  }
+
+  .footer-description {
+    font-size: 12px;
+  }
+
+  .footer-contacts {
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .footer-contact-name,
+  .footer-social-link {
+    font-size: 12px;
+  }
+
+  .footer-column-title {
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+
+  .footer-column-links {
+    gap: 6px;
+  }
+
+  .footer-link,
+  .footer-bottom-link,
+  .footer-copyright,
+  .footer-meta {
+    font-size: 12px;
+  }
+
+  .footer-bottom {
+    margin-top: 32px;
+    padding-top: 16px;
+  }
+
+  .footer-bottom-links {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .footer-meta {
+    margin-top: 8px;
+  }
+}

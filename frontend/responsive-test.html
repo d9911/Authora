@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authora - Responsive Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui, sans-serif;
+      background: #f5f4f8;
+    }
+    .test-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      padding: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 1000;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .viewport-info {
+      color: #5b4bff;
+    }
+    iframe {
+      margin-top: 50px;
+      width: 100%;
+      border: 2px solid #5b4bff;
+      border-radius: 8px;
+      background: white;
+    }
+    .breakpoint-tests {
+      display: grid;
+      gap: 20px;
+      margin-top: 70px;
+    }
+    .breakpoint-card {
+      background: white;
+      border: 1px solid #e5e3ee;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .breakpoint-card h3 {
+      margin: 0 0 12px 0;
+      color: #17141f;
+      font-size: 18px;
+    }
+    .breakpoint-card p {
+      margin: 0 0 8px 0;
+      color: #6b6878;
+      font-size: 13px;
+    }
+    .resize-handle {
+      margin: 20px 0;
+      padding: 12px;
+      background: #5b4bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      width: 100%;
+    }
+    .resize-handle:hover {
+      background: #9f8cff;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-header">
+    <span class="viewport-info">Viewport: <span id="viewport-size"></span></span>
+  </div>
+
+  <div class="breakpoint-tests">
+    <div class="breakpoint-card">
+      <h3>📱 Mobile (< 640px)</h3>
+      <p><strong>Expected:</strong> Single column, compact spacing, mobile menu toggle</p>
+      <button class="resize-handle" onclick="testBreakpoint(480)">Test 480px</button>
+      <iframe id="frame-xs" height="700" src="http://localhost:5178"></iframe>
+    </div>
+
+    <div class="breakpoint-card">
+      <h3>📲 Tablet (640-768px)</h3>
+      <p><strong>Expected:</strong> Larger fonts, 2-column grid for lists</p>
+      <button class="resize-handle" onclick="testBreakpoint(768)">Test 768px</button>
+      <iframe id="frame-md" height="700" src="http://localhost:5178"></iframe>
+    </div>
+
+    <div class="breakpoint-card">
+      <h3>💻 Laptop (768-1024px)</h3>
+      <p><strong>Expected:</strong> 3-column grid, full navigation visible</p>
+      <button class="resize-handle" onclick="testBreakpoint(1024)">Test 1024px</button>
+      <iframe id="frame-lg" height="700" src="http://localhost:5178"></iframe>
+    </div>
+
+    <div class="breakpoint-card">
+      <h3>🖥️ Desktop (> 1200px)</h3>
+      <p><strong>Expected:</strong> Max width 1120px container, optimal spacing</p>
+      <button class="resize-handle" onclick="testBreakpoint(1280)">Test 1280px</button>
+      <iframe id="frame-xl" height="700" src="http://localhost:5178"></iframe>
+    </div>
+  </div>
+
+  <script>
+    function updateViewportInfo() {
+      document.getElementById('viewport-size').textContent =
+        `${window.innerWidth}px × ${window.innerHeight}px`;
+    }
+
+    function testBreakpoint(width) {
+      const iframe = event.target.nextElementSibling;
+      iframe.style.width = width + 'px';
+      iframe.style.maxWidth = '100%';
+
+      // Scroll to iframe
+      iframe.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    window.addEventListener('resize', updateViewportInfo);
+    updateViewportInfo();
+
+    // Auto-resize iframes on load
+    window.addEventListener('load', () => {
+      document.getElementById('frame-xs').style.width = '480px';
+      document.getElementById('frame-md').style.width = '768px';
+      document.getElementById('frame-lg').style.width = '1024px';
+      document.getElementById('frame-xl').style.width = '1280px';
+    });
+  </script>
+</body>
+</html>

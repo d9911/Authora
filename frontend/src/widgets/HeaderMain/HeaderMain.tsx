@@ -2,18 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { config } from '@/shared/config';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux';
 import { loadMeThunk, logoutThunk } from '@/processes/store/slices/authSlice';
 import { ButtonMain } from '@/shared/ui';
-
-const navLinkStyle: React.CSSProperties = {
-  color: 'var(--mist)',
-  fontSize: 14,
-  fontWeight: 500,
-  textDecoration: 'none',
-};
+import styles from './HeaderMain.module.scss';
 
 function AuraMark() {
   // Mini version of the hero sigil: concentric rings + core.
@@ -30,6 +24,7 @@ export function HeaderMain() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { user, status } = useAppSelector((s) => s.auth);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     if (status === 'idle') void dispatch(loadMeThunk());
@@ -41,65 +36,52 @@ export function HeaderMain() {
   };
 
   return (
-    <header
-      style={{
-        borderBottom: '1px solid var(--line)',
-        background: 'var(--card)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-      }}
-    >
-      <div
-        className="container"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: 64,
-        }}
-      >
-        <Link
-          href="/"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 9,
-            fontFamily: 'var(--font-display)',
-            fontWeight: 700,
-            fontSize: 19,
-            letterSpacing: '-0.02em',
-            color: 'var(--ink)',
-            textDecoration: 'none',
-          }}
-        >
+    <header className={styles.header}>
+      <div className={`container ${styles['header-container']}`}>
+        <Link href="/" className={styles['header-logo']}>
           <AuraMark />
-          {config.appName}
+          <span>{config.appName}</span>
         </Link>
-        <nav style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-          <Link href="/country" style={navLinkStyle}>
-            Countries
-          </Link>
-          <Link href="/about" style={navLinkStyle}>
-            About
-          </Link>
-          {user ? (
-            <>
-              <Link href="/profile/edit" style={navLinkStyle}>
+
+        <button
+          className={styles['header-mobile-toggle']}
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Toggle menu"
+        >
+          {mobileOpen ? '✕' : '☰'}
+        </button>
+
+        <nav className={`${styles['header-nav']} ${mobileOpen ? styles['mobile-open'] : ''}`}>
+          <div className={styles['header-links']}>
+            <Link href="/country" className={styles['header-link']} onClick={() => setMobileOpen(false)}>
+              Countries
+            </Link>
+            <Link href="/about" className={styles['header-link']} onClick={() => setMobileOpen(false)}>
+              About
+            </Link>
+            {user && (
+              <Link href="/profile/edit" className={styles['header-link']} onClick={() => setMobileOpen(false)}>
                 {user.name || user.email}
               </Link>
+            )}
+          </div>
+
+          <div className={styles['header-actions']}>
+            {user ? (
               <ButtonMain variant="secondary" onClick={onLogout}>
                 Logout
               </ButtonMain>
-            </>
-          ) : (
-            <>
-              <Link href="/sign-in" style={navLinkStyle}>
-                Sign In
-              </Link>
-              <ButtonMain onClick={() => router.push('/sign-up')}>Get started</ButtonMain>
-            </>
-          )}
+            ) : (
+              <>
+                <Link href="/sign-in" onClick={() => setMobileOpen(false)}>
+                  <ButtonMain variant="ghost">Sign In</ButtonMain>
+                </Link>
+                <ButtonMain onClick={() => { router.push('/sign-up'); setMobileOpen(false); }}>
+                  Get started
+                </ButtonMain>
+              </>
+            )}
+          </div>
         </nav>
       </div>
     </header>

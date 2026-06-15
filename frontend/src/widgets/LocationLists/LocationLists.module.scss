@@ -1,0 +1,262 @@
+/* ============================================================
+   Location Lists - Responsive Styles
+   ============================================================ */
+
+@import '../../shared/styles/breakpoints.scss';
+
+.list-container {
+  width: 100%;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.list-header {
+  margin-bottom: 32px;
+
+  h1 {
+    margin-bottom: 8px;
+  }
+}
+
+.list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+  margin-bottom: 40px;
+}
+
+.list-item {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  text-decoration: none;
+  display: block;
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: rgba(91, 75, 255, 0.4);
+    box-shadow: var(--glow-iris);
+    text-decoration: none;
+  }
+}
+
+.list-item-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.list-item-flag {
+  font-size: 32px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.list-item-title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.list-item-code {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  color: var(--mist);
+  background: var(--paper);
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.list-item-description {
+  color: var(--mist);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.list-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--mist);
+
+  h3 {
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+
+  p {
+    font-size: 14px;
+  }
+}
+
+.list-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 80px 20px;
+  color: var(--mist);
+}
+
+@include media(xl) {
+  .list-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .list-header {
+    margin-bottom: 28px;
+  }
+}
+
+@include media(lg) {
+  .list-container {
+    padding: 0 20px;
+  }
+
+  .list-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+  }
+
+  .list-item {
+    padding: 18px;
+  }
+
+  .list-item-flag {
+    font-size: 28px;
+  }
+
+  .list-item-title {
+    font-size: 1.1rem;
+  }
+
+  .list-header {
+    margin-bottom: 24px;
+  }
+}
+
+@include media(md) {
+  .list-container {
+    padding: 0 18px;
+  }
+
+  .list-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .list-item {
+    padding: 16px;
+  }
+
+  .list-item-flag {
+    font-size: 26px;
+  }
+
+  .list-item-title {
+    font-size: 1rem;
+  }
+
+  .list-item-header {
+    gap: 10px;
+  }
+
+  .list-item-description {
+    font-size: 13px;
+  }
+
+  .list-item-code {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    margin-top: 6px;
+  }
+
+  .list-header {
+    margin-bottom: 20px;
+  }
+
+  .list-empty {
+    padding: 40px 16px;
+
+    p {
+      font-size: 13px;
+    }
+  }
+}
+
+@include media(sm) {
+  .list-container {
+    padding: 0 14px;
+  }
+
+  .list-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .list-item {
+    padding: 14px;
+  }
+
+  .list-item-flag {
+    font-size: 24px;
+  }
+
+  .list-item-title {
+    font-size: 0.95rem;
+  }
+
+  .list-item-header {
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .list-item-description {
+    font-size: 12px;
+  }
+
+  .list-item-code {
+    font-size: 0.6rem;
+    padding: 2px 7px;
+  }
+
+  .list-header {
+    margin-bottom: 16px;
+  }
+
+  .list-empty {
+    padding: 32px 12px;
+  }
+
+  .list-loading {
+    padding: 60px 16px;
+  }
+}
+
+@include media(xs) {
+  .list-container {
+    padding: 0 12px;
+  }
+
+  .list-item {
+    padding: 12px;
+  }
+
+  .list-item-flag {
+    font-size: 22px;
+  }
+}

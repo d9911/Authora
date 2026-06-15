@@ -13,6 +13,7 @@ import {
 import { ButtonMain, InputMain } from '@/shared/ui';
 import { GithubLoginButton } from '@/features/GithubLoginButton/GithubLoginButton';
 import { TelegramLoginButton } from '@/features/TelegramLoginButton/TelegramLoginButton';
+import styles from './SignInForm.module.scss';
 
 export function SignInForm() {
   const dispatch = useAppDispatch();
@@ -50,68 +51,83 @@ export function SignInForm() {
 
   if (twoFactorToken) {
     return (
-      <form onSubmit={onSubmit2fa} className="auth-card">
-        <h2>Two-factor code</h2>
-        <p className="muted">Enter the 6-digit code from your authenticator app.</p>
-        <InputMain
-          label="Authenticator code"
-          inputMode="numeric"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="123456"
-          autoFocus
-        />
-        {error && <p className="error-text">{error}</p>}
-        <ButtonMain type="submit" fullWidth loading={busy}>
-          Verify
-        </ButtonMain>
-        <ButtonMain
-          variant="ghost"
-          fullWidth
-          style={{ marginTop: 8 }}
-          onClick={() => dispatch(resetTwoFactor())}
-          type="button"
-        >
-          Back
-        </ButtonMain>
-      </form>
+      <div className={styles['auth-wrapper']}>
+        <form onSubmit={onSubmit2fa} className={styles['auth-card']}>
+          <div className={styles['auth-header']}>
+            <h2 className={styles['auth-title']}>Two-factor code</h2>
+            <p className={styles['auth-subtitle']}>
+              Enter the 6-digit code from your authenticator app.
+            </p>
+          </div>
+          <div className={styles['auth-form']}>
+            <InputMain
+              label="Authenticator code"
+              inputMode="numeric"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="123456"
+              autoFocus
+            />
+            {error && <div className={styles['auth-error']}>{error}</div>}
+            <ButtonMain type="submit" fullWidth loading={busy}>
+              Verify
+            </ButtonMain>
+            <ButtonMain
+              variant="ghost"
+              fullWidth
+              onClick={() => dispatch(resetTwoFactor())}
+              type="button"
+            >
+              Back
+            </ButtonMain>
+          </div>
+        </form>
+      </div>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} className="auth-card">
-      <span className="eyebrow">Welcome back</span>
-      <h2 style={{ marginTop: 10 }}>Sign in</h2>
-      <InputMain
-        label="Email"
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-        autoComplete="email"
-      />
-      <InputMain
-        label="Password"
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        autoComplete="current-password"
-      />
-      {error && <p className="error-text">{error}</p>}
-      <ButtonMain type="submit" fullWidth loading={busy}>
-        Sign in
-      </ButtonMain>
+    <div className={styles['auth-wrapper']}>
+      <form onSubmit={onSubmit} className={styles['auth-card']}>
+        <div className={styles['auth-header']}>
+          <span className="eyebrow">Welcome back</span>
+          <h2 className={styles['auth-title']}>Sign in</h2>
+        </div>
+        <div className={styles['auth-form']}>
+          <InputMain
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+          />
+          <InputMain
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+          />
+          {error && <div className={styles['auth-error']}>{error}</div>}
+          <ButtonMain type="submit" fullWidth loading={busy}>
+            Sign in
+          </ButtonMain>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
-        <GithubLoginButton />
-        <TelegramLoginButton />
-      </div>
+          <div className={styles['auth-divider']}>or</div>
 
-      <div style={{ marginTop: 16, fontSize: 14, display: 'flex', justifyContent: 'space-between' }}>
-        <Link href="/sign-up">Create account</Link>
-        <Link href="/forgot-password">Forgot password?</Link>
-      </div>
-    </form>
+          <div className={styles['oauth-buttons']}>
+            <GithubLoginButton />
+            <TelegramLoginButton />
+          </div>
+        </div>
+
+        <div className={styles['auth-footer']}>
+          <Link href="/sign-up">Create account</Link>
+          <Link href="/forgot-password">Forgot password?</Link>
+        </div>
+      </form>
+    </div>
   );
 }

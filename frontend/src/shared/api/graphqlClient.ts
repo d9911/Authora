@@ -64,6 +64,13 @@ export async function gqlRequest<T>(
     if (retryable && canRetry) {
       const ok = await tryRefresh();
       if (ok) return gqlRequest<T>(query, variables, { retry: false });
+
+      // Refresh failed → clear local state and force logout
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user');
+        window.location.href = '/sign-in';
+        return new Promise(() => {}); // Never resolve, page is redirecting
+      }
     }
     throw new GraphQLRequestError(first.message, code, first.extensions?.statusCode);
   }

@@ -1,0 +1,75 @@
+/* ============================================================
+   InputMain - Responsive Styles
+   ============================================================ */
+
+@import '../../styles/breakpoints.scss';
+
+.input-wrapper {
+  display: block;
+  margin-bottom: 16px;
+}
+
+.input-label {
+  display: block;
+  margin-bottom: 7px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mist);
+}
+
+.input-field {
+  width: 100%;
+  height: 46px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 0 13px;
+  font-size: 15px;
+  font-family: var(--font-body);
+  outline: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(91, 75, 255, 0.18);
+    border-color: var(--iris);
+  }
+
+  &.mono {
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+  }
+}
+
+@include media(md) {
+  .input-field {
+    height: 44px;
+    font-size: 15px;
+    padding: 0 12px;
+  }
+
+  .input-label {
+    font-size: 10px;
+    margin-bottom: 6px;
+  }
+}
+
+@include media(sm) {
+  .input-wrapper {
+    margin-bottom: 14px;
+  }
+
+  .input-field {
+    height: 42px;
+    font-size: 14px;
+    padding: 0 11px;
+  }
+
+  .input-label {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+}

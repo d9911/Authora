@@ -113,6 +113,15 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
         refreshToken = pair.refreshToken;
         setRefresh = pair.refreshToken;
       }
+    } else {
+      // Refresh token invalid/expired → clear cookies and force logout
+      const res = NextResponse.json(
+        { errors: [{ message: 'INVALID_TOKEN', extensions: { code: 'INVALID_TOKEN' } }] },
+        { status: 401 }
+      );
+      res.cookies.set(config.cookies.accessToken, '', { ...COOKIE_BASE, maxAge: 0 });
+      res.cookies.set(config.cookies.refreshToken, '', { ...COOKIE_BASE, maxAge: 0 });
+      return res;
     }
   }
 

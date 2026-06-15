@@ -1,0 +1,146 @@
+/* ============================================================
+   ProfileCard - Responsive Styles
+   ============================================================ */
+
+@import '../../shared/styles/breakpoints.scss';
+
+.profile-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 26px;
+  box-shadow: var(--shadow-soft);
+}
+
+.profile-header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(91, 75, 255, 0.08);
+  color: var(--iris);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 600;
+  overflow: hidden;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.profile-info {
+  flex: 1;
+  min-width: 0; // для text-overflow
+
+  h4 {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.profile-email {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--mist);
+  flex-wrap: wrap;
+}
+
+.profile-bio {
+  margin-top: 16px;
+  color: var(--mist);
+  line-height: 1.6;
+}
+
+@include media(lg) {
+  .profile-card {
+    padding: 22px;
+  }
+
+  .profile-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 22px;
+  }
+
+  .profile-header {
+    gap: 14px;
+  }
+}
+
+@include media(md) {
+  .profile-card {
+    padding: 20px;
+  }
+
+  .profile-avatar {
+    width: 52px;
+    height: 52px;
+    font-size: 20px;
+  }
+
+  .profile-header {
+    gap: 12px;
+  }
+
+  .profile-email {
+    font-size: 13px;
+  }
+
+  .profile-bio {
+    margin-top: 14px;
+    font-size: 14px;
+  }
+}
+
+@include media(sm) {
+  .profile-card {
+    padding: 16px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .profile-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+  }
+
+  .profile-info {
+    width: 100%;
+
+    h4 {
+      font-size: 1rem;
+    }
+  }
+
+  .profile-email {
+    font-size: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .profile-bio {
+    margin-top: 12px;
+    font-size: 13px;
+  }
+}

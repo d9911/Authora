@@ -1,51 +1,31 @@
 import { Profile, User } from '@/shared/types';
+import styles from './ProfileCard.module.scss';
 
 export function ProfileCard({ user, profile }: { user: User; profile: Profile | null }) {
   return (
-    <div className="card">
-      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: '50%',
-            background: 'rgba(91,75,255,0.08)',
-            color: 'var(--iris)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 24,
-            fontWeight: 600,
-            overflow: 'hidden',
-            flexShrink: 0,
-          }}
-        >
+    <div className={styles['profile-card']}>
+      <div className={styles['profile-header']}>
+        <div className={styles['profile-avatar']}>
           {user.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={user.avatarUrl}
-              alt="avatar"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
+            <img src={user.avatarUrl} alt="avatar" />
           ) : (
             (user.name || user.email).charAt(0).toUpperCase()
           )}
         </div>
-        <div>
-          <h4 style={{ margin: 0 }}>{user.name || user.email}</h4>
-          <span className="muted" style={{ fontSize: 14 }}>
-            {user.email}{' '}
+        <div className={styles['profile-info']}>
+          <h4>{user.name || user.email}</h4>
+          <div className={styles['profile-email']}>
+            <span>{user.email}</span>
             {user.emailVerified ? (
-              <span className="tag tag-verified" style={{ marginLeft: 4 }}>
-                ✓ verified
-              </span>
+              <span className="tag tag-verified">✓ verified</span>
             ) : (
-              '· unverified'
+              <span>· unverified</span>
             )}
-          </span>
+          </div>
         </div>
       </div>
-      {profile?.bio && <p style={{ marginTop: 16, color: 'var(--mist)' }}>{profile.bio}</p>}
+      {profile?.bio && <p className={styles['profile-bio']}>{profile.bio}</p>}
     </div>
   );
 }

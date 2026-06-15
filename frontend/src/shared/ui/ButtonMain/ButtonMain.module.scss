@@ -1,0 +1,134 @@
+/* ============================================================
+   ButtonMain - Responsive Styles
+   ============================================================ */
+
+@import '../../styles/breakpoints.scss';
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 22px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  outline: none;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--iris);
+    outline-offset: 2px;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+}
+
+.button-primary {
+  background: var(--iris);
+  color: white;
+  box-shadow: 0 10px 24px -12px rgba(91, 75, 255, 0.7);
+
+  &:hover:not(:disabled) {
+    background: var(--halo);
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px -10px rgba(91, 75, 255, 0.8);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+}
+
+.button-secondary {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+
+  &:hover:not(:disabled) {
+    border-color: var(--iris);
+    background: rgba(91, 75, 255, 0.04);
+  }
+}
+
+.button-ghost {
+  background: transparent;
+  color: var(--ink);
+  padding: 0 14px;
+
+  &:hover:not(:disabled) {
+    background: rgba(91, 75, 255, 0.08);
+  }
+}
+
+.button-danger {
+  background: var(--alert);
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: #ff3d5a;
+  }
+}
+
+.button-full {
+  width: 100%;
+}
+
+.button-small {
+  height: 36px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+@include media(md) {
+  .button {
+    height: 44px;
+    padding: 0 18px;
+    font-size: 14px;
+  }
+
+  .button-small {
+    height: 34px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+}
+
+@include media(sm) {
+  .button {
+    height: 42px;
+    padding: 0 16px;
+    font-size: 14px;
+    gap: 6px;
+  }
+
+  .button-small {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  /* Stack buttons vertically on small screens */
+  .button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .button {
+      width: 100%;
+    }
+  }
+}

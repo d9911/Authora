@@ -190,7 +190,13 @@ export class AuthUseCases {
   /* ----------------------------- refresh ----------------------------- */
 
   async refresh(refreshToken: string): Promise<AuthPayload> {
-    const payload = verifyRefreshToken(refreshToken);
+    let payload;
+    try {
+      payload = verifyRefreshToken(refreshToken);
+    } catch {
+      throw new AppError(ErrorCodes.INVALID_TOKEN, 'Refresh token expired or invalid', 401);
+    }
+
     const hash = sha256(refreshToken);
     const record = await this.deps.refreshTokens.findValidByHash(hash);
     if (!record) throw new AppError(ErrorCodes.INVALID_TOKEN, 'Refresh token revoked', 401);

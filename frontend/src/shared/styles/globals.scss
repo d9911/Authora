@@ -198,7 +198,5 @@ h4 { font-size: 1.1rem; letter-spacing: -0.01em; }
   }
 }
 
-@media (max-width: 640px) {
-  .container { padding: 0 18px; }
-  .page { padding: 36px 0; }
-}
+/* Import responsive breakpoints */
+@import './responsive.scss';
