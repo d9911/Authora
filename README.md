@@ -292,6 +292,6 @@ TELEGRAM_BOT_URL=https://t.me/AuthAuraBot   # bot deep-link base
 NEXT_PUBLIC_BACKEND_URL=http://localhost:3010   # full-page GitHub redirect
 ```
 
-```
+## 📄 LICENSE
 
-```
+[LICENSE](./LICENSE)
