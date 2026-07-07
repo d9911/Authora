@@ -1,16 +1,24 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { loadMeThunk } from '@/processes/store/slices/authSlice';
 import { confirmEmailCode, resendEmailCode } from '@/features/auth-api/authApi';
 import { ButtonMain, InputMain } from '@/shared/ui';
 import { GraphQLRequestError } from '@/shared/api/graphqlClient';
+import { useAppDispatch } from '@/shared/hooks/redux';
 
 const handle = (e: unknown) =>
   e instanceof GraphQLRequestError || e instanceof Error ? e.message : 'Error';
+const AUTO_CODE_LENGTH = 6;
+
+function normalizeCode(value: string): string {
+  return value.replace(/\D/g, '').slice(0, AUTO_CODE_LENGTH);
+}
 
 export function ConfirmEmailForm() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const params = useSearchParams();
 
   const [email, setEmail] = useState('');
@@ -25,15 +33,25 @@ export function ConfirmEmailForm() {
     if (e) setEmail(e);
   }, [params]);
 
-  const onSubmit = async (ev: FormEvent) => {
-    ev.preventDefault();
+  const submitCode = async (nextCode = code) => {
+    const normalized = normalizeCode(nextCode);
+    if (busy) return;
+    if (!email.trim()) {
+      setError('Enter your email address.');
+      return;
+    }
+    if (normalized.length !== AUTO_CODE_LENGTH) {
+      setError('Enter the 6-digit code from your email.');
+      return;
+    }
     setError(null);
     setMsg(null);
     setBusy(true);
     try {
-      await confirmEmailCode(email, code.trim());
+      await confirmEmailCode(email.trim(), normalized);
+      await dispatch(loadMeThunk());
       setMsg('Email confirmed ✓ Redirecting…');
-      setTimeout(() => router.push('/profile/edit'), 900);
+      router.replace('/');
     } catch (e) {
       setError(handle(e));
     } finally {
@@ -41,12 +59,27 @@ export function ConfirmEmailForm() {
     }
   };
 
+  const onSubmit = (ev: FormEvent) => {
+    ev.preventDefault();
+    void submitCode();
+  };
+
+  const handleCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const normalized = normalizeCode(e.target.value);
+    setCode(normalized);
+    if (normalized.length === AUTO_CODE_LENGTH) void submitCode(normalized);
+  };
+
   const onResend = async () => {
     setError(null);
     setMsg(null);
+    if (!email.trim()) {
+      setError('Enter your email address.');
+      return;
+    }
     setResending(true);
     try {
-      await resendEmailCode(email);
+      await resendEmailCode(email.trim());
       setMsg('A new code has been sent to your email.');
     } catch (e) {
       setError(handle(e));
@@ -78,9 +111,10 @@ export function ConfirmEmailForm() {
         label="Confirmation code"
         inputMode="numeric"
         value={code}
-        onChange={(e) => setCode(e.target.value)}
+        onChange={handleCodeChange}
         placeholder="123456"
-        maxLength={6}
+        maxLength={AUTO_CODE_LENGTH}
+        autoComplete="one-time-code"
         required
         autoFocus
       />
@@ -92,7 +126,7 @@ export function ConfirmEmailForm() {
         className="confirm-actions"
         style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}
       >
-        <ButtonMain type="submit" fullWidth loading={busy}>
+        <ButtonMain type="submit" fullWidth loading={busy} disabled={code.length !== AUTO_CODE_LENGTH}>
           Confirm
         </ButtonMain>
 

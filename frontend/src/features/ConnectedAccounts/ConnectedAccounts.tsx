@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, ReactNode, useEffect, useState } from 'react';
+import { ChangeEvent, FormEvent, ReactNode, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { config } from '@/shared/config';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux';
@@ -20,6 +20,11 @@ const handle = (e: unknown) =>
 
 type Provider = 'github' | 'telegram';
 type BusyAction = Provider | 'email-send' | 'email-confirm';
+const AUTO_CODE_LENGTH = 6;
+
+function normalizeCode(value: string): string {
+  return value.replace(/\D/g, '').slice(0, AUTO_CODE_LENGTH);
+}
 
 export function ConnectedAccounts() {
   const dispatch = useAppDispatch();
@@ -89,13 +94,13 @@ export function ConnectedAccounts() {
     }
   };
 
-  const confirmEmail = async (ev: FormEvent) => {
-    ev.preventDefault();
+  const submitEmailCode = async (nextCode = emailCode) => {
     if (!user?.email) {
       setError('User email is not loaded yet.');
       return;
     }
-    const code = emailCode.trim();
+    const code = normalizeCode(nextCode);
+    if (busy) return;
     if (!code) {
       setError('Enter the confirmation code from your email.');
       return;
@@ -114,6 +119,17 @@ export function ConnectedAccounts() {
     } finally {
       setBusy(null);
     }
+  };
+
+  const confirmEmail = async (ev: FormEvent) => {
+    ev.preventDefault();
+    await submitEmailCode();
+  };
+
+  const handleEmailCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const normalized = normalizeCode(e.target.value);
+    setEmailCode(normalized);
+    if (normalized.length === AUTO_CODE_LENGTH) void submitEmailCode(normalized);
   };
 
   const emailVerified = Boolean(user?.emailVerified);
@@ -203,9 +219,10 @@ export function ConnectedAccounts() {
               aria-label="Email confirmation code"
               inputMode="numeric"
               value={emailCode}
-              onChange={(e) => setEmailCode(e.target.value)}
+              onChange={handleEmailCodeChange}
               placeholder="Code"
-              maxLength={6}
+              maxLength={AUTO_CODE_LENGTH}
+              autoComplete="one-time-code"
               mono
               style={{ width: 112 }}
             />

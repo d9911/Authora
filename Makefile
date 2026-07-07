@@ -114,7 +114,12 @@ db-mongo-up:
 	@echo "✅ MongoDB stack up and seeded"
 
 doc-mongo:
-	docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml up -d --build --force-recreate backend frontend
+	@if docker image inspect authora-backend:latest >/dev/null 2>&1 \
+		&& docker image inspect authora-frontend:latest >/dev/null 2>&1; then \
+		docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml up -d --no-build backend frontend; \
+	else \
+		docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml up -d --build --force-recreate backend frontend; \
+	fi
 
 db-postgres-up:
 	docker compose --profile postgres up -d

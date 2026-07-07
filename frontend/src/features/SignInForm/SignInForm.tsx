@@ -1,11 +1,12 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { ChangeEvent, FormEvent, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux';
 import {
   clearAuthError,
+  loadMeThunk,
   resetTwoFactor,
   signInThunk,
   signInTwoFactorThunk,
@@ -16,6 +17,11 @@ import { TelegramLoginButton } from '@/features/TelegramLoginButton/TelegramLogi
 import styles from './SignInForm.module.scss';
 
 const DEFAULT_NEXT_PATH = '/profile/edit';
+const AUTO_CODE_LENGTH = 6;
+
+function normalizeCode(value: string): string {
+  return value.replace(/\D/g, '').slice(0, AUTO_CODE_LENGTH);
+}
 
 function safeNextPath(value: string | null): string {
   if (!value || !value.startsWith('/') || value.startsWith('//')) return DEFAULT_NEXT_PATH;
@@ -41,25 +47,47 @@ export function SignInForm() {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
 
+  const completeAuthRedirect = async () => {
+    await dispatch(loadMeThunk());
+    window.location.replace(nextPath);
+  };
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     dispatch(clearAuthError());
-    const res = await dispatch(signInThunk({ email, password }));
-    setBusy(false);
-    // If 2FA is not required and sign-in succeeded, go to the next page.
-    if (signInThunk.fulfilled.match(res) && !res.payload.needTwoFactor) {
-      window.location.assign(nextPath);
+    try {
+      const res = await dispatch(signInThunk({ email, password }));
+      // If 2FA is not required and sign-in succeeded, go to the next page.
+      if (signInThunk.fulfilled.match(res) && !res.payload.needTwoFactor) {
+        await completeAuthRedirect();
+      }
+    } finally {
+      setBusy(false);
     }
   };
 
-  const onSubmit2fa = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!twoFactorToken) return;
+  const submitTwoFactorCode = async (nextCode = code) => {
+    const normalized = normalizeCode(nextCode);
+    if (!twoFactorToken || !normalized || busy) return;
     setBusy(true);
-    const res = await dispatch(signInTwoFactorThunk({ twoFactorToken, code }));
-    setBusy(false);
-    if (signInTwoFactorThunk.fulfilled.match(res)) window.location.assign(nextPath);
+    try {
+      const res = await dispatch(signInTwoFactorThunk({ twoFactorToken, code: normalized }));
+      if (signInTwoFactorThunk.fulfilled.match(res)) await completeAuthRedirect();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onSubmit2fa = (e: FormEvent) => {
+    e.preventDefault();
+    void submitTwoFactorCode();
+  };
+
+  const handleTwoFactorCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const normalized = normalizeCode(e.target.value);
+    setCode(normalized);
+    if (normalized.length === AUTO_CODE_LENGTH) void submitTwoFactorCode(normalized);
   };
 
   if (twoFactorToken) {
@@ -77,8 +105,10 @@ export function SignInForm() {
               label="Authenticator code"
               inputMode="numeric"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={handleTwoFactorCodeChange}
               placeholder="123456"
+              maxLength={AUTO_CODE_LENGTH}
+              autoComplete="one-time-code"
               autoFocus
             />
             {error && <div className={styles['auth-error']}>{error}</div>}

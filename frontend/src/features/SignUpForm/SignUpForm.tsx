@@ -30,10 +30,8 @@ export function SignUpForm() {
     dispatch(clearAuthError());
     const res = await dispatch(signUpThunk({ email, password, name: name || undefined }));
     setBusy(false);
-    // After sign-up the email is not yet verified — send the user to the
-    // code-entry page (a 6-digit code was emailed to them).
     if (signUpThunk.fulfilled.match(res)) {
-      router.push(`/confirm-email?email=${encodeURIComponent(email)}`);
+      router.replace(`/confirm-email?email=${encodeURIComponent(email.trim())}`);
     }
   };
 
@@ -69,7 +67,7 @@ export function SignUpForm() {
             Sign up
           </ButtonMain>
           <p className={styles['auth-subtitle']} style={{ marginTop: 12 }}>
-            After signing up, check your email to confirm your address.
+            After signing up, enter the 6-digit code from your email.
           </p>
         </div>
         <div className={styles['auth-footer']}>
