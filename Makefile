@@ -2,7 +2,7 @@
 .PHONY: setup init install dev backend-dev frontend-dev backend-build frontend-build \
         backend-start backend-test backend-test-sqlite security-audit load-test test-all \
         seed seed-mongo seed-sqlite docker-up docker-down \
-        db-mongo-up db-postgres-up db-sqlite-up clean-ports
+        db-mongo-up doc-mongo db-postgres-up db-sqlite-up clean-ports
 
 BACKEND_DIR = backend
 FRONTEND_DIR = frontend
@@ -54,6 +54,9 @@ backend-build:
 
 frontend-build:
 	cd frontend && yarn run build
+
+build: backend-build frontend-build
+
 
 # --- production ---
 backend-start:

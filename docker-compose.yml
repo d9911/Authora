@@ -30,12 +30,13 @@ services:
       MONGO_URI: "mongodb://mongo:27017/authora"
       JWT_ACCESS_SECRET: "docker_access_secret_change_me"
       JWT_REFRESH_SECRET: "docker_refresh_secret_change_me"
+      FRONTEND_URL: "http://localhost:5178"
+      GITHUB_CALLBACK_URL: "http://localhost:5178/api/auth/github/callback"
       CORS_ORIGINS: "http://localhost:5178"
       COOKIE_SECURE: "${COOKIE_SECURE:-false}"
-      # OAuth/Telegram secrets (GITHUB_*, TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_URL,
-      # FRONTEND_URL, SMTP_*) come from backend/.env or backend/.env.docker above.
-      # They are intentionally NOT redeclared here so empty shell vars can't
-      # shadow the file values (environment overrides env_file in Compose).
+      # OAuth/Telegram/SMTP secrets (GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET,
+      # TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_URL, SMTP_*) come from backend/.env or
+      # backend/.env.docker above. Only non-secret local URLs are redeclared here.
     volumes:
       - sqlite_data:/data
     healthcheck:

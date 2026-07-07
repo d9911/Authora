@@ -284,13 +284,18 @@ Required env:
 ```
 # backend (.env / .env.docker)
 GITHUB_CLIENT_ID=...        GITHUB_CLIENT_SECRET=...
-GITHUB_CALLBACK_URL=http://localhost:3010/api/auth/github/callback
+GITHUB_CALLBACK_URL=http://localhost:5178/api/auth/github/callback
 TELEGRAM_BOT_TOKEN=8460081839:...           # from BotFather
 TELEGRAM_BOT_URL=https://t.me/AuthAuraBot   # bot deep-link base
 
 # frontend (.env) — browser-facing
 NEXT_PUBLIC_BACKEND_URL=http://localhost:3010   # full-page GitHub redirect
 ```
+
+The GitHub OAuth App **Authorization callback URL** must match
+`GITHUB_CALLBACK_URL` exactly for localhost development. The frontend callback
+route forwards GitHub's `code`/`state` to the backend callback, so the client
+secret stays on the backend.
 
 ## 📄 LICENSE
 

@@ -1,0 +1,142 @@
+.card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 22px;
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 38%),
+    radial-gradient(circle at 12% 8%, rgba(159, 140, 255, 0.16), transparent 28%);
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.interactive {
+  transform-style: preserve-3d;
+}
+
+.interactive:hover {
+  transform: translateY(-4px) rotateX(1deg) rotateY(-1deg);
+  border-color: rgba(91, 75, 255, 0.34);
+  box-shadow: var(--glow-iris);
+}
+
+.interactive:hover::before,
+.selected::before {
+  opacity: 1;
+}
+
+.selected {
+  border-color: rgba(91, 75, 255, 0.54);
+  box-shadow: var(--glow-iris);
+}
+
+.tone-plain {
+  color: var(--ink);
+}
+
+.tone-glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px);
+}
+
+.tone-dark {
+  color: var(--on-ink);
+  border-color: var(--line-dark);
+  background: linear-gradient(150deg, var(--ink), var(--ink-soft));
+}
+
+.tone-dark .title {
+  color: var(--on-ink);
+}
+
+.tone-dark .description,
+.tone-dark .eyebrow {
+  color: var(--on-ink-mist);
+}
+
+.tone-accent {
+  color: #fff;
+  border-color: rgba(159, 140, 255, 0.5);
+  background:
+    radial-gradient(circle at 80% 20%, rgba(159, 140, 255, 0.58), transparent 34%),
+    linear-gradient(135deg, var(--iris), #3226bf);
+}
+
+.tone-accent .title,
+.tone-accent .description,
+.tone-accent .eyebrow {
+  color: #fff;
+}
+
+.header,
+.body,
+.footer {
+  position: relative;
+  z-index: 1;
+}
+
+.header {
+  display: grid;
+  gap: 8px;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--iris);
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+
+.description {
+  margin: 0;
+  color: var(--mist);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.body {
+  display: grid;
+  gap: 14px;
+}
+
+.footer {
+  margin-top: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card::before {
+    transition: none;
+  }
+
+  .interactive:hover {
+    transform: none;
+  }
+}

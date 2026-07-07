@@ -1,0 +1,59 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tone-neutral {
+  --badge-rgb: 107, 104, 120;
+  --badge-color: var(--mist);
+}
+
+.tone-accent {
+  --badge-rgb: 91, 75, 255;
+  --badge-color: var(--iris);
+}
+
+.tone-success {
+  --badge-rgb: 18, 184, 134;
+  --badge-color: var(--signal);
+}
+
+.tone-danger {
+  --badge-rgb: 255, 84, 112;
+  --badge-color: var(--alert);
+}
+
+.tone-warning {
+  --badge-rgb: 228, 154, 64;
+  --badge-color: #9f651e;
+}
+
+.variant-soft {
+  color: var(--badge-color);
+  border-color: rgba(var(--badge-rgb), 0.18);
+  background: rgba(var(--badge-rgb), 0.08);
+}
+
+.variant-outline {
+  color: var(--badge-color);
+  border-color: rgba(var(--badge-rgb), 0.34);
+  background: transparent;
+}
+
+.variant-solid {
+  color: #fff;
+  border-color: transparent;
+  background: rgb(var(--badge-rgb));
+}

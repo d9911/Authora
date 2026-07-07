@@ -6,21 +6,37 @@ interface TgUser {
   first_name?: string;
   last_name?: string;
   username?: string;
+  language_code?: string;
 }
 interface TgMessage {
+  message_id?: number;
   text?: string;
   from?: TgUser;
   chat?: { id: number };
 }
+interface TgCallbackQuery {
+  id: string;
+  from: TgUser;
+  data?: string;
+  message?: TgMessage;
+}
 interface TgUpdate {
   update_id: number;
   message?: TgMessage;
+  callback_query?: TgCallbackQuery;
 }
 interface TgApiResponse<T> {
   ok: boolean;
   result?: T;
   description?: string;
 }
+
+type ReplyMarkup = {
+  inline_keyboard: Array<Array<{ text: string; callback_data: string }>>;
+};
+
+const CONFIRM_PREFIX = 'authora_auth_ok:';
+const CANCEL_PREFIX = 'authora_auth_cancel:';
 
 /**
  * Telegram bot deep-link login flow.
@@ -123,25 +139,32 @@ export class TelegramBotService {
   }
 
   private handleUpdate(upd: TgUpdate): void {
+    if (upd.callback_query) {
+      void this.handleCallback(upd.callback_query);
+      return;
+    }
+
     const msg = upd.message;
     if (!msg?.text || !msg.from) return;
     const m = msg.text.trim().match(/^\/start(?:@\w+)?(?:\s+(\S+))?/);
     if (!m) return;
     const ticketToken = m[1];
     const from = msg.from;
-    const name = [from.first_name, from.last_name].filter(Boolean).join(' ') || undefined;
 
     if (ticketToken) {
-      const ok = this.tickets.resolve(ticketToken, {
-        telegramId: String(from.id),
-        name,
-        username: from.username,
-      });
       // eslint-disable-next-line no-console
-      console.log(`[telegram-bot] /start with ticket: ${ok ? 'resolved' : 'expired-or-missing'}`);
+      console.log('[telegram-bot] /start with ticket: confirmation requested');
       void this.reply(
         msg.chat?.id,
-        ok ? '✅ You are signed in. Return to the website.' : '⚠️ This login link expired. Please try again.',
+        this.buildConfirmationText(from),
+        {
+          inline_keyboard: [
+            [
+              { text: 'Да, авторизоваться', callback_data: `${CONFIRM_PREFIX}${ticketToken}` },
+              { text: 'Отмена', callback_data: `${CANCEL_PREFIX}${ticketToken}` },
+            ],
+          ],
+        },
       );
     } else {
       // eslint-disable-next-line no-console
@@ -150,13 +173,53 @@ export class TelegramBotService {
     }
   }
 
-  private async reply(chatId: number | undefined, text: string): Promise<void> {
+  private async handleCallback(query: TgCallbackQuery): Promise<void> {
+    const data = query.data ?? '';
+    const isConfirm = data.startsWith(CONFIRM_PREFIX);
+    const isCancel = data.startsWith(CANCEL_PREFIX);
+    if (!isConfirm && !isCancel) return;
+
+    const token = data.slice((isConfirm ? CONFIRM_PREFIX : CANCEL_PREFIX).length);
+    if (!token) return;
+
+    if (isCancel) {
+      // eslint-disable-next-line no-console
+      console.log('[telegram-bot] authorization cancelled by user');
+      await this.answerCallback(query.id, 'Авторизация отменена.');
+      await this.editMessage(query.message, 'Авторизация Authora отменена.');
+      return;
+    }
+
+    const ok = this.tickets.resolve(token, {
+      telegramId: String(query.from.id),
+      name: this.displayName(query.from),
+      username: query.from.username,
+    });
+    // eslint-disable-next-line no-console
+    console.log(`[telegram-bot] confirmation: ${ok ? 'resolved' : 'expired-or-missing'}`);
+    await this.answerCallback(
+      query.id,
+      ok ? 'Авторизация подтверждена.' : 'Ссылка авторизации устарела.',
+    );
+    await this.editMessage(
+      query.message,
+      ok
+        ? '✅ Авторизация Authora подтверждена. Вернитесь на сайт.'
+        : '⚠️ Эта ссылка авторизации устарела. Попробуйте снова на сайте.',
+    );
+  }
+
+  private async reply(chatId: number | undefined, text: string, replyMarkup?: ReplyMarkup): Promise<void> {
     if (!chatId) return;
     try {
       const res = await fetch(`${this.api}/sendMessage`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text }),
+        body: JSON.stringify({
+          chat_id: chatId,
+          text,
+          ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+        }),
       });
       const json = (await res.json()) as TgApiResponse<unknown>;
       if (!json.ok) {
@@ -171,10 +234,73 @@ export class TelegramBotService {
     }
   }
 
+  private async answerCallback(callbackQueryId: string, text: string): Promise<void> {
+    try {
+      await fetch(`${this.api}/answerCallbackQuery`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ callback_query_id: callbackQueryId, text, show_alert: false }),
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[telegram-bot] answerCallbackQuery failed: ${err instanceof Error ? err.message : 'request failed'}`,
+      );
+    }
+  }
+
+  private async editMessage(message: TgMessage | undefined, text: string): Promise<void> {
+    if (!message?.chat?.id || !message.message_id) return;
+    try {
+      await fetch(`${this.api}/editMessageText`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: message.chat.id,
+          message_id: message.message_id,
+          text,
+          reply_markup: { inline_keyboard: [] },
+        }),
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[telegram-bot] editMessageText failed: ${err instanceof Error ? err.message : 'request failed'}`,
+      );
+    }
+  }
+
   private logPollIssue(message: string): void {
     if (this.lastPollError === message) return;
     this.lastPollError = message;
     // eslint-disable-next-line no-console
     console.warn(`[telegram-bot] getUpdates issue: ${message}`);
+  }
+
+  private buildConfirmationText(user: TgUser): string {
+    const username = user.username ? `@${user.username}` : 'не указан';
+    const language = this.formatLanguage(user.language_code);
+    return [
+      'Вы готовы авторизоваться в приложении Authora через свой Telegram аккаунт?',
+      '',
+      '👤 Пользователь',
+      '',
+      `🆔 ID: ${user.id}`,
+      `🔗 Юзернейм: ${username}`,
+      `📝 Имя: ${this.displayName(user) ?? 'не указано'}`,
+      `🏳️ Язык: ${language}`,
+      '',
+      '📅 Регистрация: недоступна через Telegram Bot API',
+    ].join('\n');
+  }
+
+  private displayName(user: TgUser): string | undefined {
+    return [user.first_name, user.last_name].filter(Boolean).join(' ') || undefined;
+  }
+
+  private formatLanguage(languageCode: string | undefined): string {
+    if (!languageCode) return 'не указан';
+    if (languageCode.toLowerCase() === 'ru') return 'RU 🇷🇺';
+    return languageCode.toUpperCase();
   }
 }

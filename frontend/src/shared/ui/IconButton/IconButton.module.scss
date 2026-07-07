@@ -1,0 +1,77 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--iris);
+  outline-offset: 2px;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(91, 75, 255, 0.42);
+  box-shadow: 0 12px 26px -18px rgba(91, 75, 255, 0.82);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.size-small {
+  width: 34px;
+  height: 34px;
+}
+
+.size-default {
+  width: 42px;
+  height: 42px;
+}
+
+.size-large {
+  width: 52px;
+  height: 52px;
+}
+
+.variant-plain {
+  background: var(--card);
+}
+
+.variant-glass {
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(14px);
+}
+
+.variant-dark {
+  color: var(--on-ink);
+  border-color: var(--line-dark);
+  background: var(--ink-soft);
+}
+
+.variant-accent {
+  color: #fff;
+  border-color: transparent;
+  background: var(--iris);
+  box-shadow: 0 10px 24px -14px rgba(91, 75, 255, 0.8);
+}
+
+.button svg {
+  width: 1.05em;
+  height: 1.05em;
+}
