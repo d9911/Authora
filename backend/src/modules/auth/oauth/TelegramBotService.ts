@@ -16,6 +16,11 @@ interface TgUpdate {
   update_id: number;
   message?: TgMessage;
 }
+interface TgApiResponse<T> {
+  ok: boolean;
+  result?: T;
+  description?: string;
+}
 
 /**
  * Telegram bot deep-link login flow.
@@ -35,6 +40,7 @@ export class TelegramBotService {
   private running = false;
   private api = '';
   private username: string | null = null;
+  private lastPollError: string | null = null;
 
   constructor(private readonly tickets: TelegramTicketStore) {
     if (env.telegram.botToken) {
@@ -93,14 +99,23 @@ export class TelegramBotService {
           // generous timeout for long polling
           signal: AbortSignal.timeout(40000),
         });
-        const json = (await res.json()) as { ok: boolean; result?: TgUpdate[] };
+        const json = (await res.json()) as TgApiResponse<TgUpdate[]>;
         if (json.ok && json.result) {
+          if (this.lastPollError) {
+            this.lastPollError = null;
+            // eslint-disable-next-line no-console
+            console.log('[telegram-bot] getUpdates recovered');
+          }
           for (const upd of json.result) {
             this.offset = upd.update_id + 1;
             this.handleUpdate(upd);
           }
+        } else {
+          this.logPollIssue(json.description ?? 'Telegram returned ok=false for getUpdates');
+          await new Promise((r) => setTimeout(r, 2000));
         }
-      } catch {
+      } catch (err) {
+        this.logPollIssue(err instanceof Error ? err.message : 'getUpdates failed');
         // network hiccup / timeout — back off briefly and retry
         await new Promise((r) => setTimeout(r, 2000));
       }
@@ -110,7 +125,7 @@ export class TelegramBotService {
   private handleUpdate(upd: TgUpdate): void {
     const msg = upd.message;
     if (!msg?.text || !msg.from) return;
-    const m = msg.text.trim().match(/^\/start(?:\s+(\S+))?/);
+    const m = msg.text.trim().match(/^\/start(?:@\w+)?(?:\s+(\S+))?/);
     if (!m) return;
     const ticketToken = m[1];
     const from = msg.from;
@@ -122,11 +137,15 @@ export class TelegramBotService {
         name,
         username: from.username,
       });
+      // eslint-disable-next-line no-console
+      console.log(`[telegram-bot] /start with ticket: ${ok ? 'resolved' : 'expired-or-missing'}`);
       void this.reply(
         msg.chat?.id,
         ok ? '✅ You are signed in. Return to the website.' : '⚠️ This login link expired. Please try again.',
       );
     } else {
+      // eslint-disable-next-line no-console
+      console.log('[telegram-bot] /start without ticket');
       void this.reply(msg.chat?.id, 'Open the website and press “Continue with Telegram”.');
     }
   }
@@ -134,13 +153,28 @@ export class TelegramBotService {
   private async reply(chatId: number | undefined, text: string): Promise<void> {
     if (!chatId) return;
     try {
-      await fetch(`${this.api}/sendMessage`, {
+      const res = await fetch(`${this.api}/sendMessage`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ chat_id: chatId, text }),
       });
-    } catch {
-      /* ignore */
+      const json = (await res.json()) as TgApiResponse<unknown>;
+      if (!json.ok) {
+        // eslint-disable-next-line no-console
+        console.warn(`[telegram-bot] sendMessage failed: ${json.description ?? 'ok=false'}`);
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[telegram-bot] sendMessage failed: ${err instanceof Error ? err.message : 'request failed'}`,
+      );
     }
+  }
+
+  private logPollIssue(message: string): void {
+    if (this.lastPollError === message) return;
+    this.lastPollError = message;
+    // eslint-disable-next-line no-console
+    console.warn(`[telegram-bot] getUpdates issue: ${message}`);
   }
 }

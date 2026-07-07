@@ -110,6 +110,9 @@ db-mongo-up:
 	docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml exec backend node dist/infrastructure/database/mongo/seed.js
 	@echo "✅ MongoDB stack up and seeded"
 
+doc-mongo:
+	docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml up -d --build --force-recreate backend frontend
+
 db-postgres-up:
 	docker compose --profile postgres up -d
 

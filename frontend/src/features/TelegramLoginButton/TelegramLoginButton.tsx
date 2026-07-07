@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { telegramBotStart, telegramBotPoll } from '@/features/auth-api/authApi';
 import { useAppDispatch } from '@/shared/hooks/redux';
 import { loadMeThunk } from '@/processes/store/slices/authSlice';
@@ -27,11 +26,11 @@ export function TelegramLoginButton({
   mode?: 'login' | 'link';
   onLinked?: () => void;
 }) {
-  const router = useRouter();
   const dispatch = useAppDispatch();
   const [busy, setBusy] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fallback, setFallback] = useState<{ botUrl: string; command: string } | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -42,16 +41,26 @@ export function TelegramLoginButton({
 
   const start = async () => {
     setError(null);
+    setFallback(null);
     setBusy(true);
+    const popup = window.open('about:blank', 'authora-telegram-login');
+    try {
+      if (popup) popup.opener = null;
+    } catch {
+      /* ignore browsers that do not allow changing opener */
+    }
     try {
       const { token, botUrl } = await telegramBotStart(mode === 'link');
       if (!botUrl) {
+        popup?.close();
         setError('Telegram bot is not configured on the server.');
         setBusy(false);
         return;
       }
-      // Open the bot so the user can press Start.
-      window.open(botUrl, '_blank', 'noopener,noreferrer');
+      setFallback({ botUrl, command: `/start ${token}` });
+      if (popup) {
+        popup.location.href = botUrl;
+      }
       setBusy(false);
       setWaiting(true);
 
@@ -63,17 +72,18 @@ export function TelegramLoginButton({
           if (timer.current) clearInterval(timer.current);
           setWaiting(false);
           if (res.status === 'expired') {
+            setFallback(null);
             setError('Login link expired. Please try again.');
             return;
           }
           if (res.status === 'linked') {
+            setFallback(null);
             await dispatch(loadMeThunk());
             onLinked?.();
             return;
           }
           if (res.status === 'done') {
-            await dispatch(loadMeThunk());
-            router.push('/profile/edit');
+            window.location.assign('/profile/edit');
           }
         } catch (e) {
           if (timer.current) clearInterval(timer.current);
@@ -82,6 +92,7 @@ export function TelegramLoginButton({
         }
       }, 2000);
     } catch (e) {
+      popup?.close();
       setError(handle(e));
       setBusy(false);
     }
@@ -102,6 +113,15 @@ export function TelegramLoginButton({
       {waiting && (
         <p className="muted" style={{ fontSize: 13, marginTop: 6 }}>
           Press <strong>Start</strong> in the opened Telegram chat, then come back here.
+        </p>
+      )}
+      {waiting && fallback && (
+        <p className="muted" style={{ fontSize: 13, marginTop: 6 }}>
+          If Telegram did not open,{' '}
+          <a href={fallback.botUrl} target="_blank" rel="noopener noreferrer">
+            open it here
+          </a>{' '}
+          or send <code>{fallback.command}</code> to the bot.
         </p>
       )}
       {error && <p className="error-text">{error}</p>}

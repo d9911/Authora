@@ -126,6 +126,8 @@ export async function oauthExchange(handoff: string): Promise<AuthPayload> {
   const data = await gqlRequest<{ oauthExchange: AuthPayload }>(
     `mutation OauthExchange($handoff: String!) {
       oauthExchange(handoff: $handoff) {
+        accessToken
+        refreshToken
         needTwoFactor
         user { id name email emailVerified twoFactorEnabled githubId telegramId }
       }
@@ -187,7 +189,12 @@ export async function telegramBotPoll(token: string): Promise<TelegramBotPoll> {
     `mutation TelegramBotPoll($token: String!) {
       telegramBotPoll(token: $token) {
         status
-        auth { needTwoFactor user { id name email emailVerified twoFactorEnabled githubId telegramId } }
+        auth {
+          accessToken
+          refreshToken
+          needTwoFactor
+          user { id name email emailVerified twoFactorEnabled githubId telegramId }
+        }
       }
     }`,
     { token },

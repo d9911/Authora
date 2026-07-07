@@ -12,10 +12,12 @@ services:
     build: ./backend
     ports:
       - "3010:3010"
-    # Secrets (SMTP / OAuth / Telegram) come from backend/.env.docker if present.
-    # NOTE: we do NOT load backend/.env here — that file is for local `make dev`
-    # and its DB_TYPE / MONGO_URI (127.0.0.1) would be wrong inside a container.
+    # Secrets (SMTP / OAuth / Telegram) can come from the local backend/.env
+    # during development, while backend/.env.docker can override them for Docker.
+    # DB settings below stay literal because `environment` overrides env_file.
     env_file:
+      - path: ./backend/.env
+        required: false
       - path: ./backend/.env.docker
         required: false
     # Literal DB values so nothing (shell, .env) can shadow them. The default
@@ -31,7 +33,7 @@ services:
       CORS_ORIGINS: "http://localhost:5178"
       COOKIE_SECURE: "${COOKIE_SECURE:-false}"
       # OAuth/Telegram secrets (GITHUB_*, TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_URL,
-      # FRONTEND_URL, SMTP_*) come from backend/.env.docker via env_file above.
+      # FRONTEND_URL, SMTP_*) come from backend/.env or backend/.env.docker above.
       # They are intentionally NOT redeclared here so empty shell vars can't
       # shadow the file values (environment overrides env_file in Compose).
     volumes:
