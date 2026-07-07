@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { config } from '@/shared/config';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux';
 import { loadMeThunk, logoutThunk } from '@/processes/store/slices/authSlice';
@@ -20,7 +20,11 @@ function AuraMark() {
   );
 }
 
-export function HeaderMain() {
+interface HeaderMainProps {
+  afterActions?: ReactNode;
+}
+
+export function HeaderMain({ afterActions }: HeaderMainProps) {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { user, status } = useAppSelector((s) => s.auth);
@@ -67,6 +71,7 @@ export function HeaderMain() {
           </div>
 
           <div className={styles['header-actions']}>
+            {afterActions}
             {user ? (
               <ButtonMain variant="secondary" onClick={onLogout}>
                 Logout

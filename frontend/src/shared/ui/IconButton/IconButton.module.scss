@@ -54,7 +54,7 @@
 }
 
 .variant-glass {
-  background: rgba(255, 255, 255, 0.68);
+  background: var(--surface-glass);
   backdrop-filter: blur(14px);
 }
 

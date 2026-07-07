@@ -204,7 +204,7 @@ export class TelegramBotService {
     await this.editMessage(
       query.message,
       ok
-        ? '✅ Авторизация Authora подтверждена. Вернитесь на сайт.'
+        ? this.buildConfirmedText(query.from)
         : '⚠️ Эта ссылка авторизации устарела. Попробуйте снова на сайте.',
     );
   }
@@ -278,11 +278,31 @@ export class TelegramBotService {
   }
 
   private buildConfirmationText(user: TgUser): string {
-    const username = user.username ? `@${user.username}` : 'не указан';
-    const language = this.formatLanguage(user.language_code);
     return [
       'Вы готовы авторизоваться в приложении Authora через свой Telegram аккаунт?',
       '',
+      'В систему Authora будут записаны эти Telegram-данные:',
+      '',
+      ...this.buildUserDataLines(user),
+    ].join('\n');
+  }
+
+  private buildConfirmedText(user: TgUser): string {
+    return [
+      '✅ Авторизация Authora подтверждена.',
+      '',
+      'В систему Authora будут записаны эти Telegram-данные:',
+      '',
+      ...this.buildUserDataLines(user),
+      '',
+      'Вернитесь на сайт.',
+    ].join('\n');
+  }
+
+  private buildUserDataLines(user: TgUser): string[] {
+    const username = user.username ? `@${user.username}` : 'не указан';
+    const language = this.formatLanguage(user.language_code);
+    return [
       '👤 Пользователь',
       '',
       `🆔 ID: ${user.id}`,
@@ -291,7 +311,7 @@ export class TelegramBotService {
       `🏳️ Язык: ${language}`,
       '',
       '📅 Регистрация: недоступна через Telegram Bot API',
-    ].join('\n');
+    ];
   }
 
   private displayName(user: TgUser): string | undefined {

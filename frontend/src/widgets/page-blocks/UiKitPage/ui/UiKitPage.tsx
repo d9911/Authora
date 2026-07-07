@@ -27,11 +27,11 @@ const layerCards = [
 ];
 
 const tokens = [
-  ['Ink', '#17141f'],
-  ['Iris', '#5b4bff'],
-  ['Halo', '#9f8cff'],
-  ['Signal', '#12b886'],
-  ['Paper', '#f5f4f8'],
+  { name: 'Paper', value: 'var(--paper)', token: '--paper' },
+  { name: 'Card', value: 'var(--card)', token: '--card' },
+  { name: 'Ink', value: 'var(--ink)', token: '--ink' },
+  { name: 'Iris', value: 'var(--iris)', token: '--iris' },
+  { name: 'Line', value: 'var(--line)', token: '--line' },
 ];
 
 export function UiKitPage() {
@@ -42,6 +42,7 @@ export function UiKitPage() {
           <div className={styles.badgeRow}>
             <Badge tone="accent">Dependency-free</Badge>
             <Badge tone="success">FSD aligned</Badge>
+            <Badge tone="accent" variant="outline">Light + Dark</Badge>
             <Badge>CSS depth</Badge>
           </div>
           <h1 id="ui-kit-title" className={styles.title}>
@@ -50,7 +51,7 @@ export function UiKitPage() {
           <p className={styles.subtitle}>
             A reusable component selection page for cards, controls, overlays, pseudo-3D
             previews and page sections. The route stays thin; reusable pieces stay in the
-            correct Feature-Sliced layer.
+            correct Feature-Sliced layer, and every surface follows the active theme.
           </p>
           <div className={styles.heroActions}>
             <Link href="#kit-parts" className={styles.primaryAction}>
@@ -96,15 +97,15 @@ export function UiKitPage() {
         <SectionHeader
           eyebrow="Design tokens"
           title="The page reuses the current Authora visual system."
-          description="These values are already defined as global CSS variables, so the kit extends the project style instead of creating a separate theme."
+          description="These swatches are live CSS variables. Flip the header theme switch and the same UI kit resolves to the light or dark token set."
         />
         <div className={styles.tokenGrid}>
-          {tokens.map(([name, color]) => (
-            <div key={name} className={styles.token}>
-              <span style={{ background: color }} />
+          {tokens.map((token) => (
+            <div key={token.name} className={styles.token}>
+              <span style={{ background: token.value }} />
               <div>
-                <strong>{name}</strong>
-                <code>{color}</code>
+                <strong>{token.name}</strong>
+                <code>{token.token}</code>
               </div>
             </div>
           ))}

@@ -54,14 +54,14 @@
 }
 
 .tone-glass {
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--surface-glass);
   backdrop-filter: blur(18px);
 }
 
 .tone-dark {
   color: var(--on-ink);
   border-color: var(--line-dark);
-  background: linear-gradient(150deg, var(--ink), var(--ink-soft));
+  background: linear-gradient(150deg, #17141f, var(--ink-soft));
 }
 
 .tone-dark .title {

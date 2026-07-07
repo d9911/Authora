@@ -14,3 +14,4 @@ export { Tabs } from './Tabs/Tabs';
 export type { TabOption } from './Tabs/Tabs';
 export { Toast } from './Toast/Toast';
 export { ToggleSwitch } from './ToggleSwitch/ToggleSwitch';
+export { ThemeToggle } from './ThemeToggle/ThemeToggle';

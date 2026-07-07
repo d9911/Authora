@@ -5,8 +5,8 @@
 @import '../../shared/styles/breakpoints.scss';
 
 .footer {
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--footer-bg);
+  color: var(--footer-text);
 }
 
 .footer-container {

@@ -8,7 +8,7 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--header-bg);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
 }
@@ -137,7 +137,7 @@
       left: 0;
       right: 0;
       flex-direction: column;
-      background: rgba(255, 255, 255, 0.98);
+      background: var(--header-menu-bg);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--line);
       padding: 16px 20px;

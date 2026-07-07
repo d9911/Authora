@@ -10,6 +10,41 @@ import { GraphQLRequestError } from '@/shared/api/graphqlClient';
 const handle = (e: unknown) =>
   e instanceof GraphQLRequestError || e instanceof Error ? e.message : 'Error';
 
+function writePopupMessage(popup: Window | null, title: string, message: string): void {
+  if (!popup) return;
+  try {
+    popup.document.title = title;
+    popup.document.body.innerHTML = `
+      <main style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; line-height: 1.45">
+        <h1 style="font-size: 18px; margin: 0 0 8px">${title}</h1>
+        <p style="margin: 0; color: #5c6c75">${message}</p>
+      </main>
+    `;
+  } catch {
+    /* The popup may already have navigated away. */
+  }
+}
+
+function openTelegramPopup(): Window | null {
+  const popup = window.open('', '_blank');
+  try {
+    if (popup) popup.opener = null;
+  } catch {
+    /* ignore browsers that do not allow changing opener */
+  }
+  writePopupMessage(popup, 'Opening Telegram…', 'Please wait while Authora creates a secure login link.');
+  return popup;
+}
+
+function closePopupOrExplain(popup: Window | null, message: string): void {
+  if (!popup) return;
+  try {
+    popup.close();
+  } catch {
+    writePopupMessage(popup, 'Telegram did not open', message);
+  }
+}
+
 /**
  * Telegram **bot deep-link** login (works on localhost — no widget/HTTPS domain
  * needed). Clicking opens the bot (https://t.me/<bot>?start=<ticket>); when the
@@ -43,23 +78,18 @@ export function TelegramLoginButton({
     setError(null);
     setFallback(null);
     setBusy(true);
-    const popup = window.open('about:blank', 'authora-telegram-login');
-    try {
-      if (popup) popup.opener = null;
-    } catch {
-      /* ignore browsers that do not allow changing opener */
-    }
+    const popup = openTelegramPopup();
     try {
       const { token, botUrl } = await telegramBotStart(mode === 'link');
       if (!botUrl) {
-        popup?.close();
+        closePopupOrExplain(popup, 'Telegram bot is not configured on the server.');
         setError('Telegram bot is not configured on the server.');
         setBusy(false);
         return;
       }
       setFallback({ botUrl, command: `/start ${token}` });
       if (popup) {
-        popup.location.href = botUrl;
+        popup.location.replace(botUrl);
       }
       setBusy(false);
       setWaiting(true);
@@ -92,7 +122,7 @@ export function TelegramLoginButton({
         }
       }, 2000);
     } catch (e) {
-      popup?.close();
+      closePopupOrExplain(popup, handle(e));
       setError(handle(e));
       setBusy(false);
     }
