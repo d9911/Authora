@@ -136,8 +136,14 @@ export function SignInForm() {
           </div>
         </div>
 
+        <div className={styles['auth-register-panel']}>
+          <span>New to Authora?</span>
+          <Link className={styles['auth-register-link']} href="/sign-up">
+            Create account
+          </Link>
+        </div>
+
         <div className={styles['auth-footer']}>
-          <Link href="/sign-up">Create account</Link>
           <Link href="/forgot-password">Forgot password?</Link>
         </div>
       </form>

@@ -58,7 +58,7 @@ export interface AuthDeps {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ONE_HOUR = 60 * 60 * 1000;
-const CODE_TTL = 15 * 60 * 1000; // email confirmation code valid for 15 min
+const CODE_TTL = 24 * 60 * 60 * 1000; // email confirmation code valid for 24 hours
 
 export class AuthUseCases {
   constructor(private readonly deps: AuthDeps) {}

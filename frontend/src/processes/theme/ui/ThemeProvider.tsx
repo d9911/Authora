@@ -83,6 +83,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const onChange = (event: MediaQueryListEvent) => {
+      if (getStoredTheme()) return;
       setThemeState(event.matches ? 'dark' : 'light');
     };
 

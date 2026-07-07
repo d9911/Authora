@@ -1,26 +1,34 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { config } from '@/shared/config';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux';
 import { loadMeThunk } from '@/processes/store/slices/authSlice';
-import { getOAuthLinkToken, unlinkProvider } from '@/features/auth-api/authApi';
+import {
+  confirmEmailCode,
+  getOAuthLinkToken,
+  resendEmailCode,
+  unlinkProvider,
+} from '@/features/auth-api/authApi';
 import { TelegramLoginButton } from '@/features/TelegramLoginButton/TelegramLoginButton';
-import { ButtonMain } from '@/shared/ui';
+import { ButtonMain, InputMain } from '@/shared/ui';
 import { GraphQLRequestError } from '@/shared/api/graphqlClient';
 
 const handle = (e: unknown) =>
   e instanceof GraphQLRequestError || e instanceof Error ? e.message : 'Error';
 
 type Provider = 'github' | 'telegram';
+type BusyAction = Provider | 'email-send' | 'email-confirm';
 
 export function ConnectedAccounts() {
   const dispatch = useAppDispatch();
   const params = useSearchParams();
   const { user } = useAppSelector((s) => s.auth);
 
-  const [busy, setBusy] = useState<Provider | null>(null);
+  const [busy, setBusy] = useState<BusyAction | null>(null);
+  const [emailCode, setEmailCode] = useState('');
+  const [emailRequested, setEmailRequested] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -62,17 +70,70 @@ export function ConnectedAccounts() {
     }
   };
 
+  const requestEmailCode = async () => {
+    if (!user?.email) {
+      setError('User email is not loaded yet.');
+      return;
+    }
+    setError(null);
+    setMsg(null);
+    setBusy('email-send');
+    try {
+      await resendEmailCode(user.email);
+      setEmailRequested(true);
+      setMsg(`Confirmation code sent to ${user.email}`);
+    } catch (e) {
+      setError(handle(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const confirmEmail = async (ev: FormEvent) => {
+    ev.preventDefault();
+    if (!user?.email) {
+      setError('User email is not loaded yet.');
+      return;
+    }
+    const code = emailCode.trim();
+    if (!code) {
+      setError('Enter the confirmation code from your email.');
+      return;
+    }
+    setError(null);
+    setMsg(null);
+    setBusy('email-confirm');
+    try {
+      await confirmEmailCode(user.email, code);
+      setEmailCode('');
+      setEmailRequested(false);
+      await dispatch(loadMeThunk());
+      setMsg('Email confirmed ✓');
+    } catch (e) {
+      setError(handle(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const emailVerified = Boolean(user?.emailVerified);
   const githubConnected = Boolean(user?.githubId);
   const telegramConnected = Boolean(user?.telegramId);
 
   const Row = ({
     label,
     connected,
+    connectedLabel = 'Connected',
+    missingLabel = 'Not connected',
+    detail,
     children,
   }: {
     label: string;
     connected: boolean;
-    children: React.ReactNode;
+    connectedLabel?: string;
+    missingLabel?: string;
+    detail?: string;
+    children: ReactNode;
   }) => (
     <div
       style={{
@@ -88,15 +149,30 @@ export function ConnectedAccounts() {
         <strong>{label}</strong>{' '}
         {connected ? (
           <span className="tag tag-verified" style={{ marginLeft: 6 }}>
-            Connected
+            {connectedLabel}
           </span>
         ) : (
           <span className="muted" style={{ marginLeft: 6, fontSize: 13 }}>
-            Not connected
+            {missingLabel}
           </span>
         )}
+        {detail && (
+          <div className="muted" style={{ marginTop: 4, fontSize: 13 }}>
+            {detail}
+          </div>
+        )}
       </div>
-      <div style={{ minWidth: 180, display: 'flex', justifyContent: 'flex-end' }}>{children}</div>
+      <div
+        style={{
+          minWidth: 180,
+          display: 'flex',
+          justifyContent: 'flex-end',
+          flexWrap: 'wrap',
+          gap: 8,
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 
@@ -106,6 +182,53 @@ export function ConnectedAccounts() {
       <p className="muted" style={{ marginTop: -4 }}>
         Link external accounts to sign in with one click.
       </p>
+
+      <Row
+        label="Email"
+        connected={emailVerified}
+        connectedLabel="Verified"
+        missingLabel={emailRequested ? 'Code sent' : 'Not verified'}
+        detail={user?.email}
+      >
+        {emailVerified ? (
+          <span className="muted" style={{ alignSelf: 'center', fontSize: 13 }}>
+            Active
+          </span>
+        ) : (
+          <form
+            onSubmit={confirmEmail}
+            style={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 8 }}
+          >
+            <InputMain
+              aria-label="Email confirmation code"
+              inputMode="numeric"
+              value={emailCode}
+              onChange={(e) => setEmailCode(e.target.value)}
+              placeholder="Code"
+              maxLength={6}
+              mono
+              style={{ width: 112 }}
+            />
+            <ButtonMain
+              type="button"
+              variant="secondary"
+              size="small"
+              loading={busy === 'email-send'}
+              onClick={requestEmailCode}
+            >
+              {emailRequested ? 'Resend code' : 'Send code'}
+            </ButtonMain>
+            <ButtonMain
+              type="submit"
+              size="small"
+              loading={busy === 'email-confirm'}
+              disabled={!emailCode.trim()}
+            >
+              Confirm
+            </ButtonMain>
+          </form>
+        )}
+      </Row>
 
       <Row label="GitHub" connected={githubConnected}>
         {githubConnected ? (

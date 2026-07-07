@@ -62,15 +62,78 @@ export class MailService {
   }
 
   async sendEmailVerificationCode(to: string, code: string): Promise<void> {
+    const confirmUrl = `${env.app.frontendUrl}/confirm-email?email=${encodeURIComponent(to)}`;
     await this.send({
       to,
-      subject: `Your Authora confirmation code: ${code}`,
-      text: `Your email confirmation code is ${code}. It expires in 15 minutes.`,
+      subject: `Authora email verification code: ${code}`,
+      text: [
+        'Verify your email for Authora',
+        '',
+        `Your confirmation code is ${code}.`,
+        'This code expires in 24 hours.',
+        '',
+        `Open verification page: ${confirmUrl}`,
+        '',
+        'If you did not request this code, you can safely ignore this email.',
+      ].join('\n'),
       html: `
-        <p>Welcome to Authora!</p>
-        <p>Your email confirmation code is:</p>
-        <p style="font-size:28px;font-weight:700;letter-spacing:4px;margin:16px 0">${code}</p>
-        <p style="color:#5c6c75">This code expires in 15 minutes.</p>`,
+        <!doctype html>
+        <html lang="en">
+          <body style="margin:0;padding:0;background:#f5f4f8;font-family:Inter,Arial,sans-serif;color:#17141f">
+            <div style="display:none;max-height:0;overflow:hidden;opacity:0">
+              Your Authora confirmation code expires in 24 hours.
+            </div>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f4f8;padding:32px 16px">
+              <tr>
+                <td align="center">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #ded9ea;border-radius:20px;overflow:hidden">
+                    <tr>
+                      <td style="height:4px;background:#5b4bff"></td>
+                    </tr>
+                    <tr>
+                      <td style="padding:32px 32px 24px">
+                        <p style="margin:0 0 10px;color:#5b4bff;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase">
+                          Authora
+                        </p>
+                        <h1 style="margin:0;color:#17141f;font-size:28px;line-height:1.2;font-weight:700">
+                          Verify your email
+                        </h1>
+                        <p style="margin:14px 0 0;color:#5c6c75;font-size:15px;line-height:1.55">
+                          Use this code to confirm that this email address belongs to you.
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:0 32px 26px">
+                        <div style="background:#f2f0ff;border:1px solid #d8d2ff;border-radius:18px;padding:24px;text-align:center">
+                          <p style="margin:0 0 12px;color:#5c6c75;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase">
+                            Confirmation code
+                          </p>
+                          <div style="font-family:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;font-size:36px;line-height:1;font-weight:700;letter-spacing:8px;color:#17141f">
+                            ${code}
+                          </div>
+                          <p style="margin:14px 0 0;color:#5c6c75;font-size:14px">
+                            This code expires in 24 hours.
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:0 32px 32px">
+                        <a href="${confirmUrl}" style="display:inline-block;background:#5b4bff;color:#ffffff;text-decoration:none;border-radius:999px;padding:13px 22px;font-weight:700;font-size:14px">
+                          Open verification page
+                        </a>
+                        <p style="margin:20px 0 0;color:#7a7289;font-size:13px;line-height:1.55">
+                          If you did not request this code, you can safely ignore this email.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>`,
     });
   }
 

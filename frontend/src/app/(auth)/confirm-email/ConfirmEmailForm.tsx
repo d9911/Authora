@@ -88,20 +88,24 @@ export function ConfirmEmailForm() {
       {error && <p className="error-text">{error}</p>}
       {msg && <p className="success-text">{msg}</p>}
 
-      <ButtonMain type="submit" fullWidth loading={busy}>
-        Confirm
-      </ButtonMain>
-
-      <ButtonMain
-        type="button"
-        variant="ghost"
-        fullWidth
-        style={{ marginTop: 8 }}
-        loading={resending}
-        onClick={onResend}
+      <div
+        className="confirm-actions"
+        style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}
       >
-        Resend code
-      </ButtonMain>
+        <ButtonMain type="submit" fullWidth loading={busy}>
+          Confirm
+        </ButtonMain>
+
+        <ButtonMain
+          type="button"
+          variant="ghost"
+          fullWidth
+          loading={resending}
+          onClick={onResend}
+        >
+          Resend code
+        </ButtonMain>
+      </div>
     </form>
   );
 }

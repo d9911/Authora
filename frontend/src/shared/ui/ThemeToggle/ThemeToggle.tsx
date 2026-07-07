@@ -15,6 +15,7 @@ export function ThemeToggle({ theme, label = 'Theme', className, ...rest }: Them
     <button
       type="button"
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
+      aria-pressed={isDark}
       className={`${styles.toggle} ${isDark ? styles.dark : styles.light} ${className || ''}`}
       {...rest}
     >
