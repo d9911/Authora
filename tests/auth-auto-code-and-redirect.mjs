@@ -62,6 +62,11 @@ const checks = [
       !/\/api\/auth\/github/.test(telegramLoginButton),
   ],
   [
+    'telegram link returns to profile with linked confirmation',
+    /res\.status === 'linked'/.test(telegramLoginButton) &&
+      /window\.location\.replace\('\/profile\/edit\?linked=telegram'\)/.test(telegramLoginButton),
+  ],
+  [
     'github login flow stays separate from the telegram bot flow',
     /\/api\/auth\/github/.test(githubLoginButton) &&
       !/telegramBotStart|telegramBotPoll/.test(githubLoginButton),

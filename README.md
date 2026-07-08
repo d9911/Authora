@@ -121,8 +121,9 @@ This guarantees `make docker-up` always runs on SQLite and never tries to reach
 (`docker-compose.mongo.yml`) that flips `DB_TYPE=mongo`,
 `MONGO_URI=mongodb://mongo:27017/authora` and adds `depends_on: mongo (healthy)`.
 
-Docker secrets (SMTP / OAuth / Telegram) go in **`backend/.env.docker`**
-(copy from `backend/.env.docker.example`) — never DB settings.
+Docker secrets (SMTP / OAuth / Telegram) can come from the root **`.env`** that
+Compose reads, or from **`backend/.env.docker`** (copy from
+`backend/.env.docker.example`) for Docker-only overrides — never DB settings.
 
 Notes on the images:
 
@@ -282,7 +283,8 @@ with no way to sign in).
 Required env:
 
 ```
-# backend (.env / .env.docker)
+# backend local dev: backend/.env
+# Docker: root .env and/or backend/.env.docker
 GITHUB_CLIENT_ID=...        GITHUB_CLIENT_SECRET=...
 GITHUB_CALLBACK_URL=http://localhost:5178/api/auth/github/callback
 TELEGRAM_BOT_TOKEN=8460081839:...           # from BotFather

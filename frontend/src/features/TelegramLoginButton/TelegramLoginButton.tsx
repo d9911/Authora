@@ -112,6 +112,7 @@ export function TelegramLoginButton({
             setFallback(null);
             await dispatch(loadMeThunk());
             onLinked?.();
+            window.location.replace('/profile/edit?linked=telegram');
             return;
           }
           if (res.status === 'done') {

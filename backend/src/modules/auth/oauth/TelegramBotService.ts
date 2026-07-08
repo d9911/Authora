@@ -74,16 +74,22 @@ export class TelegramBotService {
    * Cached after the first successful lookup.
    */
   async getBotUrl(): Promise<string> {
-    const explicit = (env.telegram.botUrl ?? '').replace(/\/$/, '');
-    if (explicit) return explicit;
     if (!this.isConfigured()) return '';
-    if (this.username) return `https://t.me/${this.username}`;
+    const explicit = (env.telegram.botUrl ?? '').replace(/\/$/, '');
+    const username = await this.resolveBotUsername();
+    if (!username) return '';
+    if (explicit) return explicit;
+    return `https://t.me/${username}`;
+  }
+
+  private async resolveBotUsername(): Promise<string> {
+    if (this.username) return this.username;
     try {
       const res = await fetch(`${this.api}/getMe`, { signal: AbortSignal.timeout(8000) });
       const json = (await res.json()) as { ok: boolean; result?: { username?: string } };
       if (json.ok && json.result?.username) {
         this.username = json.result.username;
-        return `https://t.me/${this.username}`;
+        return this.username;
       }
     } catch {
       /* network/timeout — fall through */
