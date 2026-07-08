@@ -2,7 +2,7 @@
    HeaderMain - Responsive Styles
    ============================================================ */
 
-@import '../../shared/styles/breakpoints.scss';
+@use '../../shared/styles/breakpoints' as *;
 
 .header {
   position: sticky;
@@ -58,6 +58,54 @@
 
   &:hover {
     color: var(--iris);
+    text-decoration: none;
+  }
+}
+
+.account-menu-wrap {
+  position: relative;
+}
+
+.account-trigger {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--iris);
+    outline-offset: 4px;
+    border-radius: 6px;
+  }
+}
+
+.account-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  min-width: 160px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+  z-index: 120;
+}
+
+.account-menu-item {
+  display: block;
+  border-radius: 6px;
+  padding: 9px 10px;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 14px;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--paper);
+    color: var(--iris);
+    outline: none;
     text-decoration: none;
   }
 }
@@ -148,6 +196,22 @@
 
   .header-actions {
     gap: 8px;
+  }
+
+  .account-menu-wrap {
+    width: 100%;
+  }
+
+  .account-trigger {
+    width: 100%;
+    text-align: center;
+  }
+
+  .account-menu {
+    position: static;
+    width: 100%;
+    margin-top: 8px;
+    box-shadow: none;
   }
 }
 

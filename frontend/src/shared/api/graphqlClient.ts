@@ -19,6 +19,13 @@ export class GraphQLRequestError extends Error implements ApiError {
 
 let refreshing: Promise<boolean> | null = null;
 
+function redirectToSignIn(): Promise<never> {
+  localStorage.removeItem('user');
+  const nextPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  window.location.href = `/sign-in?next=${encodeURIComponent(nextPath)}`;
+  return new Promise(() => {});
+}
+
 // Request both tokens so the proxy re-stores the rotated pair as cookies.
 const REFRESH_MUTATION = /* GraphQL */ `
   mutation RefreshToken($input: RefreshTokenInput!) {
@@ -65,11 +72,9 @@ export async function gqlRequest<T>(
       const ok = await tryRefresh();
       if (ok) return gqlRequest<T>(query, variables, { retry: false });
 
-      // Refresh failed → clear local state and force logout
+      // Refresh failed → clear local state and force logout, preserving return URL.
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('user');
-        window.location.href = '/sign-in';
-        return new Promise(() => {}); // Never resolve, page is redirecting
+        return redirectToSignIn();
       }
     }
     throw new GraphQLRequestError(first.message, code, first.extensions?.statusCode);

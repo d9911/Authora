@@ -18,6 +18,7 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
+const DEFAULT_THEME: ThemeMode = 'light';
 
 function getSystemTheme(): ThemeMode {
   if (typeof window === 'undefined') return 'light';
@@ -48,7 +49,8 @@ function applyTheme(theme: ThemeMode) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>(getInitialTheme);
+  const [theme, setThemeState] = useState<ThemeMode>(DEFAULT_THEME);
+  const [hydrated, setHydrated] = useState(false);
 
   const setTheme = useCallback((nextTheme: ThemeMode) => {
     setThemeState(nextTheme);
@@ -75,10 +77,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+    const initialTheme = getInitialTheme();
+    setThemeState(initialTheme);
+    setHydrated(true);
+    applyTheme(initialTheme);
+  }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
+    applyTheme(theme);
+  }, [hydrated, theme]);
+
+  useEffect(() => {
+    if (!hydrated) return;
     if (getStoredTheme()) return;
 
     const media = window.matchMedia('(prefers-color-scheme: dark)');
@@ -89,7 +100,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     media.addEventListener('change', onChange);
     return () => media.removeEventListener('change', onChange);
-  }, []);
+  }, [hydrated]);
 
   const value = useMemo(
     () => ({

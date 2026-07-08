@@ -2,7 +2,7 @@
    ButtonMain - Responsive Styles
    ============================================================ */
 
-@import '../../styles/breakpoints.scss';
+@use '../../styles/breakpoints' as *;
 
 .button {
   display: inline-flex;

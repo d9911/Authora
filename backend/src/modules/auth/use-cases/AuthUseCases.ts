@@ -24,6 +24,7 @@ import {
   verifyOAuthToken,
   verifyRefreshToken,
 } from '../../../infrastructure/jwt/jwt';
+import { PASSWORD_POLICY_HINT, validatePassword } from '../domain/passwordPolicy';
 
 export interface AuthTokens {
   accessToken: string;
@@ -86,8 +87,8 @@ export class AuthUseCases {
   }): Promise<AuthPayload> {
     const email = input.email?.trim().toLowerCase();
     if (!email || !EMAIL_RE.test(email)) throw AppError.validation('Invalid email');
-    if (!input.password || input.password.length < 8) {
-      throw AppError.validation('Password must be at least 8 characters');
+    if (!validatePassword(input.password)) {
+      throw AppError.validation(PASSWORD_POLICY_HINT);
     }
 
     const existing = await this.deps.users.findByEmail(email);
@@ -239,8 +240,8 @@ export class AuthUseCases {
   }
 
   async resetPassword(token: string, newPassword: string): Promise<boolean> {
-    if (!newPassword || newPassword.length < 8) {
-      throw AppError.validation('Password must be at least 8 characters');
+    if (!validatePassword(newPassword)) {
+      throw AppError.validation(PASSWORD_POLICY_HINT);
     }
     const record = await this.deps.emailTokens.findValid(sha256(token), 'reset_password');
     if (!record) throw new AppError(ErrorCodes.INVALID_TOKEN, 'Invalid or expired token', 400);
@@ -262,8 +263,8 @@ export class AuthUseCases {
     if (!user || !user.password) throw AppError.unauthorized();
     const ok = await comparePassword(oldPassword, user.password);
     if (!ok) throw AppError.invalidCredentials('Current password is incorrect');
-    if (!newPassword || newPassword.length < 8) {
-      throw AppError.validation('Password must be at least 8 characters');
+    if (!validatePassword(newPassword)) {
+      throw AppError.validation(PASSWORD_POLICY_HINT);
     }
     await this.deps.users.update(userId, { password: await hashPassword(newPassword) });
     await this.deps.refreshTokens.revokeAllForUser(userId);

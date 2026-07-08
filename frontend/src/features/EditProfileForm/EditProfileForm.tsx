@@ -35,9 +35,14 @@ export function EditProfileForm() {
   useEffect(() => {
     if (status === 'idle') {
       void dispatch(loadMeThunk());
-      void dispatch(loadMyProfileThunk());
     }
   }, [dispatch, status]);
+
+  useEffect(() => {
+    if (status === 'authenticated' && profile === null && !loading) {
+      void dispatch(loadMyProfileThunk());
+    }
+  }, [dispatch, loading, profile, status]);
 
   useEffect(() => {
     setForm((f) => ({

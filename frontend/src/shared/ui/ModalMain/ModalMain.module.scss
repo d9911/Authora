@@ -2,7 +2,7 @@
    ModalMain - Responsive Styles
    ============================================================ */
 
-@import '../../styles/breakpoints.scss';
+@use '../../styles/breakpoints' as *;
 
 .modal-overlay {
   position: fixed;

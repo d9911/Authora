@@ -4,6 +4,8 @@
    Iris accent · violet-black ink · credential data in mono.
    ============================================================ */
 
+@use 'sass:meta';
+
 :root {
   /* --- Core palette (4–6 named values) --- */
   --ink: #17141f;        /* violet-black — primary text / dark surfaces */
@@ -236,4 +238,4 @@ h4 { font-size: 1.1rem; letter-spacing: -0.01em; }
 }
 
 /* Import responsive breakpoints */
-@import './responsive.scss';
+@include meta.load-css('./responsive');

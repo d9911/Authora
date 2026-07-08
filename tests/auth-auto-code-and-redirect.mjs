@@ -11,10 +11,23 @@ const confirmEmail = read('frontend/src/app/(auth)/confirm-email/ConfirmEmailFor
 const connectedAccounts = read('frontend/src/features/ConnectedAccounts/ConnectedAccounts.tsx');
 const githubLoginButton = read('frontend/src/features/GithubLoginButton/GithubLoginButton.tsx');
 const telegramLoginButton = read('frontend/src/features/TelegramLoginButton/TelegramLoginButton.tsx');
+const dockerCompose = read('docker-compose.yml');
+const backendEnvExample = read('backend/.env.example');
+const githubOAuthService = read('backend/src/modules/auth/oauth/GithubOAuthService.ts');
 const connectedAccountsRenderSetup = connectedAccounts.slice(
   connectedAccounts.indexOf('export function ConnectedAccounts()'),
   connectedAccounts.indexOf('  return ('),
 );
+
+function extractGithubCallback(source, label) {
+  const match = source.match(/GITHUB_CALLBACK_URL[:=]\s*["']?([^"'\n]+)["']?/);
+  if (!match) throw new Error(`Missing GITHUB_CALLBACK_URL in ${label}`);
+  return match[1].trim();
+}
+
+const dockerGithubCallbackUrl = extractGithubCallback(dockerCompose, 'docker-compose.yml');
+const exampleGithubCallbackUrl = extractGithubCallback(backendEnvExample, 'backend/.env.example');
+const canonicalGithubCallbackUrl = 'http://localhost:3010/api/auth/github/callback';
 
 const checks = [
   [
@@ -69,6 +82,24 @@ const checks = [
   [
     'github login flow stays separate from the telegram bot flow',
     /\/api\/auth\/github/.test(githubLoginButton) &&
+      !/telegramBotStart|telegramBotPoll/.test(githubLoginButton),
+  ],
+  [
+    'github callback config is consistent across docker and backend example',
+    dockerGithubCallbackUrl === canonicalGithubCallbackUrl &&
+      exampleGithubCallbackUrl === canonicalGithubCallbackUrl,
+  ],
+  [
+    'github authorize and token exchange use the same configured callback url',
+    /redirect_uri:\s*env\.github\.callbackUrl/.test(githubOAuthService) &&
+      /redirect_uri:\s*env\.github\.callbackUrl/.test(
+        githubOAuthService.slice(githubOAuthService.indexOf('async exchangeCode')),
+      ),
+  ],
+  [
+    'github UI entrypoints stay on the github backend route',
+    /\/api\/auth\/github/.test(githubLoginButton) &&
+      /\/api\/auth\/github\?link=/.test(connectedAccounts) &&
       !/telegramBotStart|telegramBotPoll/.test(githubLoginButton),
   ],
 ];

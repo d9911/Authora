@@ -2,7 +2,7 @@
    Responsive Styles for < 1200px
    ============================================================ */
 
-@import './breakpoints.scss';
+@use './breakpoints' as *;
 
 /* --- Container & Layout --- */
 @include media(xl) {

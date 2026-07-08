@@ -9,6 +9,7 @@ const repoRoot = dirname(fileURLToPath(new URL('../package.json', import.meta.ur
 const tempDir = await mkdtemp(join(tmpdir(), 'authora-doc-mongo-'));
 const logPath = join(tempDir, 'docker.log');
 const fakeDockerPath = join(tempDir, 'docker');
+const fakeYarnPath = join(tempDir, 'yarn');
 
 await writeFile(
   fakeDockerPath,
@@ -17,8 +18,22 @@ printf '%s\\n' "$*" >> "${logPath}"
 
 if [ "$1" = "compose" ]; then
   case "$*" in
-    *"--build"*)
-      echo "target backend: failed to solve: node:24-bookworm-slim: failed to resolve source metadata for docker.io/library/node:24-bookworm-slim" >&2
+    *" build "*)
+    case "$*" in
+      *"--pull=false"*"backend frontend"*)
+        exit 0
+        ;;
+      *)
+        echo "compose build must use --pull=false for backend frontend" >&2
+        exit 64
+        ;;
+    esac
+      ;;
+  esac
+
+  case "$*" in
+    *" up "*"--build"*)
+      echo "up --build would risk Docker Hub metadata resolution and stale fallback behavior" >&2
       exit 1
       ;;
     *)
@@ -36,6 +51,15 @@ exit 64
 `,
 );
 await chmod(fakeDockerPath, 0o755);
+
+await writeFile(
+  fakeYarnPath,
+  `#!/bin/sh
+printf '%s\\n' "yarn $*" >> "${logPath}"
+exit 0
+`,
+);
+await chmod(fakeYarnPath, 0o755);
 
 const result = await new Promise((resolve) => {
   const child = spawn('make', ['doc-mongo'], {
@@ -63,13 +87,13 @@ const dockerLog = await readFile(logPath, 'utf8');
 assert.equal(
   result.code,
   0,
-  `make doc-mongo should use cached local images without attempting a Docker Hub build.\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}\nDOCKER LOG:\n${dockerLog}`,
+  `make doc-mongo should build local images without using compose up --build.\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}\nDOCKER LOG:\n${dockerLog}`,
 );
 assert.match(dockerLog, /image inspect authora-backend:latest/);
 assert.match(dockerLog, /image inspect authora-frontend:latest/);
-assert.doesNotMatch(dockerLog, /--build/);
+assert.match(dockerLog, /compose .* build --pull=false backend frontend/);
+assert.doesNotMatch(dockerLog, / up .*--build/);
 assert.doesNotMatch(result.stdout, /Docker Hub metadata/);
 
-const dockerCalls = dockerLog.trim().split('\n');
-assert.match(dockerCalls.at(-1) ?? '', /compose .* up -d --no-build backend frontend/);
-assert.doesNotMatch(dockerCalls.at(-1) ?? '', /--force-recreate/);
+const dockerCalls = dockerLog.trim().split('\n').filter((line) => !line.startsWith('yarn '));
+assert.match(dockerCalls.at(-1) ?? '', /compose .* up -d --no-build --force-recreate backend frontend/);

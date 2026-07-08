@@ -2,7 +2,7 @@
    FooterMain - Responsive Styles
    ============================================================ */
 
-@import '../../shared/styles/breakpoints.scss';
+@use '../../shared/styles/breakpoints' as *;
 
 .footer {
   background: var(--footer-bg);

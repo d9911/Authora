@@ -186,6 +186,27 @@ async function main() {
       check('Weak password rejected (min length)', !!json?.errors, 'medium');
     }
 
+    /* 8b. Password allowlist is enforced server-side */
+    {
+      const invalid = await gql(
+        `mutation($i: SignUpInput!){ signUp(input:$i){ accessToken } }`,
+        { i: { email: `slash_${Date.now()}@x.com`, password: 'Valid123/', name: 'Slash' } },
+      );
+      check('Password with forbidden slash rejected at signup', !!invalid.json?.errors, 'medium');
+
+      const tooLong = await gql(
+        `mutation($i: SignUpInput!){ signUp(input:$i){ accessToken } }`,
+        { i: { email: `long_${Date.now()}@x.com`, password: 'A'.repeat(51), name: 'Long' } },
+      );
+      check('Password longer than 50 chars rejected at signup', !!tooLong.json?.errors, 'medium');
+
+      const allowed = await gql(
+        `mutation($i: SignUpInput!){ signUp(input:$i){ accessToken } }`,
+        { i: { email: `allowed_${Date.now()}@x.com`, password: 'AllowÑ1!', name: 'Allowed' } },
+      );
+      check('Password with Ñ and allowed special chars accepted at signup', !!allowed.json?.data?.signUp?.accessToken, 'medium');
+    }
+
     /* 9. Duplicate email rejected (no account takeover) */
     {
       const { json } = await gql(

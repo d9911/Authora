@@ -2,7 +2,7 @@
    Location Lists - Responsive Styles
    ============================================================ */
 
-@import '../../shared/styles/breakpoints.scss';
+@use '../../shared/styles/breakpoints' as *;
 
 .list-container {
   width: 100%;

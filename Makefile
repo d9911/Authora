@@ -94,6 +94,11 @@ seed-sqlite:
 docker-up:
 	docker compose up -d --build
 
+dock-fb:
+	docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml up -d --no-build --force-recreate backend
+	docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml up -d --build --force-recreate backend frontend
+
+# 	set -a; source backend/.env; set +a; docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml -f <(printf '%s\n' 'services:' '  backend:' '    environment:' '      OWNER_EMAIL: ${OWNER_EMAIL}' '      SMTP_HOST: ${SMTP_HOST}' '      SMTP_PORT: ${SMTP_PORT}' '      SMTP_USER: ${SMTP_USER}' '      SMTP_PASS: ${SMTP_PASS}') up -d --build --force-recreate backend frontend
 docker-down:
 	docker compose down
 
@@ -113,10 +118,11 @@ db-mongo-up:
 	docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml exec backend node dist/infrastructure/database/mongo/seed.js
 	@echo "✅ MongoDB stack up and seeded"
 
-doc-mongo:
+doc-mongo: build
 	@if docker image inspect authora-backend:latest >/dev/null 2>&1 \
 		&& docker image inspect authora-frontend:latest >/dev/null 2>&1; then \
-		docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml up -d --no-build backend frontend; \
+		docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml build --pull=false backend frontend; \
+		docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml up -d --no-build --force-recreate backend frontend; \
 	else \
 		docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml up -d --build --force-recreate backend frontend; \
 	fi

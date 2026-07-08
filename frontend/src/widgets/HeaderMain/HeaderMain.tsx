@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { config } from '@/shared/config';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux';
 import { loadMeThunk, logoutThunk } from '@/processes/store/slices/authSlice';
@@ -29,14 +29,53 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
   const router = useRouter();
   const { user, status } = useAppSelector((s) => s.auth);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+  const userLabel = user?.nickname || user?.name || user?.email;
 
   useEffect(() => {
     if (status === 'idle') void dispatch(loadMeThunk());
   }, [dispatch, status]);
 
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!accountMenuRef.current?.contains(event.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAccountMenuOpen(false);
+    };
+
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [accountMenuOpen]);
+
+  useEffect(() => {
+    if (!user) setAccountMenuOpen(false);
+  }, [user]);
+
   const onLogout = async () => {
     await dispatch(logoutThunk());
+    setAccountMenuOpen(false);
+    setMobileOpen(false);
     router.push('/');
+  };
+
+  const closeMenus = () => {
+    setAccountMenuOpen(false);
+    setMobileOpen(false);
+  };
+
+  const toggleAccountMenu = () => {
+    setAccountMenuOpen((open) => !open);
   };
 
   return (
@@ -63,10 +102,31 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
             <Link href="/about" className={styles['header-link']} onClick={() => setMobileOpen(false)}>
               About
             </Link>
-            {user && (
-              <Link href="/profile/edit" className={styles['header-link']} onClick={() => setMobileOpen(false)}>
-                {user.name || user.email}
-              </Link>
+            {user && userLabel && (
+              <div className={styles['account-menu-wrap']} ref={accountMenuRef}>
+                <button
+                  type="button"
+                  className={`${styles['header-link']} ${styles['account-trigger']}`}
+                  onClick={toggleAccountMenu}
+                  aria-haspopup="menu"
+                  aria-expanded={accountMenuOpen}
+                  aria-controls="header-account-menu"
+                >
+                  {userLabel}
+                </button>
+                {accountMenuOpen && (
+                  <div id="header-account-menu" className={styles['account-menu']} role="menu">
+                    <Link
+                      href="/profile/edit"
+                      className={styles['account-menu-item']}
+                      role="menuitem"
+                      onClick={closeMenus}
+                    >
+                      Profile
+                    </Link>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
