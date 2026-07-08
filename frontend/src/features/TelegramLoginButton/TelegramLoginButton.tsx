@@ -10,6 +10,8 @@ import { GraphQLRequestError } from '@/shared/api/graphqlClient';
 const handle = (e: unknown) =>
   e instanceof GraphQLRequestError || e instanceof Error ? e.message : 'Error';
 
+const TELEGRAM_OPENING_PATH = '/oauth/telegram/opening';
+
 function writePopupMessage(popup: Window | null, title: string, message: string): void {
   if (!popup) return;
   try {
@@ -26,7 +28,7 @@ function writePopupMessage(popup: Window | null, title: string, message: string)
 }
 
 function openTelegramPopup(): Window | null {
-  const popup = window.open('', '_blank');
+  const popup = window.open(TELEGRAM_OPENING_PATH, '_blank');
   try {
     if (popup) popup.opener = null;
   } catch {

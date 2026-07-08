@@ -9,6 +9,12 @@ const signIn = read('frontend/src/features/SignInForm/SignInForm.tsx');
 const signUp = read('frontend/src/features/SignUpForm/SignUpForm.tsx');
 const confirmEmail = read('frontend/src/app/(auth)/confirm-email/ConfirmEmailForm.tsx');
 const connectedAccounts = read('frontend/src/features/ConnectedAccounts/ConnectedAccounts.tsx');
+const githubLoginButton = read('frontend/src/features/GithubLoginButton/GithubLoginButton.tsx');
+const telegramLoginButton = read('frontend/src/features/TelegramLoginButton/TelegramLoginButton.tsx');
+const connectedAccountsRenderSetup = connectedAccounts.slice(
+  connectedAccounts.indexOf('export function ConnectedAccounts()'),
+  connectedAccounts.indexOf('  return ('),
+);
 
 const checks = [
   [
@@ -38,6 +44,27 @@ const checks = [
   [
     'profile email verification auto-submits when six digits are entered',
     /AUTO_CODE_LENGTH/.test(connectedAccounts) && /handleEmailCodeChange/.test(connectedAccounts),
+  ],
+  [
+    'profile email code input keeps focus while typing',
+    /ConnectedAccountRow/.test(connectedAccounts) &&
+      !/const\s+Row\s*=/.test(connectedAccountsRenderSetup),
+  ],
+  [
+    'telegram opens an app-owned waiting page instead of about:blank',
+    /\/oauth\/telegram\/opening/.test(telegramLoginButton) &&
+      !/window\.open\(['"](?:about:blank)?['"]\s*,\s*['"]_blank['"]/.test(telegramLoginButton),
+  ],
+  [
+    'telegram login flow stays separate from the github oauth redirect',
+    /telegramBotStart/.test(telegramLoginButton) &&
+      /telegramBotPoll/.test(telegramLoginButton) &&
+      !/\/api\/auth\/github/.test(telegramLoginButton),
+  ],
+  [
+    'github login flow stays separate from the telegram bot flow',
+    /\/api\/auth\/github/.test(githubLoginButton) &&
+      !/telegramBotStart|telegramBotPoll/.test(githubLoginButton),
   ],
 ];
 

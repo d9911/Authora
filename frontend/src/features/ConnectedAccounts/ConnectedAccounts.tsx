@@ -26,6 +26,64 @@ function normalizeCode(value: string): string {
   return value.replace(/\D/g, '').slice(0, AUTO_CODE_LENGTH);
 }
 
+function ConnectedAccountRow({
+  label,
+  connected,
+  connectedLabel = 'Connected',
+  missingLabel = 'Not connected',
+  detail,
+  children,
+}: {
+  label: string;
+  connected: boolean;
+  connectedLabel?: string;
+  missingLabel?: string;
+  detail?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        padding: '12px 0',
+        borderBottom: '1px solid var(--line)',
+      }}
+    >
+      <div>
+        <strong>{label}</strong>{' '}
+        {connected ? (
+          <span className="tag tag-verified" style={{ marginLeft: 6 }}>
+            {connectedLabel}
+          </span>
+        ) : (
+          <span className="muted" style={{ marginLeft: 6, fontSize: 13 }}>
+            {missingLabel}
+          </span>
+        )}
+        {detail && (
+          <div className="muted" style={{ marginTop: 4, fontSize: 13 }}>
+            {detail}
+          </div>
+        )}
+      </div>
+      <div
+        style={{
+          minWidth: 180,
+          display: 'flex',
+          justifyContent: 'flex-end',
+          flexWrap: 'wrap',
+          gap: 8,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function ConnectedAccounts() {
   const dispatch = useAppDispatch();
   const params = useSearchParams();
@@ -136,62 +194,6 @@ export function ConnectedAccounts() {
   const githubConnected = Boolean(user?.githubId);
   const telegramConnected = Boolean(user?.telegramId);
 
-  const Row = ({
-    label,
-    connected,
-    connectedLabel = 'Connected',
-    missingLabel = 'Not connected',
-    detail,
-    children,
-  }: {
-    label: string;
-    connected: boolean;
-    connectedLabel?: string;
-    missingLabel?: string;
-    detail?: string;
-    children: ReactNode;
-  }) => (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 12,
-        padding: '12px 0',
-        borderBottom: '1px solid var(--line)',
-      }}
-    >
-      <div>
-        <strong>{label}</strong>{' '}
-        {connected ? (
-          <span className="tag tag-verified" style={{ marginLeft: 6 }}>
-            {connectedLabel}
-          </span>
-        ) : (
-          <span className="muted" style={{ marginLeft: 6, fontSize: 13 }}>
-            {missingLabel}
-          </span>
-        )}
-        {detail && (
-          <div className="muted" style={{ marginTop: 4, fontSize: 13 }}>
-            {detail}
-          </div>
-        )}
-      </div>
-      <div
-        style={{
-          minWidth: 180,
-          display: 'flex',
-          justifyContent: 'flex-end',
-          flexWrap: 'wrap',
-          gap: 8,
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-
   return (
     <div className="card">
       <h2>Connected accounts</h2>
@@ -199,7 +201,7 @@ export function ConnectedAccounts() {
         Link external accounts to sign in with one click.
       </p>
 
-      <Row
+      <ConnectedAccountRow
         label="Email"
         connected={emailVerified}
         connectedLabel="Verified"
@@ -245,9 +247,9 @@ export function ConnectedAccounts() {
             </ButtonMain>
           </form>
         )}
-      </Row>
+      </ConnectedAccountRow>
 
-      <Row label="GitHub" connected={githubConnected}>
+      <ConnectedAccountRow label="GitHub" connected={githubConnected}>
         {githubConnected ? (
           <ButtonMain
             variant="secondary"
@@ -261,9 +263,9 @@ export function ConnectedAccounts() {
             Connect
           </ButtonMain>
         )}
-      </Row>
+      </ConnectedAccountRow>
 
-      <Row label="Telegram" connected={telegramConnected}>
+      <ConnectedAccountRow label="Telegram" connected={telegramConnected}>
         {telegramConnected ? (
           <ButtonMain
             variant="secondary"
@@ -279,7 +281,7 @@ export function ConnectedAccounts() {
             onLinked={() => setMsg('Telegram account linked ✓')}
           />
         )}
-      </Row>
+      </ConnectedAccountRow>
 
       {error && <p className="error-text">{error}</p>}
       {msg && <p className="success-text">{msg}</p>}
