@@ -1,11 +1,14 @@
 'use client'
 
-import { FormEvent, useEffect, useState } from 'react'
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux'
 import { clearProfileFlags, loadMyProfileThunk, updateProfileThunk } from '@/processes/store/slices/profileSlice'
 import { loadMeThunk } from '@/processes/store/slices/authSlice'
+import { loadCountriesThunk, loadCountryByIdThunk } from '@/processes/store/slices/locationSlice'
+import { fetchCityById } from '@/entities/country/api/locationApi'
 import { ButtonMain, InputMain } from '@/shared/ui'
 import { ProfilePhotoManager } from '@/features/ProfilePhotoManager/ui/ProfilePhotoManager'
+import styles from './EditProfileForm.module.scss'
 
 const emptyForm = {
   name: '',
@@ -24,8 +27,11 @@ export function EditProfileForm() {
   const dispatch = useAppDispatch()
   const { user, status } = useAppSelector((s) => s.auth)
   const { profile, saving, saved, error, loading } = useAppSelector((s) => s.profile)
+  const { countries, current: currentCountry, loading: locationsLoading } = useAppSelector((s) => s.location)
 
   const [form, setForm] = useState(emptyForm)
+  const [selectedCountryId, setSelectedCountryId] = useState('')
+  const [selectedRegionId, setSelectedRegionId] = useState('')
 
   useEffect(() => {
     if (status === 'idle') {
@@ -38,6 +44,12 @@ export function EditProfileForm() {
       void dispatch(loadMyProfileThunk())
     }
   }, [dispatch, loading, profile, status])
+
+  useEffect(() => {
+    if (status === 'authenticated' && countries.length === 0 && !locationsLoading) {
+      void dispatch(loadCountriesThunk())
+    }
+  }, [countries.length, dispatch, locationsLoading, status])
 
   useEffect(() => {
     setForm((f) => ({
@@ -63,7 +75,65 @@ export function EditProfileForm() {
     }
   }, [profile])
 
+  useEffect(() => {
+    let cancelled = false
+    const cityId = profile?.cityId
+
+    if (!cityId) {
+      setSelectedCountryId('')
+      setSelectedRegionId('')
+      return
+    }
+
+    fetchCityById(cityId)
+      .then((city) => {
+        if (cancelled) return
+        const countryId = city?.countryId ?? ''
+        setSelectedCountryId(countryId)
+        setSelectedRegionId(city?.regionId ?? '')
+        if (countryId) {
+          void dispatch(loadCountryByIdThunk(countryId))
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSelectedCountryId('')
+          setSelectedRegionId('')
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [dispatch, profile?.cityId])
+
   const set = (key: keyof typeof emptyForm) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [key]: e.target.value }))
+
+  const selectedCountry = currentCountry?.id === selectedCountryId ? currentCountry : null
+  const regions = selectedCountry?.regions ?? []
+  const cities = useMemo(() => {
+    const allCities = selectedCountry?.cities ?? []
+    return selectedRegionId ? allCities.filter((city) => city.regionId === selectedRegionId) : allCities
+  }, [selectedCountry?.cities, selectedRegionId])
+
+  const onCountryChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const countryId = event.target.value
+    setSelectedCountryId(countryId)
+    setSelectedRegionId('')
+    setForm((f) => ({ ...f, cityId: '' }))
+    if (countryId) {
+      void dispatch(loadCountryByIdThunk(countryId))
+    }
+  }
+
+  const onRegionChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    setSelectedRegionId(event.target.value)
+    setForm((f) => ({ ...f, cityId: '' }))
+  }
+
+  const onCityChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    setForm((f) => ({ ...f, cityId: event.target.value }))
+  }
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -71,7 +141,7 @@ export function EditProfileForm() {
     const payload = {
       ...form,
       dateOfBirth: form.dateOfBirth ? new Date(form.dateOfBirth).toISOString() : undefined,
-      cityId: form.cityId || undefined,
+      cityId: form.cityId || null,
     }
     await dispatch(updateProfileThunk(payload))
   }
@@ -87,7 +157,49 @@ export function EditProfileForm() {
           <InputMain label="Name" value={form.name} onChange={set('name')} />
           <InputMain label="Nickname" value={form.nickname} onChange={set('nickname')} />
           <InputMain label="Phone number" value={form.phoneNumber} onChange={set('phoneNumber')} />
-          <InputMain label="City ID" value={form.cityId} onChange={set('cityId')} />
+          <label className={styles['select-wrapper']}>
+            <span className={styles['select-label']}>Country</span>
+            <select className={styles['select-field']} value={selectedCountryId} onChange={onCountryChange}>
+              <option value="">Select country</option>
+              {countries.map((country) => (
+                <option key={country.id} value={country.id}>
+                  {country.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={styles['select-wrapper']}>
+            <span className={styles['select-label']}>Region</span>
+            <select
+              className={styles['select-field']}
+              value={selectedRegionId}
+              onChange={onRegionChange}
+              disabled={!selectedCountryId || locationsLoading}
+            >
+              <option value="">All regions</option>
+              {regions.map((region) => (
+                <option key={region.id} value={region.id}>
+                  {region.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={styles['select-wrapper']}>
+            <span className={styles['select-label']}>City</span>
+            <select
+              className={styles['select-field']}
+              value={form.cityId}
+              onChange={onCityChange}
+              disabled={!selectedCountryId || locationsLoading}
+            >
+              <option value="">No city</option>
+              {cities.map((city) => (
+                <option key={city.id} value={city.id}>
+                  {city.name}
+                </option>
+              ))}
+            </select>
+          </label>
           <InputMain label="Date of birth" type="date" value={form.dateOfBirth} onChange={set('dateOfBirth')} />
           <InputMain label="Gender" value={form.gender} onChange={set('gender')} />
           <InputMain label="Address" value={form.address} onChange={set('address')} />

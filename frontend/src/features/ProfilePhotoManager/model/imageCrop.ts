@@ -3,7 +3,7 @@ import { ProfileImageKind } from '@/shared/types';
 export const PROFILE_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp';
 
 const LIMITS: Record<ProfileImageKind, number> = {
-  AVATAR: 5 * 1024 * 1024,
+  AVATAR: 10 * 1024 * 1024,
   COVER: 10 * 1024 * 1024,
 };
 

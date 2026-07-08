@@ -70,10 +70,10 @@ async function run() {
     () =>
       processor.process({
         kind: 'avatar',
-        data: Buffer.alloc(5 * 1024 * 1024 + 1),
+        data: Buffer.alloc(10 * 1024 * 1024 + 1),
         mimeType: 'image/png',
       }),
-    /Avatar image must be 5 MB or smaller/,
+    /Avatar image must be 10 MB or smaller/,
   );
 }
 

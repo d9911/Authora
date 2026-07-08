@@ -12,7 +12,7 @@ export interface UpdateProfileInput {
   phoneNumber?: string;
   bio?: string;
   description?: string;
-  cityId?: string;
+  cityId?: string | null;
   dateOfBirth?: string;
   gender?: string;
   address?: string;

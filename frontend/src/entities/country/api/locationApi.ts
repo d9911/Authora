@@ -14,7 +14,7 @@ export async function fetchCountryById(id: string): Promise<Country | null> {
       country(id: $id) {
         id name code
         regions { id name countryId }
-        cities { id name }
+        cities { id name countryId regionId }
       }
     }`,
     { id },

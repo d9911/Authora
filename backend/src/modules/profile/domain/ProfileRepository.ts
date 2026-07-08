@@ -6,7 +6,7 @@ export interface CreateProfileDto {
   bio?: string;
   description?: string;
   coverSrc?: string;
-  cityId?: string;
+  cityId?: string | null;
   dateOfBirth?: Date;
   gender?: string;
   address?: string;
@@ -18,7 +18,7 @@ export interface UpdateProfileDto {
   isVerified?: boolean;
   description?: string;
   coverSrc?: string | null;
-  cityId?: string;
+  cityId?: string | null;
   dateOfBirth?: Date;
   gender?: string;
   address?: string;

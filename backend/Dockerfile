@@ -7,10 +7,10 @@ WORKDIR /app
 RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
-COPY package*.json ./
-RUN npm install
+COPY package.json yarn.lock ./
+RUN corepack enable && yarn install --frozen-lockfile
 COPY . .
-RUN npm run build
+RUN corepack enable && yarn build
 
 FROM node:24-bookworm-slim AS runtime
 WORKDIR /app
@@ -19,7 +19,7 @@ ENV NODE_ENV=production
 # instead of reinstalling — avoids any native-rebuild at runtime.
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY package*.json ./
+COPY package.json yarn.lock ./
 # Directory for the SQLite database file (mounted as a volume in compose).
 RUN mkdir -p /data
 EXPOSE 3010

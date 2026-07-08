@@ -9,6 +9,7 @@ interface CoverUploaderProps {
   imageUrl?: string;
   localPreview?: string | null;
   busy: boolean;
+  error?: string | null;
   onFile: (file: File) => void;
   onDelete: () => void;
 }
@@ -17,6 +18,7 @@ export function CoverUploader({
   imageUrl,
   localPreview,
   busy,
+  error,
   onFile,
   onDelete,
 }: CoverUploaderProps) {
@@ -60,6 +62,11 @@ export function CoverUploader({
             </ButtonMain>
           )}
         </div>
+        {error && (
+          <p className={styles['photo-error']} role="alert">
+            {error}
+          </p>
+        )}
       </div>
     </section>
   );

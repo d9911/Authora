@@ -85,6 +85,7 @@ class FakeProfiles implements ProfileRepository {
       ...this.profile,
       ...data,
       coverSrc: data.coverSrc === null ? undefined : data.coverSrc ?? this.profile.coverSrc,
+      cityId: data.cityId === null ? undefined : data.cityId ?? this.profile.cityId,
       updatedAt: new Date('2026-01-02T00:00:00.000Z'),
     };
     return this.profile;

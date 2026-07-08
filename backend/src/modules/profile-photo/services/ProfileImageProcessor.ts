@@ -3,7 +3,7 @@ import sharp from 'sharp';
 import { AppError } from '../../../core/errors/AppError';
 import { ProfileImageKind, ProfileImageWrite } from '../domain/ProfileImage';
 
-const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+const AVATAR_MAX_BYTES = 10 * 1024 * 1024;
 const COVER_MAX_BYTES = 10 * 1024 * 1024;
 const OUTPUT_CONTENT_TYPE = 'image/webp';
 const LIMIT_INPUT_PIXELS = 40_000_000;

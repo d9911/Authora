@@ -21,7 +21,10 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
     AVATAR: null,
     COVER: null,
   });
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<ProfileImageKind, string | null>>({
+    AVATAR: null,
+    COVER: null,
+  });
 
   useEffect(() => {
     return () => {
@@ -32,10 +35,10 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
   }, [localPreview]);
 
   const upload = async (kind: ProfileImageKind, file: File) => {
-    setError(null);
+    setErrors((current) => ({ ...current, [kind]: null }));
     const validation = validateProfileImageFile(kind, file);
     if (validation) {
-      setError(validation);
+      setErrors((current) => ({ ...current, [kind]: validation }));
       return;
     }
 
@@ -49,7 +52,7 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
       ).unwrap();
       dispatch(setAuthUser(payload.user));
     } catch (e) {
-      setError(errorMessage(e, 'Image upload failed.'));
+      setErrors((current) => ({ ...current, [kind]: errorMessage(e, 'Image upload failed.') }));
     } finally {
       setBusyKind(null);
       setLocalPreview((current) => {
@@ -66,13 +69,13 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
     );
     if (!confirmed) return;
 
-    setError(null);
+    setErrors((current) => ({ ...current, [kind]: null }));
     setBusyKind(kind);
     try {
       const payload = await dispatch(deleteProfileImageThunk(kind)).unwrap();
       dispatch(setAuthUser(payload.user));
     } catch (e) {
-      setError(errorMessage(e, 'Image delete failed.'));
+      setErrors((current) => ({ ...current, [kind]: errorMessage(e, 'Image delete failed.') }));
     } finally {
       setBusyKind(null);
     }
@@ -92,6 +95,7 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
           localPreview={localPreview.AVATAR}
           fallbackLabel={fallbackLabel}
           busy={saving && busyKind === 'AVATAR'}
+          error={errors.AVATAR}
           onFile={(file) => upload('AVATAR', file)}
           onDelete={() => remove('AVATAR')}
         />
@@ -99,11 +103,11 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
           imageUrl={profile?.coverSrc}
           localPreview={localPreview.COVER}
           busy={saving && busyKind === 'COVER'}
+          error={errors.COVER}
           onFile={(file) => upload('COVER', file)}
           onDelete={() => remove('COVER')}
         />
       </div>
-      {error && <p className={styles['photo-error']}>{error}</p>}
     </div>
   );
 }

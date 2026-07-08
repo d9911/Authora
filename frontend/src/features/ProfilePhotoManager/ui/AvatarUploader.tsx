@@ -10,6 +10,7 @@ interface AvatarUploaderProps {
   localPreview?: string | null;
   fallbackLabel: string;
   busy: boolean;
+  error?: string | null;
   onFile: (file: File) => void;
   onDelete: () => void;
 }
@@ -19,6 +20,7 @@ export function AvatarUploader({
   localPreview,
   fallbackLabel,
   busy,
+  error,
   onFile,
   onDelete,
 }: AvatarUploaderProps) {
@@ -62,6 +64,11 @@ export function AvatarUploader({
             </ButtonMain>
           )}
         </div>
+        {error && (
+          <p className={styles['photo-error']} role="alert">
+            {error}
+          </p>
+        )}
       </div>
     </section>
   );
