@@ -10,10 +10,8 @@ export interface UpdateProfileInput {
   name?: string;
   nickname?: string;
   phoneNumber?: string;
-  avatarUrl?: string;
   bio?: string;
   description?: string;
-  coverSrc?: string;
   cityId?: string;
   dateOfBirth?: string;
   gender?: string;

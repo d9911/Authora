@@ -12,6 +12,22 @@
   box-shadow: var(--shadow-soft);
 }
 
+.profile-cover {
+  width: 100%;
+  aspect-ratio: 3 / 1;
+  min-height: 112px;
+  margin-bottom: 18px;
+  overflow: hidden;
+  border-radius: var(--r);
+  background: var(--paper);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
 .profile-header {
   display: flex;
   gap: 16px;

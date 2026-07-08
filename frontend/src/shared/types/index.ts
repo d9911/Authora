@@ -61,6 +61,28 @@ export interface AuthPayload {
   twoFactorToken?: string | null;
 }
 
+export type ProfileImageKind = 'AVATAR' | 'COVER';
+
+export interface ProfileImage {
+  id: string;
+  userId: string;
+  kind: ProfileImageKind;
+  contentType: string;
+  sizeBytes: number;
+  width: number;
+  height: number;
+  etag: string;
+  url: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProfileImagePayload {
+  user: User;
+  profile: Profile;
+  image: ProfileImage | null;
+}
+
 export interface TwoFactorSetupPayload {
   qrDataUrl: string;
   otpauthUrl: string;

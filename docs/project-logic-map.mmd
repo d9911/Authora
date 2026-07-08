@@ -1,0 +1,241 @@
+%% Authora current project logic map
+%% Generated from the local repository on 2026-07-08.
+%% Sources:
+%% - README.md:1-38, 82-98, 253-300
+%% - backend/src/app/container.ts:13-51
+%% - backend/src/app/server.ts:7-24
+%% - backend/src/app/express.ts:38-119
+%% - backend/src/app/graphql/context.ts:22-41
+%% - backend/src/app/graphql/resolvers.ts:39-160
+%% - backend/src/app/graphql/schema.ts:4-161
+%% - backend/src/infrastructure/database/repositories/index.ts:21-61
+%% - backend/src/modules/auth/use-cases/AuthUseCases.ts:82-255, 276-523
+%% - backend/src/modules/profile/use-cases/ProfileUseCases.ts:7-62
+%% - backend/src/modules/user/domain/User.ts:6-33
+%% - backend/src/modules/profile/domain/Profile.ts:1-15
+%% - backend/src/infrastructure/database/mongo/models.ts:3-89
+%% - frontend/src/app/layout.tsx:25-40
+%% - frontend/src/widgets/HeaderMain/HeaderMain.tsx:27-154
+%% - frontend/src/proxy.ts:4-59
+%% - frontend/src/shared/api/requestHandler.ts:4-205
+%% - frontend/src/shared/api/graphqlClient.ts:20-80
+%% - frontend/src/processes/store/rootReducer.ts:1-14
+%% - frontend/src/features/EditProfileForm/EditProfileForm.tsx:13-124
+
+flowchart TD
+  user["User in browser"]
+
+  subgraph frontend["Frontend: Next.js app router, FSD-style modules"]
+    rootLayout["Root layout<br/>ThemeProvider + StoreProvider + ServiceWorkerRegister + HeaderMain + FooterMain"]
+    header["HeaderMain<br/>Loads me on idle auth state<br/>Shows Countries, About, auth actions, account menu"]
+    accountTrigger["Authorized nickname/name/email button<br/>Click toggles account menu"]
+    accountMenu["Account menu<br/>Profile -> /profile/edit<br/>Logout -> logoutThunk -> /"]
+
+    subgraph appRoutes["App routes"]
+      home["/ home<br/>Auth, 2FA, OAuth, atlas capability cards"]
+      publicRoutes["Public pages<br/>/about<br/>/country<br/>/country/[id]<br/>/region/[id]<br/>/city/[id]<br/>/ui"]
+      authRoutes["Auth pages<br/>/sign-in<br/>/sign-up<br/>/confirm-email<br/>/forgot-password<br/>/reset-password"]
+      privateRoutes["Private page<br/>/profile/edit"]
+      oauthRoutesFe["OAuth pages<br/>/oauth/complete<br/>/oauth/telegram/opening"]
+      apiRoutesFe["Frontend API routes<br/>POST /api/graphql<br/>/api/auth/github/callback proxy route"]
+    end
+
+    subgraph state["Frontend runtime state"]
+      redux["Redux root reducer<br/>auth + profile + location + ui"]
+      authState["auth slice<br/>user + status + error + twoFactorToken"]
+      profileState["profile slice<br/>profile + loading + saving + saved + error"]
+      locationState["location slice<br/>countries + current + loading + error"]
+      themeState["theme process<br/>ThemeInitScript + ThemeProvider + header toggle"]
+    end
+
+    subgraph frontendApi["Frontend API layer"]
+      gqlClient["gqlRequest<br/>POST /api/graphql<br/>Refresh/retry on UNAUTHORIZED or INVALID_TOKEN"]
+      sameOriginProxy["GraphQL same-origin proxy<br/>Hides backend URL<br/>Reads httpOnly cookies<br/>Injects Authorization<br/>Sets/clears cookies from auth payloads"]
+      authApi["features/auth-api<br/>signUp, signIn, 2FA, password reset, OAuth exchange/link, Telegram bot start/poll"]
+      profileApi["entities/profile API<br/>myProfile + updateProfile"]
+      locationApi["entities/country API<br/>countries + country/region/city queries"]
+    end
+
+    signInForm["SignInForm<br/>Uses next query param<br/>signIn -> optional 2FA -> loadMe -> replace(nextPath)"]
+    signUpForm["SignUpForm<br/>email + password + confirmPassword<br/>shared password regex<br/>redirects to confirm-email"]
+    editProfileForm["EditProfileForm<br/>Loads me + myProfile<br/>Updates user fields and profile fields<br/>Current photo fields are Avatar URL and Cover image URL"]
+    connectedAccounts["Connected account controls<br/>GitHub and Telegram link/unlink"]
+    twoFactorControls["Two-factor controls<br/>enable -> QR/otpauth<br/>confirm/disable by code"]
+  end
+
+  subgraph frontendGuards["Frontend route guards and session transport"]
+    nextProxy["Next proxy middleware<br/>/login -> /sign-in<br/>/profile/** requires auth cookie<br/>/sign-in and /sign-up redirect authed users to /profile/edit"]
+    nextParam["next query param<br/>Stores return target for protected page redirects"]
+    cookies["httpOnly cookies on frontend origin<br/>access_token + refresh_token"]
+  end
+
+  subgraph backend["Backend: Express + GraphQL API"]
+    server["server.ts<br/>Connects DB by DB_TYPE<br/>Starts Telegram bot polling<br/>Starts Express"]
+    expressApp["Express app<br/>Security headers + CORS + JSON 1MB<br/>general rate limit + auth operation rate limit<br/>/health<br/>OAuth routes<br/>/graphql<br/>/playground"]
+    gqlContext["GraphQL context<br/>Verifies Bearer access token<br/>Sets userId or tokenInvalid"]
+    gqlSchema["GraphQL schema<br/>User, Profile, AuthPayload, locations<br/>auth/profile/location queries and mutations"]
+    resolvers["GraphQL resolvers<br/>requireAuth for protected operations<br/>delegate to use cases"]
+
+    subgraph useCases["Application use cases"]
+      authUseCases["AuthUseCases<br/>signUp/signIn/refresh/logout<br/>email confirmation<br/>password reset/change<br/>2FA<br/>GitHub/Telegram login and linking<br/>OAuth handoff<br/>Telegram bot tickets"]
+      userUseCases["UserUseCases<br/>get current or public user data"]
+      profileUseCases["ProfileUseCases<br/>getByUserId + update<br/>avatarUrl updates User<br/>coverSrc updates Profile"]
+      locationUseCases["LocationUseCases<br/>countries, country, region, city"]
+    end
+
+    subgraph infra["Infrastructure"]
+      repositories["Repository factory<br/>DB_TYPE=mongo -> Mongo repos<br/>DB_TYPE=sqlite -> SQLite repos<br/>DB_TYPE=postgres throws not implemented"]
+      mongoModels["Mongo models<br/>User includes avatarUrl<br/>Profile includes coverSrc<br/>RefreshToken stores tokenHash<br/>EmailToken stores tokenHash"]
+      sqliteRepos["SQLite repositories<br/>Alternative repository implementation"]
+      jwtHash["JWT + hash helpers<br/>bcrypt password hash<br/>JWT access/refresh<br/>sha256 token hashes<br/>OAuth purpose tokens"]
+      mail["MailService<br/>email confirmation code<br/>password reset link"]
+      githubService["GithubOAuthService<br/>authorize URL + code exchange"]
+      telegramService["TelegramAuthService<br/>validates widget callback signature"]
+      telegramBot["TelegramBotService + TelegramTicketStore<br/>deep-link ticket flow"]
+      twoFactorService["TwoFactorService<br/>TOTP secret, QR, code verification"]
+    end
+  end
+
+  subgraph dataStores["Data stores"]
+    mongoDb["MongoDB<br/>Users, Profiles, RefreshTokens, EmailTokens, Countries, Regions, Cities"]
+    sqliteDb["SQLite file<br/>same repository contracts"]
+    externalProviders["External providers<br/>GitHub OAuth<br/>Telegram bot/widget<br/>SMTP server"]
+  end
+
+  user --> rootLayout
+  rootLayout --> header
+  rootLayout --> appRoutes
+  rootLayout --> redux
+
+  header --> authState
+  authState --> accountTrigger
+  accountTrigger --> accountMenu
+  accountMenu --> privateRoutes
+  accountMenu --> authApi
+
+  home --> authRoutes
+  home --> publicRoutes
+  publicRoutes --> locationApi
+  authRoutes --> signInForm
+  authRoutes --> signUpForm
+  privateRoutes --> editProfileForm
+  privateRoutes --> connectedAccounts
+  privateRoutes --> twoFactorControls
+  oauthRoutesFe --> authApi
+
+  signInForm --> authApi
+  signUpForm --> authApi
+  editProfileForm --> profileApi
+  connectedAccounts --> authApi
+  twoFactorControls --> authApi
+  authApi --> gqlClient
+  profileApi --> gqlClient
+  locationApi --> gqlClient
+  gqlClient --> apiRoutesFe
+  apiRoutesFe --> sameOriginProxy
+
+  nextProxy --> nextParam
+  nextProxy --> cookies
+  sameOriginProxy --> cookies
+  sameOriginProxy --> expressApp
+
+  expressApp --> gqlContext
+  expressApp --> gqlSchema
+  gqlContext --> resolvers
+  gqlSchema --> resolvers
+  resolvers --> authUseCases
+  resolvers --> userUseCases
+  resolvers --> profileUseCases
+  resolvers --> locationUseCases
+
+  server --> repositories
+  server --> telegramBot
+  server --> expressApp
+  repositories --> mongoModels
+  repositories --> sqliteRepos
+  authUseCases --> repositories
+  userUseCases --> repositories
+  profileUseCases --> repositories
+  locationUseCases --> repositories
+  authUseCases --> jwtHash
+  authUseCases --> mail
+  authUseCases --> githubService
+  authUseCases --> telegramService
+  authUseCases --> telegramBot
+  authUseCases --> twoFactorService
+
+  mongoModels --> mongoDb
+  sqliteRepos --> sqliteDb
+  githubService --> externalProviders
+  telegramService --> externalProviders
+  telegramBot --> externalProviders
+  mail --> externalProviders
+
+  subgraph authFlow["Email/password auth flow"]
+    emailStart["User submits sign-up or sign-in"]
+    passwordPolicy["Password policy validation<br/>Frontend and backend share the same allowlist regex"]
+    passwordHash["signUp hashes password with bcrypt before repository create"]
+    issueTokens["issueTokens<br/>access JWT + refresh JWT<br/>refresh hash saved in DB"]
+    proxyCookieWrite["Frontend GraphQL proxy strips raw tokens from response<br/>Writes httpOnly access and refresh cookies"]
+    loadMe["loadMeThunk -> me query<br/>hydrates Redux auth user"]
+  end
+
+  emailStart --> passwordPolicy --> authUseCases
+  authUseCases --> passwordHash --> issueTokens --> proxyCookieWrite --> cookies --> loadMe --> authState
+
+  subgraph refreshFlow["Refresh and guarded request flow"]
+    protectedRequest["Request to protected GraphQL operation"]
+    injectAuth["Proxy reads access_token cookie<br/>Injects Authorization: Bearer token"]
+    noAccess["If access is missing and refresh exists<br/>serverRefresh mutation is called"]
+    invalidAccess["If GraphQL returns UNAUTHORIZED or INVALID_TOKEN<br/>client tries refresh and retries once"]
+    failedRefresh["If refresh fails<br/>redirect to /sign-in?next=currentPath"]
+  end
+
+  protectedRequest --> injectAuth --> gqlContext
+  injectAuth --> noAccess
+  gqlClient --> invalidAccess
+  invalidAccess --> failedRefresh --> authRoutes
+
+  subgraph githubFlow["GitHub OAuth flow"]
+    githubClick["GithubLoginButton<br/>window.location.href = backend /api/auth/github"]
+    githubState["Backend sets gh_state cookie<br/>Redirects to GitHub authorize URL"]
+    githubCallback["Backend /api/auth/github/callback<br/>validates code + state"]
+    githubLogin["loginWithGithub<br/>find/link/create user<br/>issue OAuth handoff"]
+    oauthComplete["Frontend /oauth/complete<br/>oauthExchange(handoff)<br/>proxy sets cookies<br/>loadMe<br/>/profile/edit"]
+    githubLink["If link token exists<br/>linkGithub then /profile/edit?linked=github"]
+  end
+
+  githubClick --> githubState --> externalProviders --> githubCallback --> githubLogin --> oauthComplete --> cookies
+  githubCallback --> githubLink
+
+  subgraph telegramFlow["Telegram auth flow"]
+    telegramClick["TelegramLoginButton<br/>opens /oauth/telegram/opening popup"]
+    telegramStart["telegramBotStart<br/>creates ticket and bot deep-link"]
+    telegramUserAction["User presses Start in Telegram bot"]
+    telegramPoll["Frontend polls telegramBotPoll every 2 seconds"]
+    telegramDone["done -> cookies via proxy -> /profile/edit<br/>linked -> /profile/edit?linked=telegram<br/>expired -> error"]
+  end
+
+  telegramClick --> telegramStart --> telegramBot --> telegramUserAction --> telegramPoll --> telegramDone --> cookies
+
+  subgraph profilePhotoCurrent["Current profile photo and cover logic"]
+    avatarUrl["User.avatarUrl<br/>manual URL field in EditProfileForm"]
+    coverSrc["Profile.coverSrc<br/>manual URL field in EditProfileForm"]
+    updateProfile["updateProfile mutation<br/>avatarUrl goes to User patch<br/>coverSrc goes to Profile patch"]
+    noUploadPipeline["No upload/crop/delete/replace file pipeline found in current scanned sources"]
+  end
+
+  editProfileForm --> avatarUrl
+  editProfileForm --> coverSrc
+  avatarUrl --> updateProfile --> profileUseCases
+  coverSrc --> updateProfile
+  updateProfile --> noUploadPipeline
+
+  classDef guard fill:#fff6d6,stroke:#d9a300,color:#3b2d00;
+  classDef backendClass fill:#eef6ff,stroke:#4d8fd6,color:#10233f;
+  classDef frontendClass fill:#f3f2ff,stroke:#7a6cff,color:#211a5a;
+  classDef dataClass fill:#edf9f1,stroke:#2f9e5b,color:#0f3b20;
+  class nextProxy,nextParam,cookies guard;
+  class server,expressApp,gqlContext,gqlSchema,resolvers,authUseCases,userUseCases,profileUseCases,locationUseCases,repositories,mongoModels,sqliteRepos,jwtHash,mail,githubService,telegramService,telegramBot,twoFactorService backendClass;
+  class rootLayout,header,accountTrigger,accountMenu,home,publicRoutes,authRoutes,privateRoutes,oauthRoutesFe,apiRoutesFe,redux,authState,profileState,locationState,themeState,gqlClient,sameOriginProxy,authApi,profileApi,locationApi,signInForm,signUpForm,editProfileForm,connectedAccounts,twoFactorControls frontendClass;
+  class mongoDb,sqliteDb,externalProviders dataClass;

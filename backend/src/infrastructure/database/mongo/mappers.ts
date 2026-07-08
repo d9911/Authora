@@ -1,5 +1,6 @@
 import { User } from '../../../modules/user/domain/User';
 import { Profile } from '../../../modules/profile/domain/Profile';
+import { ProfileImage } from '../../../modules/profile-photo/domain/ProfileImage';
 import { Country, Region, City } from '../../../modules/location/domain';
 
 const idOf = (v: unknown): string => (v == null ? '' : String(v));
@@ -37,6 +38,26 @@ export function mapProfile(doc: any): Profile {
     gender: doc.gender ?? undefined,
     address: doc.address ?? undefined,
     timezone: doc.timezone ?? undefined,
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
+  };
+}
+
+export function mapProfileImage(doc: any): ProfileImage {
+  const rawData = doc.data;
+  const data = Buffer.isBuffer(rawData)
+    ? rawData
+    : Buffer.from(rawData?.buffer ?? rawData ?? []);
+  return {
+    id: idOf(doc._id),
+    userId: idOf(doc.userId),
+    kind: doc.kind,
+    contentType: doc.contentType,
+    data,
+    sizeBytes: Number(doc.sizeBytes),
+    width: Number(doc.width),
+    height: Number(doc.height),
+    etag: doc.etag,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };

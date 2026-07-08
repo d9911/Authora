@@ -1,5 +1,6 @@
 import { User } from '../../../modules/user/domain/User';
 import { Profile } from '../../../modules/profile/domain/Profile';
+import { ProfileImage } from '../../../modules/profile-photo/domain/ProfileImage';
 import { Country, Region, City } from '../../../modules/location/domain';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -39,6 +40,22 @@ export function mapProfile(row: any): Profile {
     gender: row.gender ?? undefined,
     address: row.address ?? undefined,
     timezone: row.timezone ?? undefined,
+    createdAt: date(row.createdAt),
+    updatedAt: date(row.updatedAt),
+  };
+}
+
+export function mapProfileImage(row: any): ProfileImage {
+  return {
+    id: String(row.id),
+    userId: String(row.userId),
+    kind: row.kind,
+    contentType: row.contentType,
+    data: Buffer.isBuffer(row.data) ? row.data : Buffer.from(row.data),
+    sizeBytes: Number(row.sizeBytes),
+    width: Number(row.width),
+    height: Number(row.height),
+    etag: row.etag,
     createdAt: date(row.createdAt),
     updatedAt: date(row.updatedAt),
   };

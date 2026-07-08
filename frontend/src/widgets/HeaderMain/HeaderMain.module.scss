@@ -67,6 +67,9 @@
 }
 
 .account-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border: 0;
   background: transparent;
   padding: 0;
@@ -77,6 +80,27 @@
     outline: 2px solid var(--iris);
     outline-offset: 4px;
     border-radius: 6px;
+  }
+}
+
+.account-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(91, 75, 255, 0.1);
+  color: var(--iris);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  flex: 0 0 auto;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 }
 
@@ -202,10 +226,10 @@
     width: 100%;
   }
 
-  .account-trigger {
-    width: 100%;
-    text-align: center;
-  }
+	  .account-trigger {
+	    width: 100%;
+	    justify-content: center;
+	  }
 
   .account-menu {
     position: static;

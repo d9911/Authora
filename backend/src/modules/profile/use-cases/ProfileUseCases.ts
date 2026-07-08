@@ -9,11 +9,9 @@ export interface UpdateProfileInput {
   name?: string;
   nickname?: string;
   phoneNumber?: string;
-  avatarUrl?: string;
   // profile fields
   bio?: string;
   description?: string;
-  coverSrc?: string;
   cityId?: string;
   dateOfBirth?: Date;
   gender?: string;
@@ -42,12 +40,10 @@ export class ProfileUseCases {
     if (input.name !== undefined) userPatch.name = input.name;
     if (input.nickname !== undefined) userPatch.nickname = input.nickname;
     if (input.phoneNumber !== undefined) userPatch.phoneNumber = input.phoneNumber;
-    if (input.avatarUrl !== undefined) userPatch.avatarUrl = input.avatarUrl;
 
     const profilePatch: UpdateProfileDto = {};
     if (input.bio !== undefined) profilePatch.bio = input.bio;
     if (input.description !== undefined) profilePatch.description = input.description;
-    if (input.coverSrc !== undefined) profilePatch.coverSrc = input.coverSrc;
     if (input.cityId !== undefined) profilePatch.cityId = input.cityId;
     if (input.dateOfBirth !== undefined) profilePatch.dateOfBirth = input.dateOfBirth;
     if (input.gender !== undefined) profilePatch.gender = input.gender;

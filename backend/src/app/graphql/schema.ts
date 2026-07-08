@@ -78,6 +78,31 @@ export const typeDefs = /* GraphQL */ `
     auth: AuthPayload
   }
 
+  enum ProfileImageKind {
+    AVATAR
+    COVER
+  }
+
+  type ProfileImage {
+    id: ID!
+    userId: ID!
+    kind: ProfileImageKind!
+    contentType: String!
+    sizeBytes: Int!
+    width: Int!
+    height: Int!
+    etag: String!
+    url: String!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+  }
+
+  type ProfileImagePayload {
+    user: User!
+    profile: Profile!
+    image: ProfileImage
+  }
+
   input SignUpInput {
     email: String!
     password: String!
@@ -108,14 +133,18 @@ export const typeDefs = /* GraphQL */ `
     code: String!
   }
 
+  input ProfileImageUploadInput {
+    kind: ProfileImageKind!
+    dataBase64: String!
+    mimeType: String!
+  }
+
   input UpdateProfileInput {
     name: String
     nickname: String
     phoneNumber: String
-    avatarUrl: String
     bio: String
     description: String
-    coverSrc: String
     cityId: ID
     dateOfBirth: DateTime
     gender: String
@@ -148,6 +177,8 @@ export const typeDefs = /* GraphQL */ `
     confirmTwoFactor(code: String!): Boolean!
     disableTwoFactor(code: String!): Boolean!
     updateProfile(input: UpdateProfileInput!): Profile!
+    uploadProfileImage(input: ProfileImageUploadInput!): ProfileImagePayload!
+    deleteProfileImage(kind: ProfileImageKind!): ProfileImagePayload!
 
     # OAuth: exchange the backend handoff token for a real session (sets cookies
     # on the frontend origin via the proxy).
@@ -160,4 +191,4 @@ export const typeDefs = /* GraphQL */ `
     oauthLinkToken: String!
     unlinkProvider(provider: String!): User!
   }
-`;
+`

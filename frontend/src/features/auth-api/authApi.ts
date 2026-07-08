@@ -5,7 +5,10 @@ import { AuthPayload, TwoFactorSetupPayload, User } from '@/shared/types';
 // SERVER-SIDE proxy, which stores them as httpOnly cookies and STRIPS them
 // from the body. The browser therefore only ever sees `user` and the 2FA
 // signal — never the raw tokens.
-const AUTH_FIELDS = `accessToken refreshToken needTwoFactor twoFactorToken user { id name email emailVerified twoFactorEnabled }`;
+const AUTH_FIELDS = `accessToken refreshToken needTwoFactor twoFactorToken user {
+  id name email nickname phoneNumber telegramId avatarUrl
+  emailVerified twoFactorEnabled githubId createdAt updatedAt
+}`;
 
 export async function signUp(input: {
   email: string;

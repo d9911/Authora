@@ -1,0 +1,111 @@
+.photo-manager {
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--card);
+  padding: 22px;
+  box-shadow: var(--shadow-soft);
+}
+
+.photo-header {
+  display: grid;
+  gap: 6px;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(280px, 1.2fr);
+  gap: 16px;
+}
+
+.photo-panel {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.avatar-preview,
+.cover-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--mist);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.avatar-preview {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  color: var(--iris);
+  font-size: 44px;
+  font-weight: 700;
+}
+
+.cover-preview {
+  width: 100%;
+  aspect-ratio: 3 / 1;
+  border-radius: var(--r);
+  min-height: 112px;
+}
+
+.photo-copy {
+  display: grid;
+  gap: 8px;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--mist);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+}
+
+.photo-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.photo-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+@media (max-width: 760px) {
+  .photo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .photo-manager {
+    padding: 18px;
+  }
+}

@@ -17,7 +17,7 @@ export interface UpdateProfileDto {
   bio?: string;
   isVerified?: boolean;
   description?: string;
-  coverSrc?: string;
+  coverSrc?: string | null;
   cityId?: string;
   dateOfBirth?: Date;
   gender?: string;

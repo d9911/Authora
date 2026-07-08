@@ -3,6 +3,7 @@ import { UserRepository } from '../../../modules/user/domain/UserRepository';
 import { ProfileRepository } from '../../../modules/profile/domain/ProfileRepository';
 import { RefreshTokenRepository } from '../../../modules/auth/domain/RefreshTokenRepository';
 import { LocationRepository } from '../../../modules/location/domain';
+import { ProfileImageRepository } from '../../../modules/profile-photo/domain/ProfileImageRepository';
 
 import { EmailTokenRepository } from '../../../modules/auth/domain/EmailTokenRepository';
 
@@ -11,18 +12,21 @@ import { MongoProfileRepository } from '../mongo/MongoProfileRepository';
 import { MongoRefreshTokenRepository } from '../mongo/MongoRefreshTokenRepository';
 import { MongoLocationRepository } from '../mongo/MongoLocationRepository';
 import { MongoEmailTokenRepository } from '../mongo/MongoEmailTokenRepository';
+import { MongoProfileImageRepository } from '../mongo/MongoProfileImageRepository';
 
 import { SqliteUserRepository } from '../sqlite/SqliteUserRepository';
 import { SqliteProfileRepository } from '../sqlite/SqliteProfileRepository';
 import { SqliteRefreshTokenRepository } from '../sqlite/SqliteRefreshTokenRepository';
 import { SqliteLocationRepository } from '../sqlite/SqliteLocationRepository';
 import { SqliteEmailTokenRepository } from '../sqlite/SqliteEmailTokenRepository';
+import { SqliteProfileImageRepository } from '../sqlite/SqliteProfileImageRepository';
 
 export interface Repositories {
   users: UserRepository;
   profiles: ProfileRepository;
   refreshTokens: RefreshTokenRepository;
   emailTokens: EmailTokenRepository;
+  profileImages: ProfileImageRepository;
   locations: LocationRepository;
 }
 
@@ -41,6 +45,7 @@ export function createRepositories(): Repositories {
         profiles: new MongoProfileRepository(),
         refreshTokens: new MongoRefreshTokenRepository(),
         emailTokens: new MongoEmailTokenRepository(),
+        profileImages: new MongoProfileImageRepository(),
         locations: new MongoLocationRepository(),
       };
     case 'sqlite':
@@ -49,6 +54,7 @@ export function createRepositories(): Repositories {
         profiles: new SqliteProfileRepository(),
         refreshTokens: new SqliteRefreshTokenRepository(),
         emailTokens: new SqliteEmailTokenRepository(),
+        profileImages: new SqliteProfileImageRepository(),
         locations: new SqliteLocationRepository(),
       };
     case 'postgres':

@@ -50,7 +50,7 @@ export class SqliteProfileRepository implements ProfileRepository {
         isVerified: data.isVerified ?? false,
         bio: data.bio,
         description: data.description,
-        coverSrc: data.coverSrc,
+        coverSrc: data.coverSrc ?? undefined,
         cityId: data.cityId,
         dateOfBirth: data.dateOfBirth,
         gender: data.gender,

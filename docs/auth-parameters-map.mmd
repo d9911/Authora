@@ -1,0 +1,198 @@
+%% Authora authorization and parameters map
+%% Generated from the local repository on 2026-07-08.
+%% Sources:
+%% - backend/src/config/env.ts:16-74
+%% - backend/src/app/oauthRoutes.ts:8-13, 40-98, 100-144
+%% - backend/src/app/graphql/context.ts:22-41
+%% - backend/src/app/graphql/resolvers.ts:6-160
+%% - backend/src/app/graphql/schema.ts:57-161
+%% - backend/src/infrastructure/jwt/hash.ts:1-27
+%% - backend/src/infrastructure/jwt/jwt.ts:11-77
+%% - backend/src/modules/auth/domain/passwordPolicy.ts:1-8
+%% - backend/src/modules/auth/use-cases/AuthUseCases.ts:60-255, 276-523
+%% - frontend/src/shared/config/index.ts:1-20
+%% - frontend/src/proxy.ts:4-59
+%% - frontend/src/shared/api/requestHandler.ts:31-205
+%% - frontend/src/shared/api/graphqlClient.ts:20-80
+%% - frontend/src/features/SignInForm/SignInForm.tsx:19-91
+%% - frontend/src/features/SignUpForm/SignUpForm.tsx:12-181
+%% - frontend/src/app/oauth/complete/OAuthComplete.tsx:11-49
+%% - frontend/src/features/GithubLoginButton/GithubLoginButton.tsx:6-19
+%% - frontend/src/features/TelegramLoginButton/TelegramLoginButton.tsx:50-126
+
+flowchart TD
+  subgraph backendEnv["Backend environment parameters"]
+    nodeEnv["NODE_ENV<br/>Production flag source"]
+    cookieSecure["COOKIE_SECURE<br/>Defaults to NODE_ENV === production"]
+    backendPort["BACKEND_PORT<br/>Default 3010"]
+    dbType["DB_TYPE<br/>mongo | sqlite | postgres"]
+    mongoUri["MONGO_URI<br/>Default mongodb://localhost:27017/authora"]
+    sqliteFile["SQLITE_FILE<br/>Default ./data/authora.sqlite"]
+    jwtAccessSecret["JWT_ACCESS_SECRET<br/>Access token signing secret"]
+    jwtRefreshSecret["JWT_REFRESH_SECRET<br/>Refresh token signing secret"]
+    jwtAccessExpires["JWT_ACCESS_EXPIRES<br/>Default 15m"]
+    jwtRefreshExpires["JWT_REFRESH_EXPIRES<br/>Default 30d"]
+    smtpParams["SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM<br/>MAIL_ENABLED"]
+    frontendUrl["FRONTEND_URL<br/>Default http://localhost:5178"]
+    corsOrigins["CORS_ORIGINS<br/>Comma-separated origins or FRONTEND_URL fallback"]
+    githubParams["GITHUB_CLIENT_ID<br/>GITHUB_CLIENT_SECRET<br/>GITHUB_CALLBACK_URL"]
+    telegramParams["TELEGRAM_BOT_TOKEN<br/>TELEGRAM_BOT_URL"]
+    rateParams["RATE_LIMIT_MAX<br/>AUTH_RATE_LIMIT_MAX"]
+  end
+
+  subgraph frontendEnv["Frontend configuration parameters"]
+    appName["NEXT_PUBLIC_APP_NAME<br/>Default Authora"]
+    backendInternalUrl["BACKEND_INTERNAL_URL<br/>Server-side GraphQL proxy target<br/>Default http://localhost:3010"]
+    backendPublicUrl["NEXT_PUBLIC_BACKEND_URL<br/>Browser-facing OAuth backend URL<br/>Default http://localhost:3010"]
+    graphqlProxyPath["graphqlProxyPath<br/>/api/graphql"]
+    accessCookieName["config.cookies.accessToken<br/>access_token"]
+    refreshCookieName["config.cookies.refreshToken<br/>refresh_token"]
+  end
+
+  subgraph browserCookies["Browser cookies"]
+    accessCookie["access_token<br/>httpOnly<br/>sameSite lax<br/>secure follows env/config<br/>frontend proxy maxAge 1 hour"]
+    refreshCookie["refresh_token<br/>httpOnly<br/>sameSite lax<br/>secure follows env/config<br/>frontend proxy maxAge 30 days"]
+    ghStateCookie["gh_state<br/>Backend OAuth CSRF cookie<br/>httpOnly, sameSite lax, path /, maxAge 10 minutes"]
+  end
+
+  subgraph routeParams["Route and query parameters"]
+    nextParam["next<br/>Set by protected route redirect<br/>Read by SignInForm<br/>Sanitized to same-origin path before redirect"]
+    loginAlias["/login<br/>Redirected to /sign-in"]
+    profileGuard["/profile/**<br/>Requires access_token or refresh_token cookie"]
+    authGuard["/sign-in and /sign-up<br/>Authed users redirect to /profile/edit"]
+    githubLinkParam["link<br/>Optional OAuth link token carried to backend GitHub start/callback"]
+    githubCallbackParams["code + state<br/>GitHub callback parameters<br/>state contains csrf and optional link token"]
+    oauthHandoffParam["handoff<br/>Read by /oauth/complete<br/>Exchanged through GraphQL oauthExchange"]
+    linkedParam["linked=github | linked=telegram<br/>Profile page success marker after provider link"]
+    errorParam["error=github_not_configured | github_state | github_failed | telegram_not_configured | telegram_signature | telegram_failed"]
+    resetTokenParam["token<br/>Password reset page and resetPassword mutation"]
+    confirmEmailParam["email + code<br/>Email confirmation flow"]
+    telegramTicketParam["token<br/>Telegram bot ticket returned by telegramBotStart and polled by telegramBotPoll"]
+  end
+
+  subgraph graphqlInputs["GraphQL auth/profile inputs"]
+    signUpInput["SignUpInput<br/>email: String!<br/>password: String!<br/>name: String<br/>nickname: String"]
+    signInInput["SignInInput<br/>email: String!<br/>password: String!"]
+    refreshInput["RefreshTokenInput<br/>refreshToken: String!<br/>In browser flow injected by frontend proxy from refresh_token cookie"]
+    twoFactorInput["SignInTwoFactorInput<br/>twoFactorToken: String!<br/>code: String!"]
+    passwordResetInput["RequestPasswordResetInput<br/>email: String!<br/><br/>ResetPasswordInput<br/>token: String!<br/>newPassword: String!"]
+    updateProfileInput["UpdateProfileInput<br/>name, nickname, phoneNumber, avatarUrl<br/>bio, description, coverSrc, cityId<br/>dateOfBirth, gender, address, timezone"]
+    oauthMutations["oauthExchange(handoffToken)<br/>oauthLinkToken<br/>unlinkProvider(provider)"]
+    telegramMutations["telegramBotStart(link: Boolean)<br/>telegramBotPoll(token)"]
+  end
+
+  subgraph passwordPolicy["Password policy parameters"]
+    passwordRegex["PASSWORD_ALLOWED_REGEX<br/>/^[A-Za-zÑñ0-9!@#$%^&*()_+=.,?:~\\[\\]]{8,50}$/"]
+    passwordAllowed["Allowed characters<br/>A-Z, a-z, Ñ, ñ, 0-9<br/>! @ # $ % ^ & * ( ) _ + = . , ? : ~ [ ]"]
+    passwordLimit["Length<br/>min 8<br/>max 50"]
+    passwordHint["Invalid password hint<br/>Russian UX text shared by frontend/backend files"]
+    confirmPassword["confirmPassword<br/>Frontend-only duplicate password field<br/>Mismatch text: Пароли не совпадают."]
+  end
+
+  subgraph runtimeState["Frontend auth runtime state"]
+    reduxAuth["Redux auth slice<br/>user<br/>status: idle | loading | authenticated | guest<br/>error<br/>twoFactorToken"]
+    headerAuth["HeaderMain reads auth.user/status<br/>status idle -> loadMeThunk<br/>user label -> account menu"]
+    signInRedirect["SignInForm completeAuthRedirect<br/>dispatch loadMeThunk<br/>window.location.replace(nextPath)"]
+    graphQlRefreshClient["gqlRequest<br/>On UNAUTHORIZED or INVALID_TOKEN: refreshToken mutation then retry once<br/>If refresh fails: /sign-in?next=currentPath"]
+  end
+
+  subgraph backendAuthRuntime["Backend auth runtime"]
+    bearerHeader["Authorization: Bearer access token"]
+    contextUser["buildContext<br/>Valid access token -> userId<br/>Invalid token -> tokenInvalid"]
+    requireAuth["requireAuth<br/>tokenInvalid -> INVALID_TOKEN<br/>no userId -> UNAUTHORIZED"]
+    bcryptHash["hashPassword / comparePassword<br/>bcryptjs with SALT_ROUNDS = 10"]
+    refreshRotation["Refresh token rotation<br/>Save sha256(refreshToken) in repository<br/>refresh() revokes used hash and issues new pair"]
+    emailTokens["Email confirmation/reset tokens<br/>6-digit code or random token<br/>sha256 stored in EmailToken repository"]
+    oauthPurposeTokens["OAuth purpose JWTs<br/>oauth_handoff and oauth_link<br/>Default expiry 10 minutes"]
+    twoFactorTicket["2FA sign-in ticket<br/>twoFactorToken returned before final auth payload"]
+  end
+
+  subgraph transport["Session transport flow"]
+    authMutation["signUp/signIn/signInTwoFactor/refreshToken/oauthExchange/telegramBotPoll.auth"]
+    authPayload["Backend AuthPayload<br/>accessToken + refreshToken + user<br/>or needTwoFactor + twoFactorToken"]
+    proxyStrip["Frontend GraphQL proxy removes raw tokens from JSON response"]
+    setCookies["Proxy writes access_token and refresh_token cookies"]
+    meQuery["me query<br/>Uses Authorization header injected by proxy"]
+    logoutMutation["logout mutation<br/>Proxy injects refreshToken from cookie and clears cookies"]
+  end
+
+  subgraph oauthFlows["OAuth and Telegram parameters"]
+    githubStart["GitHub start<br/>Frontend redirects to backendPublicUrl + /api/auth/github"]
+    githubCsrf["Backend generates csrf<br/>Stores gh_state cookie<br/>state = csrf or csrf.linkToken"]
+    githubComplete["Callback validates code/state/gh_state<br/>Login -> handoff<br/>Link -> linked=github"]
+    telegramStart["Telegram bot start<br/>link Boolean -> optional linkUserId ticket<br/>returns token + botUrl"]
+    telegramPoll["Telegram poll statuses<br/>pending | expired | done | linked"]
+  end
+
+  backendEnv --> cookieSecure
+  backendEnv --> jwtAccessSecret
+  backendEnv --> jwtRefreshSecret
+  backendEnv --> frontendUrl
+  frontendEnv --> backendInternalUrl
+  frontendEnv --> backendPublicUrl
+  frontendEnv --> graphqlProxyPath
+
+  cookieSecure --> accessCookie
+  cookieSecure --> refreshCookie
+  cookieSecure --> ghStateCookie
+  accessCookieName --> accessCookie
+  refreshCookieName --> refreshCookie
+
+  profileGuard --> nextParam
+  nextParam --> signInRedirect
+  loginAlias --> authGuard
+  authGuard --> profileGuard
+
+  signUpInput --> passwordRegex
+  passwordResetInput --> passwordRegex
+  passwordRegex --> passwordAllowed
+  passwordRegex --> passwordLimit
+  passwordRegex --> passwordHint
+  signUpInput --> confirmPassword
+
+  authMutation --> authPayload --> proxyStrip --> setCookies --> browserCookies
+  setCookies --> meQuery --> bearerHeader --> contextUser --> requireAuth
+  logoutMutation --> refreshCookie
+
+  graphQlRefreshClient --> refreshInput --> refreshRotation --> setCookies
+  accessCookie --> bearerHeader
+  refreshCookie --> refreshInput
+
+  signInInput --> bcryptHash
+  signUpInput --> bcryptHash
+  passwordResetInput --> bcryptHash
+  bcryptHash --> authPayload
+
+  contextUser --> reduxAuth
+  reduxAuth --> headerAuth
+  reduxAuth --> signInRedirect
+
+  githubStart --> githubCsrf --> githubCallbackParams --> githubComplete
+  githubLinkParam --> githubCsrf
+  githubComplete --> oauthHandoffParam --> oauthMutations --> authMutation
+  githubComplete --> linkedParam
+  githubComplete --> errorParam
+  ghStateCookie --> githubComplete
+
+  telegramStart --> telegramTicketParam --> telegramPoll --> telegramMutations --> authMutation
+  telegramPoll --> linkedParam
+  telegramPoll --> errorParam
+
+  oauthMutations --> oauthPurposeTokens
+  githubLinkParam --> oauthPurposeTokens
+  oauthHandoffParam --> oauthPurposeTokens
+
+  twoFactorInput --> twoFactorTicket --> authMutation
+  confirmEmailParam --> emailTokens
+  resetTokenParam --> emailTokens
+
+  updateProfileInput --> requireAuth
+
+  classDef env fill:#eef6ff,stroke:#4d8fd6,color:#10233f;
+  classDef cookie fill:#fff6d6,stroke:#d9a300,color:#3b2d00;
+  classDef param fill:#f3f2ff,stroke:#7a6cff,color:#211a5a;
+  classDef secure fill:#edf9f1,stroke:#2f9e5b,color:#0f3b20;
+  class nodeEnv,cookieSecure,backendPort,dbType,mongoUri,sqliteFile,jwtAccessSecret,jwtRefreshSecret,jwtAccessExpires,jwtRefreshExpires,smtpParams,frontendUrl,corsOrigins,githubParams,telegramParams,rateParams,appName,backendInternalUrl,backendPublicUrl,graphqlProxyPath,accessCookieName,refreshCookieName env;
+  class accessCookie,refreshCookie,ghStateCookie cookie;
+  class nextParam,loginAlias,profileGuard,authGuard,githubLinkParam,githubCallbackParams,oauthHandoffParam,linkedParam,errorParam,resetTokenParam,confirmEmailParam,telegramTicketParam,signUpInput,signInInput,refreshInput,twoFactorInput,passwordResetInput,updateProfileInput,oauthMutations,telegramMutations,passwordRegex,passwordAllowed,passwordLimit,passwordHint,confirmPassword param;
+  class bearerHeader,contextUser,requireAuth,bcryptHash,refreshRotation,emailTokens,oauthPurposeTokens,twoFactorTicket,authMutation,authPayload,proxyStrip,setCookies,meQuery,logoutMutation secure;

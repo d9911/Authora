@@ -1,11 +1,11 @@
-import fs from 'fs';
-import path from 'path';
-import Database from 'better-sqlite3';
-import { env } from '../../../config/env';
+import fs from 'fs'
+import path from 'path'
+import Database from 'better-sqlite3'
+import { env } from '../../../config/env'
 
-export type SqliteDb = Database.Database;
+export type SqliteDb = Database.Database
 
-let db: SqliteDb | null = null;
+let db: SqliteDb | null = null
 
 /**
  * Opens (and lazily creates) the SQLite database file and applies the schema.
@@ -13,19 +13,19 @@ let db: SqliteDb | null = null;
  * Promises so it satisfies the same async interfaces as the Mongo layer.
  */
 export function getSqlite(): SqliteDb {
-  if (db) return db;
+  if (db) return db
 
-  const file = env.sqlite.file;
+  const file = env.sqlite.file
   if (file !== ':memory:') {
-    const dir = path.dirname(path.resolve(file));
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const dir = path.dirname(path.resolve(file))
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
   }
 
-  db = new Database(file);
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
-  applySchema(db);
-  return db;
+  db = new Database(file)
+  db.pragma('journal_mode = WAL')
+  db.pragma('foreign_keys = ON')
+  applySchema(db)
+  return db
 }
 
 export function applySchema(database: SqliteDb): void {
@@ -50,7 +50,7 @@ export function applySchema(database: SqliteDb): void {
     CREATE INDEX IF NOT EXISTS idx_users_github ON users(githubId);
     CREATE INDEX IF NOT EXISTS idx_users_telegram ON users(telegramId);
 
-    CREATE TABLE IF NOT EXISTS profiles (
+	    CREATE TABLE IF NOT EXISTS profiles (
       id           INTEGER PRIMARY KEY AUTOINCREMENT,
       userId       INTEGER NOT NULL UNIQUE,
       bio          TEXT,
@@ -65,9 +65,26 @@ export function applySchema(database: SqliteDb): void {
       createdAt    TEXT NOT NULL,
       updatedAt    TEXT NOT NULL,
       FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
-    );
+	    );
 
-    CREATE TABLE IF NOT EXISTS refresh_tokens (
+	    CREATE TABLE IF NOT EXISTS profile_images (
+	      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+	      userId      INTEGER NOT NULL,
+	      kind        TEXT NOT NULL,
+	      contentType TEXT NOT NULL,
+	      data        BLOB NOT NULL,
+	      sizeBytes   INTEGER NOT NULL,
+	      width       INTEGER NOT NULL,
+	      height      INTEGER NOT NULL,
+	      etag        TEXT NOT NULL,
+	      createdAt   TEXT NOT NULL,
+	      updatedAt   TEXT NOT NULL,
+	      UNIQUE(userId, kind),
+	      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+	    );
+	    CREATE INDEX IF NOT EXISTS idx_profile_images_user_kind ON profile_images(userId, kind);
+
+	    CREATE TABLE IF NOT EXISTS refresh_tokens (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
       userId     INTEGER NOT NULL,
       tokenHash  TEXT NOT NULL,
@@ -117,18 +134,18 @@ export function applySchema(database: SqliteDb): void {
     );
     CREATE INDEX IF NOT EXISTS idx_cities_country ON cities(countryId);
     CREATE INDEX IF NOT EXISTS idx_cities_region ON cities(regionId);
-  `);
+  `)
 }
 
 export async function connectSqlite(): Promise<void> {
-  getSqlite();
+  getSqlite()
   // eslint-disable-next-line no-console
-  console.log(`[sqlite] ready: ${env.sqlite.file}`);
+  console.log(`[sqlite] ready: ${env.sqlite.file}`)
 }
 
 export async function disconnectSqlite(): Promise<void> {
   if (db) {
-    db.close();
-    db = null;
+    db.close()
+    db = null
   }
 }

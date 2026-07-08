@@ -8,6 +8,8 @@ import { TelegramBotService } from '../modules/auth/oauth/TelegramBotService';
 import { AuthUseCases } from '../modules/auth/use-cases/AuthUseCases';
 import { UserUseCases } from '../modules/user/use-cases/UserUseCases';
 import { ProfileUseCases } from '../modules/profile/use-cases/ProfileUseCases';
+import { ProfilePhotoUseCases } from '../modules/profile-photo/use-cases/ProfilePhotoUseCases';
+import { ProfileImageProcessor } from '../modules/profile-photo/services/ProfileImageProcessor';
 import { LocationUseCases } from '../modules/location/use-cases/LocationUseCases';
 
 export interface Container {
@@ -20,6 +22,7 @@ export interface Container {
   auth: AuthUseCases;
   users: UserUseCases;
   profiles: ProfileUseCases;
+  profilePhotos: ProfilePhotoUseCases;
   locations: LocationUseCases;
 }
 
@@ -36,6 +39,7 @@ export function getContainer(): Container {
   const telegram = new TelegramAuthService();
   const telegramTickets = new TelegramTicketStore();
   const telegramBot = new TelegramBotService(telegramTickets);
+  const profileImageProcessor = new ProfileImageProcessor();
 
   const auth = new AuthUseCases({
     users: repos.users,
@@ -48,6 +52,12 @@ export function getContainer(): Container {
   });
   const users = new UserUseCases(repos.users);
   const profiles = new ProfileUseCases(repos.profiles, repos.users);
+  const profilePhotos = new ProfilePhotoUseCases({
+    users: repos.users,
+    profiles: repos.profiles,
+    profileImages: repos.profileImages,
+    processor: profileImageProcessor,
+  });
   const locations = new LocationUseCases(repos.locations);
 
   container = {
@@ -60,6 +70,7 @@ export function getContainer(): Container {
     auth,
     users,
     profiles,
+    profilePhotos,
     locations,
   };
   return container;

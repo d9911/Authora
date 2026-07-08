@@ -16,7 +16,7 @@ export interface UpdateUserDto {
   name?: string;
   nickname?: string;
   phoneNumber?: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   password?: string;
   emailVerified?: boolean;
   twoFactorEnabled?: boolean;

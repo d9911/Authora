@@ -33,6 +33,21 @@ const profileSchema = new Schema(
   { timestamps: true },
 );
 
+const profileImageSchema = new Schema(
+  {
+    userId: { type: String, required: true, index: true },
+    kind: { type: String, enum: ['avatar', 'cover'], required: true },
+    contentType: { type: String, required: true },
+    data: { type: Buffer, required: true },
+    sizeBytes: { type: Number, required: true },
+    width: { type: Number, required: true },
+    height: { type: Number, required: true },
+    etag: { type: String, required: true },
+  },
+  { timestamps: true },
+);
+profileImageSchema.index({ userId: 1, kind: 1 }, { unique: true });
+
 const refreshTokenSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
@@ -81,6 +96,8 @@ export type ProfileDoc = InferSchemaType<typeof profileSchema>;
 
 export const UserModel = mongoose.models.User || model('User', userSchema);
 export const ProfileModel = mongoose.models.Profile || model('Profile', profileSchema);
+export const ProfileImageModel =
+  mongoose.models.ProfileImage || model('ProfileImage', profileImageSchema);
 export const RefreshTokenModel =
   mongoose.models.RefreshToken || model('RefreshToken', refreshTokenSchema);
 export const EmailTokenModel = mongoose.models.EmailToken || model('EmailToken', emailTokenSchema);
