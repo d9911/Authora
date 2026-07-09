@@ -23,18 +23,40 @@ function readCookie(req: Request, name: string): string | undefined {
   return undefined;
 }
 
-/**
- * GitHub `state` carries CSRF protection AND (optionally) a link token so the
- * callback can attach the provider to an already-authenticated user. We encode
- * it as "<csrf>.<linkToken?>".
- */
-function packState(csrf: string, linkToken?: string): string {
-  return linkToken ? `${csrf}.${linkToken}` : csrf;
+type GithubState = {
+  csrf: string;
+  linkToken?: string;
+  nextPath?: string;
+};
+
+function safeFrontendPath(value: unknown): string | undefined {
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) return undefined;
+  try {
+    const url = new URL(value, 'http://authora.local');
+    if (url.origin !== 'http://authora.local') return undefined;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return undefined;
+  }
 }
-function unpackState(state: string): { csrf: string; linkToken?: string } {
-  const idx = state.indexOf('.');
-  if (idx === -1) return { csrf: state };
-  return { csrf: state.slice(0, idx), linkToken: state.slice(idx + 1) };
+
+/**
+ * GitHub `state` carries CSRF protection, optional link token, and optional
+ * post-login return path. Keep this GitHub-specific; Telegram bot auth uses its
+ * own ticket flow and must not share this redirect state.
+ */
+function packState(state: GithubState): string {
+  return Buffer.from(JSON.stringify(state), 'utf8').toString('base64url');
+}
+function unpackState(state: string): GithubState {
+  try {
+    const parsed = JSON.parse(Buffer.from(state, 'base64url').toString('utf8')) as GithubState;
+    return { csrf: parsed.csrf ?? '', linkToken: parsed.linkToken, nextPath: parsed.nextPath };
+  } catch {
+    const idx = state.indexOf('.');
+    if (idx === -1) return { csrf: state };
+    return { csrf: state.slice(0, idx), linkToken: state.slice(idx + 1) };
+  }
 }
 
 export function createOAuthRouter(): Router {
@@ -60,15 +82,16 @@ export function createOAuthRouter(): Router {
     }
     const csrf = crypto.randomBytes(16).toString('hex');
     const linkToken = typeof req.query.link === 'string' ? req.query.link : undefined;
+    const nextPath = safeFrontendPath(req.query.next);
     res.cookie('gh_state', csrf, { ...COOKIE_BASE, maxAge: 10 * 60 * 1000 });
-    res.redirect(github.buildAuthorizeUrl(packState(csrf, linkToken)));
+    res.redirect(github.buildAuthorizeUrl(packState({ csrf, linkToken, nextPath })));
   });
 
   router.get('/api/auth/github/callback', async (req: Request, res: Response) => {
     const { github, auth } = getContainer();
     try {
       const code = String(req.query.code ?? '');
-      const { csrf, linkToken } = unpackState(String(req.query.state ?? ''));
+      const { csrf, linkToken, nextPath } = unpackState(String(req.query.state ?? ''));
       const expected = readCookie(req, 'gh_state');
       if (!code || !csrf || !expected || csrf !== expected) {
         res.redirect(`${base}/sign-in?error=github_state`);
@@ -89,7 +112,10 @@ export function createOAuthRouter(): Router {
       // Login / signup flow → hand off to the frontend to set same-origin cookies.
       const payload = await auth.loginWithGithub(profile);
       const handoff = await auth.issueOAuthHandoff(payload.user.id);
-      res.redirect(`${base}/oauth/complete?handoff=${encodeURIComponent(handoff)}`);
+      const completeUrl = new URL('/oauth/complete', base);
+      completeUrl.searchParams.set('handoff', handoff);
+      if (nextPath) completeUrl.searchParams.set('next', nextPath);
+      res.redirect(completeUrl.toString());
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('[github oauth] failed:', err instanceof Error ? err.message : err);

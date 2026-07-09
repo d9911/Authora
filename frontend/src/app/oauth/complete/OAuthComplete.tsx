@@ -8,6 +8,20 @@ import { useAppDispatch } from '@/shared/hooks/redux';
 import { loadMeThunk } from '@/processes/store/slices/authSlice';
 import { LoaderMain } from '@/shared/ui';
 
+const DEFAULT_NEXT_PATH = '/profile/edit';
+
+function safeNextPath(value: string | null): string {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return DEFAULT_NEXT_PATH;
+
+  try {
+    const url = new URL(value, 'http://authora.local');
+    if (url.origin !== 'http://authora.local') return DEFAULT_NEXT_PATH;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return DEFAULT_NEXT_PATH;
+  }
+}
+
 /**
  * Finishes an OAuth login: takes the backend handoff token from the URL and
  * exchanges it through the same-origin proxy, so the session cookies are set
@@ -25,6 +39,7 @@ export function OAuthComplete() {
     ran.current = true;
 
     const handoff = params.get('handoff');
+    const nextPath = safeNextPath(params.get('next'));
     if (!handoff) {
       setError('Missing handoff token');
       return;
@@ -32,7 +47,7 @@ export function OAuthComplete() {
     oauthExchange(handoff)
       .then(async () => {
         await dispatch(loadMeThunk());
-        router.replace('/profile/edit');
+        router.replace(nextPath);
       })
       .catch(() => setError('Could not complete sign-in. Please try again.'));
   }, [params, router, dispatch]);

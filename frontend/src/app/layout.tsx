@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import '@/shared/styles/globals.scss'
-import { display, body, mono } from '@/shared/styles/fonts'
+import { fontClassName } from '@/shared/styles/fonts'
 import { StoreProvider } from '@/processes/store/StoreProvider'
 import { ThemeHeaderToggle, ThemeInitScript, ThemeProvider } from '@/processes/theme'
 import { HeaderMain } from '@/widgets/HeaderMain/HeaderMain'
@@ -24,7 +24,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={fontClassName || undefined} suppressHydrationWarning>
       <body>
         <ThemeInitScript />
         <ThemeProvider>

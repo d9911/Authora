@@ -12,13 +12,15 @@ services:
     build: ./backend
     ports:
       - "3010:3010"
-    # Docker secrets (SMTP / OAuth / Telegram) can come from the root .env
-    # that Compose already reads, or from backend/.env.docker for Docker-only
-    # overrides. Do not load backend/.env here: it is for local make dev and can
-    # contain host-only DB values or placeholder OAuth/Telegram tokens.
-    # DB settings below stay literal because `environment` overrides env_file.
+    # Docker secrets (SMTP / OAuth / Telegram) can come from the root .env,
+    # backend/.env for local development, or backend/.env.docker for Docker-only
+    # overrides. DB/URL settings below stay literal because `environment`
+    # overrides env_file, so host-only DB values from backend/.env cannot shadow
+    # the container network settings.
     env_file:
       - path: ./.env
+        required: false
+      - path: ./backend/.env
         required: false
       - path: ./backend/.env.docker
         required: false

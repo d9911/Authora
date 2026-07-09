@@ -1,5 +1,6 @@
 import nodemailer, { Transporter } from 'nodemailer';
 import { env } from '../../config/env';
+import { AppError } from '../../core/errors/AppError';
 
 export interface SendMailParams {
   to: string;
@@ -53,11 +54,9 @@ export class MailService {
         text: params.text,
       });
     } catch (err) {
-      // Never let a mail failure break the auth flow — log and fall back so the
-      // user can still read the code in the server logs.
       // eslint-disable-next-line no-console
-      console.error('[mail] send failed, falling back to console:', err instanceof Error ? err.message : err);
-      this.logToConsole(params, 'FALLBACK (send failed)');
+      console.error('[mail] send failed:', err instanceof Error ? err.message : err);
+      throw AppError.mailSendFailed('Email provider rejected the message. Check SMTP credentials and sender settings.');
     }
   }
 

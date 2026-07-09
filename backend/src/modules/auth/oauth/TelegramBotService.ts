@@ -57,6 +57,7 @@ export class TelegramBotService {
   private api = '';
   private username: string | null = null;
   private lastPollError: string | null = null;
+  private lastConfigError: string | null = null;
 
   constructor(private readonly tickets: TelegramTicketStore) {
     if (env.telegram.botToken) {
@@ -66,6 +67,13 @@ export class TelegramBotService {
 
   isConfigured(): boolean {
     return Boolean(env.telegram.botToken);
+  }
+
+  configErrorMessage(): string {
+    if (!env.telegram.botToken) return 'Telegram bot token is not configured on the server.';
+    return this.lastConfigError
+      ? `Telegram bot configuration is invalid: ${this.lastConfigError}`
+      : 'Telegram bot is not configured on the server.';
   }
 
   /**
@@ -84,15 +92,21 @@ export class TelegramBotService {
 
   private async resolveBotUsername(): Promise<string> {
     if (this.username) return this.username;
+    if (!/^\d{6,}:[A-Za-z0-9_-]{20,}$/.test(env.telegram.botToken)) {
+      this.lastConfigError = 'TELEGRAM_BOT_TOKEN has invalid format';
+      return '';
+    }
     try {
       const res = await fetch(`${this.api}/getMe`, { signal: AbortSignal.timeout(8000) });
-      const json = (await res.json()) as { ok: boolean; result?: { username?: string } };
+      const json = (await res.json()) as { ok: boolean; result?: { username?: string }; description?: string };
       if (json.ok && json.result?.username) {
+        this.lastConfigError = null;
         this.username = json.result.username;
         return this.username;
       }
+      this.lastConfigError = json.description ?? `getMe returned HTTP ${res.status}`;
     } catch {
-      /* network/timeout — fall through */
+      this.lastConfigError = 'getMe request failed';
     }
     return '';
   }

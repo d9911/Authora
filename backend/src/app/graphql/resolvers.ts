@@ -132,6 +132,9 @@ export const resolvers = {
     telegramBotStart: async (_p: unknown, args: { link?: boolean }, ctx: GraphQLContext) => {
       const linkUserId = args.link ? requireAuth(ctx) : undefined
       const botBase = await ctx.container.telegramBot.getBotUrl()
+      if (!botBase) {
+        throw AppError.providerNotConfigured(ctx.container.telegramBot.configErrorMessage())
+      }
       return ctx.container.auth.startTelegramBotLogin(linkUserId, botBase)
     },
 

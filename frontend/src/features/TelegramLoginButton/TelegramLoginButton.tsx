@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { telegramBotStart, telegramBotPoll } from '@/features/auth-api/authApi';
 import { useAppDispatch } from '@/shared/hooks/redux';
 import { loadMeThunk } from '@/processes/store/slices/authSlice';
@@ -11,6 +12,18 @@ const handle = (e: unknown) =>
   e instanceof GraphQLRequestError || e instanceof Error ? e.message : 'Error';
 
 const TELEGRAM_OPENING_PATH = '/oauth/telegram/opening';
+const DEFAULT_NEXT_PATH = '/profile/edit';
+
+function safeNextPath(value: string | null): string {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return DEFAULT_NEXT_PATH;
+  try {
+    const url = new URL(value, 'http://authora.local');
+    if (url.origin !== 'http://authora.local') return DEFAULT_NEXT_PATH;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return DEFAULT_NEXT_PATH;
+  }
+}
 
 function writePopupMessage(popup: Window | null, title: string, message: string): void {
   if (!popup) return;
@@ -64,6 +77,8 @@ export function TelegramLoginButton({
   onLinked?: () => void;
 }) {
   const dispatch = useAppDispatch();
+  const searchParams = useSearchParams();
+  const nextPath = safeNextPath(searchParams.get('next'));
   const [busy, setBusy] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +131,7 @@ export function TelegramLoginButton({
             return;
           }
           if (res.status === 'done') {
-            window.location.assign('/profile/edit');
+            window.location.assign(nextPath);
           }
         } catch (e) {
           if (timer.current) clearInterval(timer.current);

@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { config } from '@/shared/config';
 
 type RouteContext = {
-  params:
-    | Promise<{ userId: string; kind: string }>
-    | {
-        userId: string;
-        kind: string;
-      };
+  params: Promise<{ userId: string; kind: string }>;
 };
 
 export async function GET(req: NextRequest, context: RouteContext) {

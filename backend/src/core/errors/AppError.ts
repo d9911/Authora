@@ -18,6 +18,9 @@ export const ErrorCodes = {
   EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
   INVALID_TOKEN: 'INVALID_TOKEN',
   TOKEN_EXPIRED: 'TOKEN_EXPIRED',
+  AUTH_PROVIDER_NOT_CONFIGURED: 'AUTH_PROVIDER_NOT_CONFIGURED',
+  AUTH_PROVIDER_FAILED: 'AUTH_PROVIDER_FAILED',
+  MAIL_SEND_FAILED: 'MAIL_SEND_FAILED',
   // 2fa
   NEED_2FA: 'NEED_2FA',
   INVALID_2FA_CODE: 'INVALID_2FA_CODE',
@@ -61,5 +64,14 @@ export class AppError extends Error {
   }
   static needTwoFactor(message = 'Two-factor authentication required') {
     return new AppError(ErrorCodes.NEED_2FA, message, 401);
+  }
+  static providerNotConfigured(message: string) {
+    return new AppError(ErrorCodes.AUTH_PROVIDER_NOT_CONFIGURED, message, 503);
+  }
+  static providerFailed(message: string) {
+    return new AppError(ErrorCodes.AUTH_PROVIDER_FAILED, message, 502);
+  }
+  static mailSendFailed(message = 'Email delivery failed') {
+    return new AppError(ErrorCodes.MAIL_SEND_FAILED, message, 502);
   }
 }
