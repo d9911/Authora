@@ -1,5 +1,6 @@
 import { axiosInstance } from './axiosInstance';
 import { ApiError } from '../types';
+import { ROUTES } from '@/shared/lib/routes';
 
 interface GraphQLResponse<T> {
   data?: T;
@@ -22,7 +23,7 @@ let refreshing: Promise<boolean> | null = null;
 function redirectToSignIn(): Promise<never> {
   localStorage.removeItem('user');
   const nextPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-  window.location.href = `/sign-in?next=${encodeURIComponent(nextPath)}`;
+  window.location.href = `${ROUTES.signIn}?next=${encodeURIComponent(nextPath)}`;
   return new Promise(() => {});
 }
 

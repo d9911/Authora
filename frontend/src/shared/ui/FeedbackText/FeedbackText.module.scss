@@ -1,0 +1,17 @@
+.feedback {
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.error {
+  color: var(--alert);
+}
+
+.success {
+  color: var(--signal);
+}
+
+.muted {
+  color: var(--mist);
+}

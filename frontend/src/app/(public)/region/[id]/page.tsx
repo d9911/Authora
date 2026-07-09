@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { serverGql } from '@/shared/api/serverGraphql';
 import { Region } from '@/shared/types';
 import { CityList } from '@/widgets/CityList/CityList';
+import { ROUTES } from '@/shared/lib/routes';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +31,7 @@ export default async function RegionPage({ params }: { params: Promise<{ id: str
 
   return (
     <div>
-      <Link href={`/country/${region.countryId}`} className="muted">
+      <Link href={ROUTES.country(region.countryId)} className="muted">
         ← Back to country
       </Link>
       <h1 style={{ marginTop: 8 }}>{region.name}</h1>

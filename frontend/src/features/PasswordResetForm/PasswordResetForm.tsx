@@ -2,11 +2,9 @@
 
 import { FormEvent, useState } from 'react';
 import { requestPasswordReset, resetPassword } from '@/features/auth-api/authApi';
-import { ButtonMain, InputMain } from '@/shared/ui';
-import { GraphQLRequestError } from '@/shared/api/graphqlClient';
-
-const handle = (e: unknown) =>
-  e instanceof GraphQLRequestError || e instanceof Error ? e.message : 'Error';
+import { ButtonMain, FeedbackText, InputMain, PasswordInput } from '@/shared/ui';
+import { getErrorMessage } from '@/shared/lib/errors';
+import { AuthFormShell } from '@/features/AuthForm/AuthFormShell';
 
 /** mode="request": ask for email. mode="reset": set a new password with a token. */
 export function PasswordResetForm({ token }: { token?: string }) {
@@ -25,7 +23,7 @@ export function PasswordResetForm({ token }: { token?: string }) {
       await requestPasswordReset(email);
       setMsg('If that email exists, a reset link has been sent.');
     } catch (e2) {
-      setErr(handle(e2));
+      setErr(getErrorMessage(e2));
     } finally {
       setBusy(false);
     }
@@ -39,22 +37,20 @@ export function PasswordResetForm({ token }: { token?: string }) {
       await resetPassword(token!, password);
       setMsg('Password updated. You can now sign in.');
     } catch (e2) {
-      setErr(handle(e2));
+      setErr(getErrorMessage(e2));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <form
+    <AuthFormShell
       onSubmit={isReset ? onReset : onRequest}
-      className="auth-card"
+      title={isReset ? 'Set new password' : 'Reset password'}
     >
-      <h2>{isReset ? 'Set new password' : 'Reset password'}</h2>
       {isReset ? (
-        <InputMain
+        <PasswordInput
           label="New password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -68,11 +64,11 @@ export function PasswordResetForm({ token }: { token?: string }) {
           required
         />
       )}
-      {err && <p className="error-text">{err}</p>}
-      {msg && <p className="success-text">{msg}</p>}
+      {err && <FeedbackText tone="error">{err}</FeedbackText>}
+      {msg && <FeedbackText tone="success">{msg}</FeedbackText>}
       <ButtonMain type="submit" fullWidth loading={busy}>
         {isReset ? 'Update password' : 'Send reset link'}
       </ButtonMain>
-    </form>
+    </AuthFormShell>
   );
 }

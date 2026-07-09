@@ -6,7 +6,7 @@ import {
   disableTwoFactor,
   enableTwoFactor,
 } from '@/features/auth-api/authApi';
-import { ButtonMain, InputMain } from '@/shared/ui';
+import { ButtonMain, FeedbackText, OtpCodeInput } from '@/shared/ui';
 import { useAppSelector } from '@/processes/store/hooks';
 import { GraphQLRequestError } from '@/shared/api/graphqlClient';
 
@@ -83,10 +83,10 @@ export function TwoFactorSetup() {
           <p>Scan this QR code with Google Authenticator or Authy:</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={qr} alt="2FA QR code" style={{ width: 180, height: 180 }} />
-          <InputMain
+          <OtpCodeInput
             label="Enter the code to confirm"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onValueChange={setCode}
             placeholder="123456"
           />
           <ButtonMain onClick={onConfirm} loading={busy}>
@@ -97,10 +97,10 @@ export function TwoFactorSetup() {
 
       {enabled && (
         <div style={{ marginTop: 12 }}>
-          <InputMain
+          <OtpCodeInput
             label="Enter a code to disable 2FA"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onValueChange={setCode}
             placeholder="123456"
           />
           <ButtonMain variant="danger" onClick={onDisable} loading={busy}>
@@ -109,8 +109,8 @@ export function TwoFactorSetup() {
         </div>
       )}
 
-      {err && <p className="error-text">{err}</p>}
-      {msg && <p className="success-text">{msg}</p>}
+      {err && <FeedbackText tone="error">{err}</FeedbackText>}
+      {msg && <FeedbackText tone="success">{msg}</FeedbackText>}
     </div>
   );
 }

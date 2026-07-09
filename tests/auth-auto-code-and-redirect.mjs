@@ -7,7 +7,7 @@ const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
 const signIn = read('frontend/src/features/SignInForm/SignInForm.tsx');
 const signUp = read('frontend/src/features/SignUpForm/SignUpForm.tsx');
-const confirmEmail = read('frontend/src/app/(auth)/confirm-email/ConfirmEmailForm.tsx');
+const confirmEmail = read('frontend/src/features/ConfirmEmailForm/ConfirmEmailForm.tsx');
 const connectedAccounts = read('frontend/src/features/ConnectedAccounts/ConnectedAccounts.tsx');
 const githubLoginButton = read('frontend/src/features/GithubLoginButton/GithubLoginButton.tsx');
 const telegramLoginButton = read('frontend/src/features/TelegramLoginButton/TelegramLoginButton.tsx');
@@ -36,27 +36,27 @@ const checks = [
   ],
   [
     'sign-up redirects straight to the email code screen',
-    /\/confirm-email\?email=/.test(signUp) &&
+    /ROUTES\.confirmEmail/.test(signUp) &&
       /encodeURIComponent\(email\.trim\(\)\)/.test(signUp) &&
       !/router\.replace\('\/profile\/edit'\)/.test(signUp),
   ],
   [
     '2FA auto-submits when six digits are entered',
-    /AUTO_CODE_LENGTH/.test(signIn) && /handleTwoFactorCodeChange/.test(signIn),
+    /OtpCodeInput/.test(signIn) && /onComplete=\{\(value\) => void submitTwoFactorCode\(value\)\}/.test(signIn),
   ],
   [
     'confirm-email auto-submits when six digits are entered',
-    /AUTO_CODE_LENGTH/.test(confirmEmail) && /handleCodeChange/.test(confirmEmail),
+    /OtpCodeInput/.test(confirmEmail) && /onComplete=\{\(value\) => void submitCode\(value\)\}/.test(confirmEmail),
   ],
   [
     'confirm-email refreshes auth state and redirects home after success',
     /loadMeThunk/.test(confirmEmail) &&
-      /router\.replace\('\/'\)/.test(confirmEmail) &&
+      /router\.replace\(ROUTES\.home\)/.test(confirmEmail) &&
       !/router\.replace\('\/profile\/edit'\)/.test(confirmEmail),
   ],
   [
     'profile email verification auto-submits when six digits are entered',
-    /AUTO_CODE_LENGTH/.test(connectedAccounts) && /handleEmailCodeChange/.test(connectedAccounts),
+    /OtpCodeInput/.test(connectedAccounts) && /onComplete=\{\(value\) => void submitEmailCode\(value\)\}/.test(connectedAccounts),
   ],
   [
     'profile email code input keeps focus while typing',
@@ -65,7 +65,7 @@ const checks = [
   ],
   [
     'telegram opens an app-owned waiting page instead of about:blank',
-    /\/oauth\/telegram\/opening/.test(telegramLoginButton) &&
+    /ROUTES\.telegramOpening/.test(telegramLoginButton) &&
       !/window\.open\(['"](?:about:blank)?['"]\s*,\s*['"]_blank['"]/.test(telegramLoginButton),
   ],
   [
@@ -77,7 +77,7 @@ const checks = [
   [
     'telegram link returns to profile with linked confirmation',
     /res\.status === 'linked'/.test(telegramLoginButton) &&
-      /window\.location\.replace\('\/profile\/edit\?linked=telegram'\)/.test(telegramLoginButton),
+      /window\.location\.replace\(LINKED_TELEGRAM_PROFILE_PATH\)/.test(telegramLoginButton),
   ],
   [
     'github login flow stays separate from the telegram bot flow',

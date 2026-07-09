@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { config as appConfig } from '@/shared/config';
+import { ROUTES } from '@/shared/lib/routes';
 
 /**
  * Route protection (plan §14). Auth state is derived from the httpOnly
@@ -11,7 +12,7 @@ import { config as appConfig } from '@/shared/config';
  *  - /api/private/**        -> require auth (401 JSON if missing)
  */
 const PRIVATE_PREFIXES = ['/profile'];
-const AUTH_PAGES = ['/sign-in', '/sign-up'];
+const AUTH_PAGES: string[] = [ROUTES.signIn, ROUTES.signUp];
 
 export function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
@@ -19,7 +20,7 @@ export function proxy(req: NextRequest) {
   // Legacy alias: /login -> /sign-in (preserve query string).
   if (pathname === '/login') {
     const url = req.nextUrl.clone();
-    url.pathname = '/sign-in';
+    url.pathname = ROUTES.signIn;
     return NextResponse.redirect(url);
   }
 
@@ -38,7 +39,7 @@ export function proxy(req: NextRequest) {
   // Protect private pages.
   if (PRIVATE_PREFIXES.some((p) => pathname.startsWith(p)) && !isAuthed) {
     const url = req.nextUrl.clone();
-    url.pathname = '/sign-in';
+    url.pathname = ROUTES.signIn;
     url.search = `?next=${encodeURIComponent(pathname + search)}`;
     return NextResponse.redirect(url);
   }
@@ -46,7 +47,7 @@ export function proxy(req: NextRequest) {
   // Keep authenticated users away from auth pages.
   if (AUTH_PAGES.includes(pathname) && isAuthed) {
     const url = req.nextUrl.clone();
-    url.pathname = '/profile/edit';
+    url.pathname = ROUTES.profileEdit;
     url.search = '';
     return NextResponse.redirect(url);
   }

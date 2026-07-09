@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, FormEvent, ReactNode, useEffect, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { config } from '@/shared/config';
 import { useAppDispatch, useAppSelector } from '@/processes/store/hooks';
@@ -12,19 +12,12 @@ import {
   unlinkProvider,
 } from '@/features/auth-api/authApi';
 import { TelegramLoginButton } from '@/features/TelegramLoginButton/TelegramLoginButton';
-import { ButtonMain, InputMain } from '@/shared/ui';
-import { GraphQLRequestError } from '@/shared/api/graphqlClient';
-
-const handle = (e: unknown) =>
-  e instanceof GraphQLRequestError || e instanceof Error ? e.message : 'Error';
+import { ButtonMain, FeedbackText, OtpCodeInput } from '@/shared/ui';
+import { getErrorMessage } from '@/shared/lib/errors';
+import { normalizeNumericCode } from '@/shared/lib/otp';
 
 type Provider = 'github' | 'telegram';
 type BusyAction = Provider | 'email-send' | 'email-confirm';
-const AUTO_CODE_LENGTH = 6;
-
-function normalizeCode(value: string): string {
-  return value.replace(/\D/g, '').slice(0, AUTO_CODE_LENGTH);
-}
 
 function ConnectedAccountRow({
   label,
@@ -113,7 +106,7 @@ export function ConnectedAccounts() {
       const token = await getOAuthLinkToken();
       window.location.href = `${config.backendPublicUrl}/api/auth/github?link=${encodeURIComponent(token)}`;
     } catch (e) {
-      setError(handle(e));
+      setError(getErrorMessage(e));
       setBusy(null);
     }
   };
@@ -127,7 +120,7 @@ export function ConnectedAccounts() {
       await dispatch(loadMeThunk());
       setMsg(`${provider === 'github' ? 'GitHub' : 'Telegram'} disconnected`);
     } catch (e) {
-      setError(handle(e));
+      setError(getErrorMessage(e));
     } finally {
       setBusy(null);
     }
@@ -146,7 +139,7 @@ export function ConnectedAccounts() {
       setEmailRequested(true);
       setMsg(`Confirmation code sent to ${user.email}`);
     } catch (e) {
-      setError(handle(e));
+      setError(getErrorMessage(e));
     } finally {
       setBusy(null);
     }
@@ -157,7 +150,7 @@ export function ConnectedAccounts() {
       setError('User email is not loaded yet.');
       return;
     }
-    const code = normalizeCode(nextCode);
+    const code = normalizeNumericCode(nextCode);
     if (busy) return;
     if (!code) {
       setError('Enter the confirmation code from your email.');
@@ -173,7 +166,7 @@ export function ConnectedAccounts() {
       await dispatch(loadMeThunk());
       setMsg('Email confirmed ✓');
     } catch (e) {
-      setError(handle(e));
+      setError(getErrorMessage(e));
     } finally {
       setBusy(null);
     }
@@ -182,12 +175,6 @@ export function ConnectedAccounts() {
   const confirmEmail = async (ev: FormEvent) => {
     ev.preventDefault();
     await submitEmailCode();
-  };
-
-  const handleEmailCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const normalized = normalizeCode(e.target.value);
-    setEmailCode(normalized);
-    if (normalized.length === AUTO_CODE_LENGTH) void submitEmailCode(normalized);
   };
 
   const emailVerified = Boolean(user?.emailVerified);
@@ -217,14 +204,12 @@ export function ConnectedAccounts() {
             onSubmit={confirmEmail}
             style={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 8 }}
           >
-            <InputMain
+            <OtpCodeInput
               aria-label="Email confirmation code"
-              inputMode="numeric"
               value={emailCode}
-              onChange={handleEmailCodeChange}
+              onValueChange={setEmailCode}
+              onComplete={(value) => void submitEmailCode(value)}
               placeholder="Code"
-              maxLength={AUTO_CODE_LENGTH}
-              autoComplete="one-time-code"
               mono
               style={{ width: 112 }}
             />
@@ -283,8 +268,8 @@ export function ConnectedAccounts() {
         )}
       </ConnectedAccountRow>
 
-      {error && <p className="error-text">{error}</p>}
-      {msg && <p className="success-text">{msg}</p>}
+      {error && <FeedbackText tone="error">{error}</FeedbackText>}
+      {msg && <FeedbackText tone="success">{msg}</FeedbackText>}
     </div>
   );
 }

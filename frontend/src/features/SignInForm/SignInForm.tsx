@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/processes/store/hooks';
@@ -11,34 +11,17 @@ import {
   signInThunk,
   signInTwoFactorThunk,
 } from '@/processes/store/slices/authSlice';
-import { ButtonMain, InputMain } from '@/shared/ui';
+import { ButtonMain, InputMain, OtpCodeInput, PasswordInput } from '@/shared/ui';
 import { GithubLoginButton } from '@/features/GithubLoginButton/GithubLoginButton';
 import { TelegramLoginButton } from '@/features/TelegramLoginButton/TelegramLoginButton';
-import styles from './SignInForm.module.scss';
-
-const DEFAULT_NEXT_PATH = '/profile/edit';
-const AUTO_CODE_LENGTH = 6;
-
-function normalizeCode(value: string): string {
-  return value.replace(/\D/g, '').slice(0, AUTO_CODE_LENGTH);
-}
-
-function safeNextPath(value: string | null): string {
-  if (!value || !value.startsWith('/') || value.startsWith('//')) return DEFAULT_NEXT_PATH;
-
-  try {
-    const url = new URL(value, 'http://authora.local');
-    if (url.origin !== 'http://authora.local') return DEFAULT_NEXT_PATH;
-    return `${url.pathname}${url.search}${url.hash}`;
-  } catch {
-    return DEFAULT_NEXT_PATH;
-  }
-}
+import { normalizeNumericCode } from '@/shared/lib/otp';
+import { ROUTES, safeNextPath } from '@/shared/lib/routes';
+import { AuthFormShell } from '@/features/AuthForm/AuthFormShell';
+import styles from '@/features/AuthForm/AuthForm.module.scss';
 
 export function SignInForm() {
   const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
-  // Where to go after a successful sign-in (set by middleware via ?next=).
   const nextPath = safeNextPath(searchParams.get('next'));
   const { error, twoFactorToken } = useAppSelector((s) => s.auth);
 
@@ -58,7 +41,6 @@ export function SignInForm() {
     dispatch(clearAuthError());
     try {
       const res = await dispatch(signInThunk({ email, password }));
-      // If 2FA is not required and sign-in succeeded, go to the next page.
       if (signInThunk.fulfilled.match(res) && !res.payload.needTwoFactor) {
         await completeAuthRedirect();
       }
@@ -68,7 +50,7 @@ export function SignInForm() {
   };
 
   const submitTwoFactorCode = async (nextCode = code) => {
-    const normalized = normalizeCode(nextCode);
+    const normalized = normalizeNumericCode(nextCode);
     if (!twoFactorToken || !normalized || busy) return;
     setBusy(true);
     try {
@@ -84,99 +66,80 @@ export function SignInForm() {
     void submitTwoFactorCode();
   };
 
-  const handleTwoFactorCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const normalized = normalizeCode(e.target.value);
-    setCode(normalized);
-    if (normalized.length === AUTO_CODE_LENGTH) void submitTwoFactorCode(normalized);
-  };
-
   if (twoFactorToken) {
     return (
-      <div className={styles['auth-wrapper']}>
-        <form onSubmit={onSubmit2fa} className={styles['auth-card']}>
-          <div className={styles['auth-header']}>
-            <h2 className={styles['auth-title']}>Two-factor code</h2>
-            <p className={styles['auth-subtitle']}>
-              Enter the 6-digit code from your authenticator app.
-            </p>
-          </div>
-          <div className={styles['auth-form']}>
-            <InputMain
-              label="Authenticator code"
-              inputMode="numeric"
-              value={code}
-              onChange={handleTwoFactorCodeChange}
-              placeholder="123456"
-              maxLength={AUTO_CODE_LENGTH}
-              autoComplete="one-time-code"
-              autoFocus
-            />
-            {error && <div className={styles['auth-error']}>{error}</div>}
-            <ButtonMain type="submit" fullWidth loading={busy}>
-              Verify
-            </ButtonMain>
-            <ButtonMain
-              variant="ghost"
-              fullWidth
-              onClick={() => dispatch(resetTwoFactor())}
-              type="button"
-            >
-              Back
-            </ButtonMain>
-          </div>
-        </form>
-      </div>
+      <AuthFormShell
+        onSubmit={onSubmit2fa}
+        title="Two-factor code"
+        subtitle="Enter the 6-digit code from your authenticator app."
+      >
+        <OtpCodeInput
+          label="Authenticator code"
+          value={code}
+          onValueChange={setCode}
+          onComplete={(value) => void submitTwoFactorCode(value)}
+          placeholder="123456"
+          autoFocus
+        />
+        {error && <div className={styles['auth-error']}>{error}</div>}
+        <ButtonMain type="submit" fullWidth loading={busy}>
+          Verify
+        </ButtonMain>
+        <ButtonMain
+          variant="ghost"
+          fullWidth
+          onClick={() => dispatch(resetTwoFactor())}
+          type="button"
+        >
+          Back
+        </ButtonMain>
+      </AuthFormShell>
     );
   }
 
   return (
-    <div className={styles['auth-wrapper']}>
-      <form onSubmit={onSubmit} className={styles['auth-card']}>
-        <div className={styles['auth-header']}>
-          <span className="eyebrow">Welcome back</span>
-          <h2 className={styles['auth-title']}>Sign in</h2>
-        </div>
-        <div className={styles['auth-form']}>
-          <InputMain
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-          />
-          <InputMain
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-          />
-          {error && <div className={styles['auth-error']}>{error}</div>}
-          <ButtonMain type="submit" fullWidth loading={busy}>
-            Sign in
-          </ButtonMain>
-
-          <div className={styles['auth-divider']}>or</div>
-
-          <div className={styles['oauth-buttons']}>
-            <GithubLoginButton />
-            <TelegramLoginButton />
+    <AuthFormShell
+      onSubmit={onSubmit}
+      eyebrow="Welcome back"
+      title="Sign in"
+      footer={
+        <>
+          <div className={styles['auth-register-panel']}>
+            <span>New to Authora?</span>
+            <Link className={styles['auth-register-link']} href={ROUTES.signUp}>
+              Create account
+            </Link>
           </div>
-        </div>
-
-        <div className={styles['auth-register-panel']}>
-          <span>New to Authora?</span>
-          <Link className={styles['auth-register-link']} href="/sign-up">
-            Create account
-          </Link>
-        </div>
-
-        <div className={styles['auth-footer']}>
-          <Link href="/forgot-password">Forgot password?</Link>
-        </div>
-      </form>
-    </div>
+          <div className={styles['auth-footer']}>
+            <Link href={ROUTES.forgotPassword}>Forgot password?</Link>
+          </div>
+        </>
+      }
+    >
+      <InputMain
+        label="Email"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+        autoComplete="email"
+      />
+      <PasswordInput
+        label="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+        autoComplete="current-password"
+      />
+      {error && <div className={styles['auth-error']}>{error}</div>}
+      <ButtonMain type="submit" fullWidth loading={busy}>
+        Sign in
+      </ButtonMain>
+      <div className={styles['auth-divider']}>or</div>
+      <div className={styles['oauth-buttons']}>
+        <GithubLoginButton />
+        <TelegramLoginButton />
+      </div>
+    </AuthFormShell>
   );
 }

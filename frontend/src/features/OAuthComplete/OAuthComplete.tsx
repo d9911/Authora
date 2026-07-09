@@ -6,26 +6,13 @@ import Link from 'next/link';
 import { oauthExchange } from '@/features/auth-api/authApi';
 import { useAppDispatch } from '@/processes/store/hooks';
 import { loadMeThunk } from '@/processes/store/slices/authSlice';
-import { LoaderMain } from '@/shared/ui';
-
-const DEFAULT_NEXT_PATH = '/profile/edit';
-
-function safeNextPath(value: string | null): string {
-  if (!value || !value.startsWith('/') || value.startsWith('//')) return DEFAULT_NEXT_PATH;
-
-  try {
-    const url = new URL(value, 'http://authora.local');
-    if (url.origin !== 'http://authora.local') return DEFAULT_NEXT_PATH;
-    return `${url.pathname}${url.search}${url.hash}`;
-  } catch {
-    return DEFAULT_NEXT_PATH;
-  }
-}
+import { FeedbackText, LoaderMain } from '@/shared/ui';
+import { ROUTES, safeNextPath } from '@/shared/lib/routes';
 
 /**
  * Finishes an OAuth login: takes the backend handoff token from the URL and
  * exchanges it through the same-origin proxy, so the session cookies are set
- * on the FRONTEND origin. Then redirects to the profile page.
+ * on the frontend origin.
  */
 export function OAuthComplete() {
   const router = useRouter();
@@ -56,8 +43,8 @@ export function OAuthComplete() {
     return (
       <div className="card" style={{ maxWidth: 420, margin: '0 auto', textAlign: 'center' }}>
         <h2>Sign-in failed</h2>
-        <p className="error-text">{error}</p>
-        <Link href="/sign-in">Back to sign in</Link>
+        <FeedbackText tone="error">{error}</FeedbackText>
+        <Link href={ROUTES.signIn}>Back to sign in</Link>
       </div>
     );
   }

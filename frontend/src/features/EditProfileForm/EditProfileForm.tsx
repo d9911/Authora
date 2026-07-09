@@ -1,14 +1,14 @@
 'use client'
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/processes/store/hooks'
 import { clearProfileFlags, loadMyProfileThunk, updateProfileThunk } from '@/processes/store/slices/profileSlice'
 import { loadMeThunk } from '@/processes/store/slices/authSlice'
 import { loadCountriesThunk, loadCountryByIdThunk } from '@/processes/store/slices/locationSlice'
 import { fetchCityById } from '@/entities/country/api/locationApi'
-import { ButtonMain, InputMain } from '@/shared/ui'
+import { ButtonMain, FeedbackText, InputMain } from '@/shared/ui'
 import { ProfilePhotoManager } from '@/features/ProfilePhotoManager/ui/ProfilePhotoManager'
-import styles from './EditProfileForm.module.scss'
+import { LocationSelectGroup } from './LocationSelectGroup'
 
 const emptyForm = {
   name: '',
@@ -116,8 +116,7 @@ export function EditProfileForm() {
     return selectedRegionId ? allCities.filter((city) => city.regionId === selectedRegionId) : allCities
   }, [selectedCountry?.cities, selectedRegionId])
 
-  const onCountryChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const countryId = event.target.value
+  const onCountryChange = (countryId: string) => {
     setSelectedCountryId(countryId)
     setSelectedRegionId('')
     setForm((f) => ({ ...f, cityId: '' }))
@@ -126,13 +125,13 @@ export function EditProfileForm() {
     }
   }
 
-  const onRegionChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setSelectedRegionId(event.target.value)
+  const onRegionChange = (regionId: string) => {
+    setSelectedRegionId(regionId)
     setForm((f) => ({ ...f, cityId: '' }))
   }
 
-  const onCityChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setForm((f) => ({ ...f, cityId: event.target.value }))
+  const onCityChange = (cityId: string) => {
+    setForm((f) => ({ ...f, cityId }))
   }
 
   const onSubmit = async (e: FormEvent) => {
@@ -157,49 +156,18 @@ export function EditProfileForm() {
           <InputMain label="Name" value={form.name} onChange={set('name')} />
           <InputMain label="Nickname" value={form.nickname} onChange={set('nickname')} />
           <InputMain label="Phone number" value={form.phoneNumber} onChange={set('phoneNumber')} />
-          <label className={styles['select-wrapper']}>
-            <span className={styles['select-label']}>Country</span>
-            <select className={styles['select-field']} value={selectedCountryId} onChange={onCountryChange}>
-              <option value="">Select country</option>
-              {countries.map((country) => (
-                <option key={country.id} value={country.id}>
-                  {country.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={styles['select-wrapper']}>
-            <span className={styles['select-label']}>Region</span>
-            <select
-              className={styles['select-field']}
-              value={selectedRegionId}
-              onChange={onRegionChange}
-              disabled={!selectedCountryId || locationsLoading}
-            >
-              <option value="">All regions</option>
-              {regions.map((region) => (
-                <option key={region.id} value={region.id}>
-                  {region.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={styles['select-wrapper']}>
-            <span className={styles['select-label']}>City</span>
-            <select
-              className={styles['select-field']}
-              value={form.cityId}
-              onChange={onCityChange}
-              disabled={!selectedCountryId || locationsLoading}
-            >
-              <option value="">No city</option>
-              {cities.map((city) => (
-                <option key={city.id} value={city.id}>
-                  {city.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <LocationSelectGroup
+            countries={countries}
+            regions={regions}
+            cities={cities}
+            selectedCountryId={selectedCountryId}
+            selectedRegionId={selectedRegionId}
+            cityId={form.cityId}
+            loading={locationsLoading}
+            onCountryChange={onCountryChange}
+            onRegionChange={onRegionChange}
+            onCityChange={onCityChange}
+          />
           <InputMain label="Date of birth" type="date" value={form.dateOfBirth} onChange={set('dateOfBirth')} />
           <InputMain label="Gender" value={form.gender} onChange={set('gender')} />
           <InputMain label="Address" value={form.address} onChange={set('address')} />
@@ -208,8 +176,8 @@ export function EditProfileForm() {
         <InputMain label="Bio" value={form.bio} onChange={set('bio')} />
         <InputMain label="Description" value={form.description} onChange={set('description')} />
 
-        {error && <p className="error-text">{error}</p>}
-        {saved && <p className="success-text">Profile saved ✓</p>}
+        {error && <FeedbackText tone="error">{error}</FeedbackText>}
+        {saved && <FeedbackText tone="success">Profile saved ✓</FeedbackText>}
         <ButtonMain type="submit" loading={saving} style={{ marginTop: 8 }}>
           Save changes
         </ButtonMain>

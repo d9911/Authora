@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { serverGql } from '@/shared/api/serverGraphql';
 import { City } from '@/shared/types';
+import { ROUTES } from '@/shared/lib/routes';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +26,7 @@ export default async function CityPage({ params }: { params: Promise<{ id: strin
   return (
     <div>
       {city.regionId && (
-        <Link href={`/region/${city.regionId}`} className="muted">
+        <Link href={ROUTES.region(city.regionId)} className="muted">
           ← Back to region
         </Link>
       )}

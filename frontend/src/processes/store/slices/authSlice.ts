@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { User } from '@/shared/types'
 import * as authApi from '@/features/auth-api/authApi'
 import { fetchMe } from '@/entities/user/api/userApi'
-import { GraphQLRequestError } from '@/shared/api/graphqlClient'
+import { getErrorMessage } from '@/shared/lib/errors'
 
 interface AuthState {
   user: User | null
@@ -19,37 +19,31 @@ const initialState: AuthState = {
   twoFactorToken: null,
 }
 
-function errMessage(e: unknown): string {
-  if (e instanceof GraphQLRequestError) return e.message
-  if (e instanceof Error) return e.message
-  return 'Unexpected error'
-}
-
 export const loadMeThunk = createAsyncThunk('auth/loadMe', async () => {
   return fetchMe()
 })
 
 export const signInThunk = createAsyncThunk('auth/signIn', async (input: { email: string; password: string }, { rejectWithValue }) => {
-  try {
-    return await authApi.signIn(input)
-  } catch (e) {
-    return rejectWithValue(errMessage(e))
+    try {
+      return await authApi.signIn(input)
+    } catch (e) {
+      return rejectWithValue(getErrorMessage(e, 'Unexpected error'))
   }
 })
 
 export const signUpThunk = createAsyncThunk('auth/signUp', async (input: { email: string; password: string; name?: string; nickname?: string }, { rejectWithValue }) => {
-  try {
-    return await authApi.signUp(input)
-  } catch (e) {
-    return rejectWithValue(errMessage(e))
+    try {
+      return await authApi.signUp(input)
+    } catch (e) {
+      return rejectWithValue(getErrorMessage(e, 'Unexpected error'))
   }
 })
 
 export const signInTwoFactorThunk = createAsyncThunk('auth/signInTwoFactor', async (input: { twoFactorToken: string; code: string }, { rejectWithValue }) => {
-  try {
-    return await authApi.signInTwoFactor(input)
-  } catch (e) {
-    return rejectWithValue(errMessage(e))
+    try {
+      return await authApi.signInTwoFactor(input)
+    } catch (e) {
+      return rejectWithValue(getErrorMessage(e, 'Unexpected error'))
   }
 })
 

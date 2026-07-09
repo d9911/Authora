@@ -6,8 +6,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
 const signIn = read('frontend/src/features/SignInForm/SignInForm.tsx');
-const signInStyles = read('frontend/src/features/SignInForm/SignInForm.module.scss');
-const confirmEmail = read('frontend/src/app/(auth)/confirm-email/ConfirmEmailForm.tsx');
+const authFormStyles = read('frontend/src/features/AuthForm/AuthForm.module.scss');
+const confirmEmail = read('frontend/src/features/ConfirmEmailForm/ConfirmEmailForm.tsx');
 const authUseCases = read('backend/src/modules/auth/use-cases/AuthUseCases.ts');
 const mailService = read('backend/src/infrastructure/mail/MailService.ts');
 
@@ -18,7 +18,7 @@ const checks = [
   ],
   [
     'register panel has dedicated styling',
-    /\.auth-register-panel/.test(signInStyles) && /\.auth-register-link/.test(signInStyles),
+    /\.auth-register-panel/.test(authFormStyles) && /\.auth-register-link/.test(authFormStyles),
   ],
   [
     'confirm-email buttons are grouped with spacing',

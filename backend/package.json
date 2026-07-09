@@ -12,7 +12,7 @@
     "seed:mongo": "ts-node-dev --transpile-only src/infrastructure/database/mongo/seed.ts",
     "seed:sqlite": "ts-node-dev --transpile-only src/infrastructure/database/sqlite/seed.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint \"src/**/*.ts\"",
+    "lint": "node ../tests/backend-clean-architecture-boundaries.mjs && tsc --noEmit",
     "format": "prettier --write \"src/**/*.ts\""
   },
   "dependencies": {

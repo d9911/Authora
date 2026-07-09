@@ -12,7 +12,9 @@ const readOptional = (path) => {
 const headerMain = read('frontend/src/widgets/HeaderMain/HeaderMain.tsx');
 const graphqlClient = read('frontend/src/shared/api/graphqlClient.ts');
 const signUp = read('frontend/src/features/SignUpForm/SignUpForm.tsx');
-const signInStyles = read('frontend/src/features/SignInForm/SignInForm.module.scss');
+const authFormStyles = read('frontend/src/features/AuthForm/AuthForm.module.scss');
+const passwordInput = read('frontend/src/shared/ui/PasswordInput/PasswordInput.tsx');
+const passwordInputStyles = read('frontend/src/shared/ui/PasswordInput/PasswordInput.module.scss');
 const editProfileForm = read('frontend/src/features/EditProfileForm/EditProfileForm.tsx');
 const authUseCases = read('backend/src/modules/auth/use-cases/AuthUseCases.ts');
 const sqliteUsers = read('backend/src/infrastructure/database/sqlite/SqliteUserRepository.ts');
@@ -55,12 +57,11 @@ const checks = [
   ],
   [
     'sign-up form has accessible show-hide buttons for both password fields',
-    /showPassword/.test(signUp) &&
-      /showConfirmPassword/.test(signUp) &&
-      /aria-label=\{ariaLabel\}/.test(signUp) &&
-      /ariaLabel=\{showPassword/.test(signUp) &&
-      /ariaLabel=\{showConfirmPassword/.test(signUp) &&
-      /type="button"/.test(signUp),
+    /PasswordInput/.test(signUp) &&
+      /showAriaLabel="Показать пароль"/.test(signUp) &&
+      /showAriaLabel="Показать повтор пароля"/.test(signUp) &&
+      /aria-label=\{visible \? hideAriaLabel : showAriaLabel\}/.test(passwordInput) &&
+      /type="button"/.test(passwordInput),
   ],
   [
     'sign-up form validates with the shared frontend password policy',
@@ -70,9 +71,10 @@ const checks = [
   ],
   [
     'auth form styles contain stable password field and field-level error classes',
-    /\.password-field/.test(signInStyles) &&
-      /\.password-toggle/.test(signInStyles) &&
-      /\.field-error/.test(signInStyles),
+    /\.auth-card/.test(authFormStyles) &&
+      /\.password-field/.test(passwordInputStyles) &&
+      /\.password-toggle/.test(passwordInputStyles) &&
+      /\.field-error/.test(passwordInputStyles),
   ],
   [
     'frontend password regex accepts the allowed character set',

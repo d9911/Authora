@@ -3,17 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { ButtonMain } from '@/shared/ui';
 import { config } from '@/shared/config';
-
-function safeNextPath(value: string | null): string | null {
-  if (!value || !value.startsWith('/') || value.startsWith('//')) return null;
-  try {
-    const url = new URL(value, 'http://authora.local');
-    if (url.origin !== 'http://authora.local') return null;
-    return `${url.pathname}${url.search}${url.hash}`;
-  } catch {
-    return null;
-  }
-}
+import { optionalNextPath } from '@/shared/lib/routes';
 
 /**
  * GitHub OAuth entry point. This is a full-page redirect to the BACKEND
@@ -22,7 +12,7 @@ function safeNextPath(value: string | null): string | null {
  */
 export function GithubLoginButton() {
   const searchParams = useSearchParams();
-  const nextPath = safeNextPath(searchParams.get('next'));
+  const nextPath = optionalNextPath(searchParams.get('next'));
 
   const onClick = () => {
     const url = new URL('/api/auth/github', config.backendPublicUrl);

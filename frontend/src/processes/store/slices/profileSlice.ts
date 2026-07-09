@@ -3,7 +3,7 @@ import { Profile } from '@/shared/types'
 import { fetchMyProfile, updateProfile, UpdateProfileInput } from '@/entities/profile/api/profileApi'
 import { deleteProfileImage, uploadProfileImage, UploadProfileImageInput } from '@/entities/profile-photo/api/profilePhotoApi'
 import { ProfileImageKind } from '@/shared/types'
-import { GraphQLRequestError } from '@/shared/api/graphqlClient'
+import { getErrorMessage } from '@/shared/lib/errors'
 
 interface ProfileState {
   profile: Profile | null
@@ -21,33 +21,31 @@ const initialState: ProfileState = {
   saved: false,
 }
 
-const errMessage = (e: unknown) => (e instanceof GraphQLRequestError || e instanceof Error ? e.message : 'Unexpected error')
-
 export const loadMyProfileThunk = createAsyncThunk('profile/loadMine', async () => {
   return fetchMyProfile()
 })
 
 export const updateProfileThunk = createAsyncThunk('profile/update', async (input: UpdateProfileInput, { rejectWithValue }) => {
-  try {
-    return await updateProfile(input)
-  } catch (e) {
-    return rejectWithValue(errMessage(e))
+    try {
+      return await updateProfile(input)
+    } catch (e) {
+      return rejectWithValue(getErrorMessage(e, 'Unexpected error'))
   }
 })
 
 export const uploadProfileImageThunk = createAsyncThunk('profilePhoto/upload', async (input: UploadProfileImageInput, { rejectWithValue }) => {
-  try {
-    return await uploadProfileImage(input)
-  } catch (e) {
-    return rejectWithValue(errMessage(e))
+    try {
+      return await uploadProfileImage(input)
+    } catch (e) {
+      return rejectWithValue(getErrorMessage(e, 'Unexpected error'))
   }
 })
 
 export const deleteProfileImageThunk = createAsyncThunk('profilePhoto/delete', async (kind: ProfileImageKind, { rejectWithValue }) => {
-  try {
-    return await deleteProfileImage(kind)
-  } catch (e) {
-    return rejectWithValue(errMessage(e))
+    try {
+      return await deleteProfileImage(kind)
+    } catch (e) {
+      return rejectWithValue(getErrorMessage(e, 'Unexpected error'))
   }
 })
 

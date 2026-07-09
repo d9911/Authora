@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { ConfirmEmailForm } from './ConfirmEmailForm';
+import { ConfirmEmailForm } from '@/features/ConfirmEmailForm/ConfirmEmailForm';
 import { LoaderMain } from '@/shared/ui';
 
 export const metadata = { title: 'Confirm email' };

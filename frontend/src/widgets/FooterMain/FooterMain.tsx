@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { config } from '@/shared/config';
+import { ROUTES } from '@/shared/lib/routes';
 import styles from './FooterMain.module.scss';
 
 const columns: {
@@ -9,22 +10,22 @@ const columns: {
   {
     title: 'Product',
     links: [
-      { label: 'Countries', href: '/country' },
-      { label: 'Profile', href: '/profile/edit' },
+      { label: 'Countries', href: ROUTES.countries },
+      { label: 'Profile', href: ROUTES.profileEdit },
     ],
   },
   {
     title: 'Account',
     links: [
-      { label: 'Sign In', href: '/sign-in' },
-      { label: 'Create account', href: '/sign-up' },
+      { label: 'Sign In', href: ROUTES.signIn },
+      { label: 'Create account', href: ROUTES.signUp },
     ],
   },
   {
     title: 'Company',
     links: [
-      { label: 'About', href: '/about' },
-      { label: 'Home', href: '/' },
+      { label: 'About', href: ROUTES.about },
+      { label: 'Home', href: ROUTES.home },
     ],
   },
   {

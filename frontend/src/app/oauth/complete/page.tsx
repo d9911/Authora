@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { OAuthComplete } from './OAuthComplete';
+import { OAuthComplete } from '@/features/OAuthComplete/OAuthComplete';
 import { LoaderMain } from '@/shared/ui';
 
 export const metadata = { title: 'Signing in…' };

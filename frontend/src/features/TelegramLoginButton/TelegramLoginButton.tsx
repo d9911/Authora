@@ -5,25 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { telegramBotStart, telegramBotPoll } from '@/features/auth-api/authApi';
 import { useAppDispatch } from '@/processes/store/hooks';
 import { loadMeThunk } from '@/processes/store/slices/authSlice';
-import { ButtonMain } from '@/shared/ui';
-import { GraphQLRequestError } from '@/shared/api/graphqlClient';
+import { ButtonMain, FeedbackText } from '@/shared/ui';
+import { getErrorMessage } from '@/shared/lib/errors';
+import { ROUTES, safeNextPath } from '@/shared/lib/routes';
 
-const handle = (e: unknown) =>
-  e instanceof GraphQLRequestError || e instanceof Error ? e.message : 'Error';
-
-const TELEGRAM_OPENING_PATH = '/oauth/telegram/opening';
-const DEFAULT_NEXT_PATH = '/profile/edit';
-
-function safeNextPath(value: string | null): string {
-  if (!value || !value.startsWith('/') || value.startsWith('//')) return DEFAULT_NEXT_PATH;
-  try {
-    const url = new URL(value, 'http://authora.local');
-    if (url.origin !== 'http://authora.local') return DEFAULT_NEXT_PATH;
-    return `${url.pathname}${url.search}${url.hash}`;
-  } catch {
-    return DEFAULT_NEXT_PATH;
-  }
-}
+const LINKED_TELEGRAM_PROFILE_PATH = `${ROUTES.profileEdit}?linked=telegram`;
 
 function writePopupMessage(popup: Window | null, title: string, message: string): void {
   if (!popup) return;
@@ -41,7 +27,7 @@ function writePopupMessage(popup: Window | null, title: string, message: string)
 }
 
 function openTelegramPopup(): Window | null {
-  const popup = window.open(TELEGRAM_OPENING_PATH, '_blank');
+  const popup = window.open(ROUTES.telegramOpening, '_blank');
   try {
     if (popup) popup.opener = null;
   } catch {
@@ -127,7 +113,7 @@ export function TelegramLoginButton({
             setFallback(null);
             await dispatch(loadMeThunk());
             onLinked?.();
-            window.location.replace('/profile/edit?linked=telegram');
+            window.location.replace(LINKED_TELEGRAM_PROFILE_PATH);
             return;
           }
           if (res.status === 'done') {
@@ -136,12 +122,12 @@ export function TelegramLoginButton({
         } catch (e) {
           if (timer.current) clearInterval(timer.current);
           setWaiting(false);
-          setError(handle(e));
+          setError(getErrorMessage(e));
         }
       }, 2000);
     } catch (e) {
-      closePopupOrExplain(popup, handle(e));
-      setError(handle(e));
+      closePopupOrExplain(popup, getErrorMessage(e));
+      setError(getErrorMessage(e));
       setBusy(false);
     }
   };
@@ -172,7 +158,7 @@ export function TelegramLoginButton({
           or send <code>{fallback.command}</code> to the bot.
         </p>
       )}
-      {error && <p className="error-text">{error}</p>}
+      {error && <FeedbackText tone="error">{error}</FeedbackText>}
     </div>
   );
 }

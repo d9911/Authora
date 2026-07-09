@@ -7,6 +7,7 @@ import { config } from '@/shared/config'
 import { useAppDispatch, useAppSelector } from '@/processes/store/hooks'
 import { loadMeThunk, logoutThunk } from '@/processes/store/slices/authSlice'
 import { ButtonMain } from '@/shared/ui'
+import { ROUTES } from '@/shared/lib/routes'
 import styles from './HeaderMain.module.scss'
 
 function AuraMark() {
@@ -67,7 +68,7 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
     await dispatch(logoutThunk())
     setAccountMenuOpen(false)
     setMobileOpen(false)
-    router.push('/')
+    router.push(ROUTES.home)
   }
 
   const closeMenus = () => {
@@ -82,7 +83,7 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
   return (
     <header className={styles.header}>
       <div className={`container ${styles['header-container']}`}>
-        <Link href="/" className={styles['header-logo']}>
+        <Link href={ROUTES.home} className={styles['header-logo']}>
           <AuraMark />
           <span>{config.appName}</span>
         </Link>
@@ -93,10 +94,10 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
 
         <nav className={`${styles['header-nav']} ${mobileOpen ? styles['mobile-open'] : ''}`}>
           <div className={styles['header-links']}>
-            <Link href="/country" className={styles['header-link']} onClick={() => setMobileOpen(false)}>
+            <Link href={ROUTES.countries} className={styles['header-link']} onClick={() => setMobileOpen(false)}>
               Countries
             </Link>
-            <Link href="/about" className={styles['header-link']} onClick={() => setMobileOpen(false)}>
+            <Link href={ROUTES.about} className={styles['header-link']} onClick={() => setMobileOpen(false)}>
               About
             </Link>
             {user && userLabel && (
@@ -121,7 +122,7 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
                 </button>
                 {accountMenuOpen && (
                   <div id="header-account-menu" className={styles['account-menu']} role="menu">
-                    <Link href="/profile/edit" className={styles['account-menu-item']} role="menuitem" onClick={closeMenus}>
+                    <Link href={ROUTES.profileEdit} className={styles['account-menu-item']} role="menuitem" onClick={closeMenus}>
                       Profile
                     </Link>
                   </div>
@@ -138,12 +139,12 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
               </ButtonMain>
             ) : (
               <>
-                <Link href="/sign-in" onClick={() => setMobileOpen(false)}>
+                <Link href={ROUTES.signIn} onClick={() => setMobileOpen(false)}>
                   <ButtonMain variant="ghost">Sign In</ButtonMain>
                 </Link>
                 <ButtonMain
                   onClick={() => {
-                    router.push('/sign-up')
+                    router.push(ROUTES.signUp)
                     setMobileOpen(false)
                   }}
                 >

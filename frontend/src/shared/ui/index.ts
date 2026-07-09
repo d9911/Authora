@@ -1,5 +1,8 @@
 export { ButtonMain } from './ButtonMain/ButtonMain';
 export { InputMain } from './InputMain/InputMain';
+export { PasswordInput } from './PasswordInput/PasswordInput';
+export { OtpCodeInput } from './OtpCodeInput/OtpCodeInput';
+export { FeedbackText } from './FeedbackText/FeedbackText';
 export { LoaderMain } from './LoaderMain/LoaderMain';
 export { ModalMain } from './ModalMain/ModalMain';
 export { AuraSigil } from './AuraSigil/AuraSigil';

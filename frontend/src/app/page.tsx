@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { config } from '@/shared/config';
 import { AuraSigil } from '@/shared/ui';
+import { ROUTES } from '@/shared/lib/routes';
 
 const capabilities = [
   {
@@ -52,7 +53,7 @@ export default function HomePage() {
           </p>
           <div style={{ display: 'flex', gap: 12, marginTop: 28, flexWrap: 'wrap' }}>
             <Link
-              href="/sign-up"
+              href={ROUTES.signUp}
               style={{
                 background: 'var(--iris)',
                 color: '#fff',
@@ -67,7 +68,7 @@ export default function HomePage() {
               Create your identity
             </Link>
             <Link
-              href="/country"
+              href={ROUTES.countries}
               style={{
                 border: '1px solid var(--line)',
                 color: 'var(--ink)',
