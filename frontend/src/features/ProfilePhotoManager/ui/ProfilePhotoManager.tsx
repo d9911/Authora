@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Profile, ProfileImageKind, User } from '@/shared/types';
-import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux';
+import { useAppDispatch, useAppSelector } from '@/processes/store/hooks';
 import { setAuthUser } from '@/processes/store/slices/authSlice';
 import {
   deleteProfileImageThunk,

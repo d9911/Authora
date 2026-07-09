@@ -3,9 +3,7 @@ import { PublicUser, toPublicUser } from '../../user/domain/User';
 import { UserRepository } from '../../user/domain/UserRepository';
 import { ProfileRepository } from '../../profile/domain/ProfileRepository';
 import { RefreshTokenRepository } from '../domain/RefreshTokenRepository';
-import {
-  EmailTokenRepository,
-} from '../../../infrastructure/database/mongo/MongoEmailTokenRepository';
+import { EmailTokenRepository } from '../domain/EmailTokenRepository';
 import { MailService } from '../../../infrastructure/mail/MailService';
 import { TwoFactorService } from '../services/TwoFactorService';
 import { TelegramTicketStore } from '../oauth/TelegramTicketStore';

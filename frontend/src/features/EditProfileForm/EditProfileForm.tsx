@@ -1,7 +1,7 @@
 'use client'
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react'
-import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux'
+import { useAppDispatch, useAppSelector } from '@/processes/store/hooks'
 import { clearProfileFlags, loadMyProfileThunk, updateProfileThunk } from '@/processes/store/slices/profileSlice'
 import { loadMeThunk } from '@/processes/store/slices/authSlice'
 import { loadCountriesThunk, loadCountryByIdThunk } from '@/processes/store/slices/locationSlice'

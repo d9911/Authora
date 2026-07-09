@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { oauthExchange } from '@/features/auth-api/authApi';
-import { useAppDispatch } from '@/shared/hooks/redux';
+import { useAppDispatch } from '@/processes/store/hooks';
 import { loadMeThunk } from '@/processes/store/slices/authSlice';
 import { LoaderMain } from '@/shared/ui';
 

@@ -6,7 +6,7 @@ import { loadMeThunk } from '@/processes/store/slices/authSlice';
 import { confirmEmailCode, resendEmailCode } from '@/features/auth-api/authApi';
 import { ButtonMain, InputMain } from '@/shared/ui';
 import { GraphQLRequestError } from '@/shared/api/graphqlClient';
-import { useAppDispatch } from '@/shared/hooks/redux';
+import { useAppDispatch } from '@/processes/store/hooks';
 
 const handle = (e: unknown) =>
   e instanceof GraphQLRequestError || e instanceof Error ? e.message : 'Error';

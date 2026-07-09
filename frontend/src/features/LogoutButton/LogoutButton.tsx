@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useAppDispatch } from '@/shared/hooks/redux';
+import { useAppDispatch } from '@/processes/store/hooks';
 import { logoutThunk } from '@/processes/store/slices/authSlice';
 import { ButtonMain } from '@/shared/ui';
 

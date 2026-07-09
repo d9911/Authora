@@ -2,7 +2,8 @@
 .PHONY: setup init install dev backend-dev frontend-dev backend-build frontend-build \
         backend-start backend-test backend-test-sqlite security-audit load-test test-all \
         seed seed-mongo seed-sqlite docker-up docker-down \
-        db-mongo-up doc-mongo db-postgres-up db-sqlite-up clean-ports
+        db-mongo-up doc-mongo db-postgres-up db-sqlite-up clean-ports \
+        check-source check-types check
 
 BACKEND_DIR = backend
 FRONTEND_DIR = frontend
@@ -70,6 +71,15 @@ backend-test-sqlite:
 	cd backend && npx ts-node-dev --transpile-only smoke-test-sqlite.ts
 
 # --- security & load testing ---
+check-source:          ## fast source-level regression checks
+	node tests/check-source.mjs
+
+check-types:           ## backend + frontend TypeScript checks
+	cd backend && yarn run typecheck
+	cd frontend && yarn run typecheck
+
+check: check-source check-types
+
 security-audit:        ## OWASP-style security checks (boots its own server)
 	node tests/security/audit.mjs
 

@@ -3,7 +3,7 @@
 import { ChangeEvent, FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux';
+import { useAppDispatch, useAppSelector } from '@/processes/store/hooks';
 import { clearAuthError, signUpThunk } from '@/processes/store/slices/authSlice';
 import { ButtonMain, InputMain } from '@/shared/ui';
 import { PASSWORD_ALLOWED_REGEX, PASSWORD_POLICY_HINT } from '@/shared/lib/passwordPolicy';

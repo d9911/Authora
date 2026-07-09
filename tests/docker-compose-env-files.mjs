@@ -21,13 +21,23 @@ assert.match(
 );
 assert.match(
   backendService,
+  /^\s*-\s*path:\s*\.\/backend\/\.env\s*$/m,
+  'Docker backend may load backend/.env for local secret values.',
+);
+assert.match(
+  backendService,
   /^\s*-\s*path:\s*\.\/backend\/\.env\.docker\s*$/m,
   'Docker backend should load backend/.env.docker for Docker-only secret overrides.',
 );
-assert.doesNotMatch(
+assert.match(
   backendService,
-  /^\s*-\s*path:\s*\.\/backend\/\.env\s*$/m,
-  'Docker backend must not load backend/.env because that file is for local make dev and can contain placeholder or host-only values.',
+  /^\s*DB_TYPE:\s*"sqlite"\s*$/m,
+  'Docker backend must set DB_TYPE literally so env_file DB values cannot shadow the container database mode.',
+);
+assert.match(
+  backendService,
+  /^\s*MONGO_URI:\s*"mongodb:\/\/mongo:27017\/authora"\s*$/m,
+  'Docker backend must set MONGO_URI literally so backend/.env cannot point the container at 127.0.0.1.',
 );
 
 assert.match(

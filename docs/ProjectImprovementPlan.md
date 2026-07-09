@@ -50,6 +50,19 @@ This plan is based on the local repository state inspected on 2026-07-09.
 
 ---
 
+## Execution Log
+
+### 2026-07-09
+
+- Added `tests/backend-clean-architecture-boundaries.mjs` and fixed `AuthUseCases.ts` so `EmailTokenRepository` is imported from `backend/src/modules/auth/domain/EmailTokenRepository.ts`, not Mongo infrastructure.
+- Added `tests/frontend-fsd-boundaries.mjs` and moved typed Redux hooks from `frontend/src/shared/hooks/redux.ts` to `frontend/src/processes/store/hooks.ts`, so `shared` no longer depends on `processes`.
+- Added `tests/check-source.mjs` plus `make check-source`, `make check-types`, and `make check`.
+- Updated `tests/docker-compose-env-files.mjs` to match the current compose contract: Docker may load root `.env`, `backend/.env`, and `backend/.env.docker`, while DB container settings remain literal in `environment`.
+- Set `TELEGRAM_BOT_TOKEN=` in `backend/.env.example` so local examples do not start the Telegram bot with a placeholder token.
+- Verified with `make check`.
+
+---
+
 ## Task 1: Add A Project Task Registry
 
 **Goal:** Put future work in one navigable place instead of scattering plans across README, PLAN, and ad hoc notes.

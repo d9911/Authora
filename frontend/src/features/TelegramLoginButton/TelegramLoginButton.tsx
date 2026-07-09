@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { telegramBotStart, telegramBotPoll } from '@/features/auth-api/authApi';
-import { useAppDispatch } from '@/shared/hooks/redux';
+import { useAppDispatch } from '@/processes/store/hooks';
 import { loadMeThunk } from '@/processes/store/slices/authSlice';
 import { ButtonMain } from '@/shared/ui';
 import { GraphQLRequestError } from '@/shared/api/graphqlClient';

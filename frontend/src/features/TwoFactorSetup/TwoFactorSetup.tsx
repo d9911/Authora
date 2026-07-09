@@ -7,7 +7,7 @@ import {
   enableTwoFactor,
 } from '@/features/auth-api/authApi';
 import { ButtonMain, InputMain } from '@/shared/ui';
-import { useAppSelector } from '@/shared/hooks/redux';
+import { useAppSelector } from '@/processes/store/hooks';
 import { GraphQLRequestError } from '@/shared/api/graphqlClient';
 
 export function TwoFactorSetup() {

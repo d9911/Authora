@@ -12,11 +12,15 @@ Three complementary tools to validate **security**, **functionality** and
 ## Run
 
 ```bash
+make check-source       # fast source-level regression checks (no server)
+make check-types        # backend + frontend TypeScript checks
+make check              # check-source + check-types
 make security-audit     # boots its own in-memory server, runs 22 checks
 make load-test          # k6 (auth + oauth) + autocannon (boots a server)
 make test-all           # everything
 
 # or directly:
+node tests/check-source.mjs
 node tests/security/audit.mjs
 tests/run-tests.sh load
 ```

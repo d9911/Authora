@@ -3,7 +3,7 @@
 import { ChangeEvent, FormEvent, ReactNode, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { config } from '@/shared/config';
-import { useAppDispatch, useAppSelector } from '@/shared/hooks/redux';
+import { useAppDispatch, useAppSelector } from '@/processes/store/hooks';
 import { loadMeThunk } from '@/processes/store/slices/authSlice';
 import {
   confirmEmailCode,
