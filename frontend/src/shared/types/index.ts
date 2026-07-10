@@ -88,6 +88,7 @@ export interface ProfileImagePayload {
 export interface TwoFactorSetupPayload {
   qrDataUrl: string;
   otpauthUrl: string;
+  recoveryCodes: string[];
 }
 
 // Shape of an error coming back from the backend (extensions.code).

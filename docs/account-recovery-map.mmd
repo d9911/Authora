@@ -1,0 +1,76 @@
+%% Authora account recovery map
+%% Verified against local sources on 2026-07-10.
+%% Main sources:
+%% - backend/src/modules/auth/use-cases/PasswordUseCases.ts
+%% - backend/src/modules/auth/use-cases/AuthUseCases.ts
+%% - backend/src/app/graphql/schema.ts
+%% - backend/src/app/graphql/resolvers.ts
+%% - frontend/src/features/PasswordResetForm/PasswordResetForm.tsx
+%% - frontend/src/features/PasswordResetForm/TelegramRecoveryPanel.tsx
+%% - frontend/src/shared/api/requestHandler.ts
+
+flowchart TD
+  user["User"]
+  forgot["/forgot-password"]
+  method{"Recovery method"}
+
+  subgraph emailFlow["Email recovery"]
+    emailInput["Contactable email"]
+    genericResponse["Generic accepted response"]
+    emailLookup{"Existing contactable account?"}
+    emailToken["Random email token<br/>SHA-256 in email_tokens<br/>TTL 1 hour"]
+    mail["SMTP reset link<br/>/reset-password?token=..."]
+    exchange["exchangePasswordResetToken"]
+  end
+
+  subgraph telegramFlow["Telegram recovery"]
+    tgStart["telegramRecoveryStart<br/>Mongo/SQLite ticket<br/>bot deep-link + matching code<br/>TTL 5 minutes"]
+    tgConfirm["User confirms in Telegram bot"]
+    tgLookup{"telegramId already linked?"}
+    tgPoll["telegramRecoveryPoll"]
+  end
+
+  subgraph grantFlow["Shared password completion"]
+    grant["Recovery grant<br/>SHA-256 in recovery_grants<br/>TTL 15 minutes"]
+    proxy["Next.js GraphQL proxy<br/>removes raw grant<br/>sets httpOnly recovery_token<br/>SameSite Strict"]
+    resetPage["/reset-password<br/>password + confirmPassword"]
+    validate["Shared allowlist policy<br/>8 to 50 chars"]
+    consume["Atomically consume recovery grant"]
+    update["bcrypt password hash<br/>authVersion + 1"]
+    revoke["Revoke all refresh tokens<br/>invalidate remaining grants"]
+    channel{"Grant channel"}
+    emailDone["Clear auth cookies<br/>/sign-in?recovered=1&next=..."]
+    telegramDone["Issue one new session<br/>return to sanitized next"]
+    backupCode["Existing 2FA stays enabled<br/>TOTP or one-time saved recovery code"]
+  end
+
+  subgraph sessionGuard["Session invalidation"]
+    oldAccess["Old access JWT"]
+    oldRefresh["Old refresh JWT"]
+    versionCheck["GraphQL context compares JWT authVersion to User.authVersion"]
+    denied["INVALID_TOKEN"]
+  end
+
+  user --> forgot --> method
+  method -->|Email| emailInput --> genericResponse
+  emailInput --> emailLookup
+  emailLookup -->|No| genericResponse
+  emailLookup -->|Yes| emailToken --> mail --> exchange --> grant
+
+  method -->|Telegram| tgStart --> tgConfirm --> tgLookup
+  tgLookup -->|No| tgPoll --> notLinked["not_linked"]
+  tgLookup -->|Yes| tgPoll --> grant
+
+  grant --> proxy --> resetPage --> validate --> consume --> update --> revoke --> channel
+  channel -->|Email| emailDone --> backupCode
+  channel -->|Telegram| telegramDone --> backupCode
+
+  oldAccess --> versionCheck --> denied
+  oldRefresh --> revoke --> denied
+
+  classDef browser fill:#f3f2ff,stroke:#7a6cff,color:#211a5a;
+  classDef backend fill:#eef6ff,stroke:#4d8fd6,color:#10233f;
+  classDef security fill:#edf9f1,stroke:#2f9e5b,color:#0f3b20;
+  class user,forgot,method,emailInput,genericResponse,mail,tgConfirm,resetPage,emailDone,telegramDone browser;
+  class emailLookup,emailToken,exchange,tgStart,tgLookup,tgPoll,grant,proxy,validate,consume,update,channel backend;
+  class revoke,oldAccess,oldRefresh,versionCheck,denied,backupCode security;

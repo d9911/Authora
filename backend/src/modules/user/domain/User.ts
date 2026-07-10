@@ -28,6 +28,7 @@ export interface User {
   emailVerified: boolean;
   twoFactorEnabled: boolean;
   twoFactorSecret?: string; // base32 secret, never exposed via API
+  twoFactorRecoveryCodeHashes?: string[]; // one-time code hashes, never exposed via API
   githubId?: string;
   authVersion: number;
 
@@ -36,15 +37,19 @@ export interface User {
 }
 
 /** User shape that is safe to return to clients (no secrets or synthetic email). */
-export type PublicUser = Omit<User, 'password' | 'twoFactorSecret' | 'email'> & {
+export type PublicUser = Omit<
+  User,
+  'password' | 'twoFactorSecret' | 'twoFactorRecoveryCodeHashes' | 'email'
+> & {
   email: string | null;
   hasPassword: boolean;
   recoveryMethods: RecoveryMethod[];
 };
 
 export function toPublicUser(user: User): PublicUser {
-  const { password, twoFactorSecret, ...rest } = user;
+  const { password, twoFactorSecret, twoFactorRecoveryCodeHashes, ...rest } = user;
   void twoFactorSecret;
+  void twoFactorRecoveryCodeHashes;
   const recoveryMethods: RecoveryMethod[] = [];
   if (user.emailKind === 'contactable') recoveryMethods.push('email');
   if (user.telegramId) recoveryMethods.push('telegram');

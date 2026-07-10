@@ -48,7 +48,7 @@ export const env = {
     smtpPort: Number(process.env.SMTP_PORT ?? 465),
     smtpUser: process.env.SMTP_USER ?? '',
     smtpPass: process.env.SMTP_PASS ?? '',
-    // When SMTP creds are not configured, emails are logged to console instead.
+    // Missing SMTP uses console output only in development; production delivery fails closed.
     enabled: Boolean(process.env.SMTP_USER && process.env.SMTP_PASS),
   },
 
@@ -73,3 +73,25 @@ export const env = {
     botUrl: process.env.TELEGRAM_BOT_URL ?? '',
   },
 };
+
+export function validateRecoveryEnvironment(): void {
+  let frontendUrl: URL;
+  try {
+    frontendUrl = new URL(env.app.frontendUrl);
+  } catch {
+    throw new Error('FRONTEND_URL must be an absolute http(s) URL');
+  }
+  if (!['http:', 'https:'].includes(frontendUrl.protocol)) {
+    throw new Error('FRONTEND_URL must use http or https');
+  }
+
+  const localHost = ['localhost', '127.0.0.1', '::1'].includes(frontendUrl.hostname);
+  if (env.isProd && !localHost && frontendUrl.protocol !== 'https:') {
+    throw new Error('FRONTEND_URL must use HTTPS outside local development');
+  }
+  if (env.isProd && !env.mail.enabled) {
+    console.warn(
+      '[auth-config] SMTP is not configured; email recovery will return a generic response but cannot deliver links.',
+    );
+  }
+}

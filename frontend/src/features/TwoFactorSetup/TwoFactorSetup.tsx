@@ -9,11 +9,13 @@ import {
 import { ButtonMain, FeedbackText, OtpCodeInput } from '@/shared/ui';
 import { useAppSelector } from '@/processes/store/hooks';
 import { GraphQLRequestError } from '@/shared/api/graphqlClient';
+import styles from './TwoFactorSetup.module.scss';
 
 export function TwoFactorSetup() {
   const { user } = useAppSelector((s) => s.auth);
   const [qr, setQr] = useState<string | null>(null);
   const [code, setCode] = useState('');
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [enabled, setEnabled] = useState<boolean>(user?.twoFactorEnabled ?? false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -28,6 +30,7 @@ export function TwoFactorSetup() {
     try {
       const setup = await enableTwoFactor();
       setQr(setup.qrDataUrl);
+      setRecoveryCodes(setup.recoveryCodes);
     } catch (e) {
       handleErr(e);
     } finally {
@@ -56,12 +59,22 @@ export function TwoFactorSetup() {
     try {
       await disableTwoFactor(code);
       setEnabled(false);
+      setRecoveryCodes([]);
       setMsg('Two-factor authentication disabled');
       setCode('');
     } catch (e) {
       handleErr(e);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const copyRecoveryCodes = async () => {
+    try {
+      await navigator.clipboard.writeText(recoveryCodes.join('\n'));
+      setMsg('Recovery codes copied');
+    } catch {
+      setErr('Could not copy recovery codes. Select and save them manually.');
     }
   };
 
@@ -79,7 +92,7 @@ export function TwoFactorSetup() {
       )}
 
       {qr && (
-        <div>
+        <div className={styles.setup}>
           <p>Scan this QR code with Google Authenticator or Authy:</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={qr} alt="2FA QR code" style={{ width: 180, height: 180 }} />
@@ -93,6 +106,30 @@ export function TwoFactorSetup() {
             Confirm
           </ButtonMain>
         </div>
+      )}
+
+      {recoveryCodes.length > 0 && (
+        <section className={styles.recovery} aria-labelledby="two-factor-recovery-title">
+          <h3 id="two-factor-recovery-title">Recovery codes</h3>
+          <p className="muted">
+            Save these one-time codes now. They will not be shown again after this page.
+          </p>
+          <ul className={styles.codes} aria-label="Two-factor recovery codes">
+            {recoveryCodes.map((recoveryCode) => (
+              <li key={recoveryCode}>{recoveryCode}</li>
+            ))}
+          </ul>
+          <div className={styles.actions}>
+            <ButtonMain type="button" variant="secondary" onClick={copyRecoveryCodes}>
+              Copy all codes
+            </ButtonMain>
+            {enabled ? (
+              <ButtonMain type="button" variant="ghost" onClick={() => setRecoveryCodes([])}>
+                I saved these codes
+              </ButtonMain>
+            ) : null}
+          </div>
+        </section>
       )}
 
       {enabled && (

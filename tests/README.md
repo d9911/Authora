@@ -7,6 +7,7 @@ Three complementary tools to validate **security**, **functionality** and
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | **Security audit** (Node) | OWASP-style checks: auth gating, JWT tampering, token leakage, injection, CSRF/signature, CORS, rate-limiting, headers | `security/audit.mjs`                  |
 | **k6** (Grafana)          | Functional + load: auth lifecycle under load, OAuth/bot flows                                                          | `load/k6-auth.js`, `load/k6-oauth.js` |
+| **Account recovery**      | Compiled use-case tests plus an SQLite GraphQL smoke for token/session lifecycle                                       | `backend/tests/account-recovery-use-cases.test.cjs`, `backend/smoke-test-sqlite.ts` |
 | **autocannon** (Node)     | Raw HTTP throughput benchmark                                                                                          | `load/autocannon-bench.mjs`           |
 
 ## Run
@@ -14,8 +15,9 @@ Three complementary tools to validate **security**, **functionality** and
 ```bash
 make check-source       # fast source-level regression checks (no server)
 make check-types        # backend + frontend TypeScript checks
-make check              # check-source + check-types
-make security-audit     # boots its own in-memory server, runs 22 checks
+make check              # source + types + compiled recovery behavior
+make backend-test-sqlite # 34-check local GraphQL/account-recovery smoke
+make security-audit     # boots its own in-memory server, runs 25 checks
 make load-test          # k6 (auth + oauth) + autocannon (boots a server)
 make test-all           # everything
 
@@ -27,8 +29,8 @@ tests/run-tests.sh load
 
 `run-tests.sh` is **fully self-contained** — it will, on demand:
 
-- `npm install` the backend if `node_modules` is missing,
-- `npm run build`,
+- `yarn install` the backend if `node_modules` is missing,
+- `yarn run build`,
 - download **k6** to `tests/bin/k6` (no system install needed),
 - install **autocannon** (`--no-save`),
 - boot the backend on SQLite `:memory:` with **relaxed rate limits**
@@ -40,7 +42,7 @@ Tune load with env: `VUS=20 DURATION=30s make load-test`.
 
 ## What "good" looks like
 
-- **Security audit:** `RESULT: 22 passed, 0 failed` (exit 0). Any `high`/`critical`
+- **Security audit:** `RESULT: 25 passed, 0 failed` (exit 0). Any `high`/`critical`
   failure exits non-zero.
 - **k6 auth:** `checks 100%`, `http_req_failed 0%`, `public_reads p(95) < 300ms`.
   Sign-up latency is intentionally **bcrypt-bound** (~0.6s) — measured under its
@@ -54,7 +56,8 @@ Tune load with env: `VUS=20 DURATION=30s make load-test`.
 The audit drove these hardening additions (`backend/src/shared/middlewares/security.ts`):
 
 - **Rate limiting** — general (`300/min`) + strict auth limiter (`10/min`) on
-  credential mutations → brute-force returns `429`.
+  credential mutations plus hashed identifier buckets (`5/min`) → brute-force
+  returns `429`.
 - **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`,
   `Referrer-Policy`, `Permissions-Policy`, CSP, `X-Powered-By` removed.
 - **Body limit** — oversized payloads return `413` (not `500`).
@@ -62,9 +65,6 @@ The audit drove these hardening additions (`backend/src/shared/middlewares/secur
 Already-present controls confirmed by the audit: refresh-token rotation &
 reuse-rejection, purpose-scoped tokens (access≠refresh≠oauth), no password /
 2FA-secret leakage, GraphQL type-safety blocking NoSQL operator injection,
-non-enumerable login & password-reset, Telegram HMAC signature check, GitHub
+non-enumerable login & password-reset, one-time hashed recovery grants,
+session revocation through `authVersion`, Telegram HMAC signature check, GitHub
 OAuth CSRF `state`, CORS allow-list.
-
-```
-
-```

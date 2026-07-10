@@ -252,7 +252,12 @@ async function run() {
   assert.equal(exchange.channel, 'email');
   assert.ok(exchange.recoveryToken.length >= 32);
 
-  assert.equal(await passwords.completePasswordReset(exchange.recoveryToken, 'NewPassword1!'), true);
+  const completion = await passwords.completePasswordReset(
+    exchange.recoveryToken,
+    'NewPassword1!',
+  );
+  assert.equal(completion.channel, 'email');
+  assert.equal(completion.user.id, 'user-1');
   const updated = users.users.get('user-1');
   assert.equal(await comparePassword('NewPassword1!', updated.password), true);
   assert.equal(updated.authVersion, 1);

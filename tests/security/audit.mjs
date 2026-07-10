@@ -63,26 +63,40 @@ function run(cmd, args) {
 }
 
 async function main() {
-  // node_modules is excluded from snapshots — install on demand, then build.
+  // node_modules is excluded from snapshots - install on demand, then build.
   if (!existsSync(`${BE_DIR}node_modules/.bin/tsc`)) {
     console.log('[audit] installing backend dependencies…');
-    await run('npm', ['install']);
+    await run('yarn', ['install']);
   }
-  await run('npm', ['run', 'build']);
+  await run('yarn', ['run', 'build']);
 
   const server = spawn('node', ['dist/app/server.js'], {
     cwd: BE_DIR,
     env: {
       ...process.env,
-      NODE_ENV: 'production',
+      NODE_ENV: 'test',
       BACKEND_PORT: String(PORT),
       DB_TYPE: 'sqlite',
       SQLITE_FILE: ':memory:',
       JWT_ACCESS_SECRET: 'audit_access_secret',
       JWT_REFRESH_SECRET: 'audit_refresh_secret',
       CORS_ORIGINS: 'http://localhost:5178',
+      SMTP_USER: '',
+      SMTP_PASS: '',
+      TELEGRAM_BOT_TOKEN: '',
+      TELEGRAM_BOT_URL: '',
+      GITHUB_CLIENT_ID: '',
+      GITHUB_CLIENT_SECRET: '',
+      AUTH_IDENTIFIER_RATE_LIMIT_MAX: '100',
     },
-    stdio: 'ignore',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let serverLog = '';
+  server.stdout?.on('data', (chunk) => {
+    serverLog += chunk.toString();
+  });
+  server.stderr?.on('data', (chunk) => {
+    serverLog += chunk.toString();
   });
 
   try {
@@ -308,7 +322,7 @@ async function main() {
 
     /* 17. Oversized payload is rejected (body limit) */
     {
-      const big = 'a'.repeat(2 * 1024 * 1024); // 2MB > 1MB limit
+      const big = 'a'.repeat(17 * 1024 * 1024); // Above the 16MB JSON upload limit.
       const res = await fetch(GQL, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -375,6 +389,7 @@ async function main() {
     process.exit(blocking.length ? 1 : 0);
   } catch (e) {
     console.error('audit error:', e);
+    if (serverLog.trim()) console.error('\nbackend output:\n' + serverLog.trim());
     server.kill('SIGKILL');
     process.exit(2);
   }

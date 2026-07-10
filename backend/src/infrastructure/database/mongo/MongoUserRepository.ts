@@ -77,4 +77,12 @@ export class MongoUserRepository implements UserRepository {
     if (!doc) throw new Error(`User not found: ${id}`);
     return mapUser(doc);
   }
+
+  async consumeTwoFactorRecoveryCode(id: string, codeHash: string): Promise<boolean> {
+    const result = await UserModel.updateOne(
+      { _id: id, twoFactorRecoveryCodeHashes: codeHash },
+      { $pull: { twoFactorRecoveryCodeHashes: codeHash } },
+    );
+    return result.modifiedCount === 1;
+  }
 }

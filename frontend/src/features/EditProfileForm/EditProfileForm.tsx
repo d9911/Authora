@@ -26,8 +26,20 @@ const emptyForm = {
 export function EditProfileForm() {
   const dispatch = useAppDispatch()
   const { user, status } = useAppSelector((s) => s.auth)
-  const { profile, saving, saved, error, loading } = useAppSelector((s) => s.profile)
-  const { countries, current: currentCountry, loading: locationsLoading } = useAppSelector((s) => s.location)
+  const {
+    profile,
+    loaded: profileLoaded,
+    saving,
+    saved,
+    error,
+    loading,
+  } = useAppSelector((s) => s.profile)
+  const {
+    countries,
+    loaded: locationsLoaded,
+    current: currentCountry,
+    loading: locationsLoading,
+  } = useAppSelector((s) => s.location)
 
   const [form, setForm] = useState(emptyForm)
   const [selectedCountryId, setSelectedCountryId] = useState('')
@@ -40,16 +52,16 @@ export function EditProfileForm() {
   }, [dispatch, status])
 
   useEffect(() => {
-    if (status === 'authenticated' && profile === null && !loading) {
+    if (status === 'authenticated' && !profileLoaded && !loading) {
       void dispatch(loadMyProfileThunk())
     }
-  }, [dispatch, loading, profile, status])
+  }, [dispatch, loading, profileLoaded, status])
 
   useEffect(() => {
-    if (status === 'authenticated' && countries.length === 0 && !locationsLoading) {
+    if (status === 'authenticated' && !locationsLoaded && !locationsLoading) {
       void dispatch(loadCountriesThunk())
     }
-  }, [countries.length, dispatch, locationsLoading, status])
+  }, [dispatch, locationsLoaded, locationsLoading, status])
 
   useEffect(() => {
     setForm((f) => ({

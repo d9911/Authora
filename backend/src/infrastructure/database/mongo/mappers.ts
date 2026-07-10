@@ -20,6 +20,9 @@ export function mapUser(doc: any): User {
     emailVerified: Boolean(doc.emailVerified),
     twoFactorEnabled: Boolean(doc.twoFactorEnabled),
     twoFactorSecret: doc.twoFactorSecret ?? undefined,
+    twoFactorRecoveryCodeHashes: Array.isArray(doc.twoFactorRecoveryCodeHashes)
+      ? doc.twoFactorRecoveryCodeHashes.map(String)
+      : undefined,
     githubId: doc.githubId ?? undefined,
     authVersion: Number(doc.authVersion ?? 0),
     createdAt: doc.createdAt,

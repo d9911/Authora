@@ -19,9 +19,17 @@ const initialState: AuthState = {
   twoFactorToken: null,
 }
 
-export const loadMeThunk = createAsyncThunk('auth/loadMe', async () => {
-  return fetchMe()
-})
+export const loadMeThunk = createAsyncThunk<
+  User | null,
+  void,
+  { state: { auth: AuthState } }
+>(
+  'auth/loadMe',
+  async () => fetchMe(),
+  {
+    condition: (_input, { getState }) => getState().auth.status !== 'loading',
+  },
+)
 
 export const signInThunk = createAsyncThunk('auth/signIn', async (input: { email: string; password: string }, { rejectWithValue }) => {
     try {
@@ -69,6 +77,9 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(loadMeThunk.pending, (state) => {
+        state.status = 'loading'
+      })
       .addCase(loadMeThunk.fulfilled, (state, action) => {
         state.user = action.payload
         state.status = action.payload ? 'authenticated' : 'guest'

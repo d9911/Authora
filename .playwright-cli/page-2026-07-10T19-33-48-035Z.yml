@@ -1,0 +1,89 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Authora" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=e10]:
+        - generic [ref=e11]:
+          - link "Countries" [ref=e12] [cursor=pointer]:
+            - /url: /country
+          - link "About" [ref=e13] [cursor=pointer]:
+            - /url: /about
+        - generic [ref=e14]:
+          - button "Switch to dark theme" [ref=e15] [cursor=pointer]:
+            - generic [ref=e19]:
+              - generic [ref=e20]: Theme
+              - generic [ref=e21]: Light
+          - link [ref=e22] [cursor=pointer]:
+            - /url: /sign-in
+            - button "Sign In" [ref=e23]
+          - button "Get started" [ref=e24] [cursor=pointer]
+  - main [ref=e25]:
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - text: Account recovery
+        - heading "Восстановление аккаунта" [level=2] [ref=e30]
+        - paragraph [ref=e31]: Выберите способ, который был привязан к аккаунту заранее.
+      - generic [ref=e32]:
+        - group "Способ восстановления" [ref=e33]:
+          - button "Email" [pressed] [ref=e34] [cursor=pointer]
+          - button "Telegram" [ref=e35] [cursor=pointer]
+        - generic [ref=e36]:
+          - generic [ref=e37]: Email
+          - textbox "Email" [ref=e38]
+        - button "Отправить ссылку" [disabled] [ref=e39]
+      - link "Вернуться ко входу" [ref=e41] [cursor=pointer]:
+        - /url: /sign-in?next=%2Fprofile%2Fedit
+  - contentinfo [ref=e42]:
+    - generic [ref=e43]:
+      - generic [ref=e44]:
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - generic [ref=e47]: 📋
+            - generic [ref=e48]: Authora
+          - paragraph [ref=e49]: Модуль для сбора и управления заявками с клиентских сайтов. Разработка под ключ — быстро, качественно, с гарантией результата.
+          - generic [ref=e50]:
+            - generic [ref=e51]: Denis Gutsuliak
+            - link "📧 admin@d9911.org" [ref=e52] [cursor=pointer]:
+              - /url: mailto:admin@d9911.org
+            - 'link "💬 Telegram: @d9911" [ref=e53] [cursor=pointer]':
+              - /url: https://t.me/d9911/
+        - generic [ref=e54]:
+          - generic [ref=e55]: Product
+          - generic [ref=e56]:
+            - link "Countries" [ref=e57] [cursor=pointer]:
+              - /url: /country
+            - link "Profile" [ref=e58] [cursor=pointer]:
+              - /url: /profile/edit
+        - generic [ref=e59]:
+          - generic [ref=e60]: Account
+          - generic [ref=e61]:
+            - link "Sign In" [ref=e62] [cursor=pointer]:
+              - /url: /sign-in
+            - link "Create account" [ref=e63] [cursor=pointer]:
+              - /url: /sign-up
+        - generic [ref=e64]:
+          - generic [ref=e65]: Company
+          - generic [ref=e66]:
+            - link "About" [ref=e67] [cursor=pointer]:
+              - /url: /about
+            - link "Home" [ref=e68] [cursor=pointer]:
+              - /url: /
+        - generic [ref=e69]:
+          - generic [ref=e70]: Services
+          - generic [ref=e71]:
+            - link "Web Development" [ref=e72] [cursor=pointer]:
+              - /url: https://t.me/d9911/
+            - link "Backend" [ref=e73] [cursor=pointer]:
+              - /url: https://t.me/d9911/
+            - link "Integrations" [ref=e74] [cursor=pointer]:
+              - /url: https://t.me/d9911/
+      - generic [ref=e75]:
+        - generic [ref=e76]: © 2026 Authora. All rights reserved.
+        - generic [ref=e77]:
+          - link "Privacy Policy" [ref=e78] [cursor=pointer]:
+            - /url: "#"
+          - link "Terms of Use" [ref=e79] [cursor=pointer]:
+            - /url: "#"
+          - generic [ref=e80]: Built with Next.js · FSD
+  - alert [ref=e81]

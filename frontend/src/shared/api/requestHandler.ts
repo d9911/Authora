@@ -204,6 +204,7 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
     data.signInTwoFactor as TokenPair,
     data.refreshToken as TokenPair,
     data.oauthExchange as TokenPair,
+    data.completePasswordReset as TokenPair,
     (data.telegramBotPoll as { auth?: TokenPair } | undefined)?.auth,
   ];
   for (const payload of candidates) {
@@ -230,10 +231,15 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
   }
 
   const passwordResetCompleted =
-    (isOperation(query, 'completePasswordReset') && data.completePasswordReset === true) ||
+    (isOperation(query, 'completePasswordReset') &&
+      (data.completePasswordReset as { success?: boolean } | undefined)?.success === true) ||
     (isOperation(query, 'resetPassword') && data.resetPassword === true);
+  const resetChannel = (
+    data.completePasswordReset as { channel?: 'email' | 'telegram' } | undefined
+  )?.channel;
   const clearAuthCookies =
-    (isOperation(query, 'logout') && data.logout === true) || passwordResetCompleted;
+    (isOperation(query, 'logout') && data.logout === true) ||
+    (passwordResetCompleted && resetChannel !== 'telegram');
   const recoveryInvalid = (
     json.errors as Array<{ extensions?: { code?: string } }> | undefined
   )?.some((error) =>

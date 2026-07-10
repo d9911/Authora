@@ -24,8 +24,9 @@ const resolvers = read('backend/src/app/graphql/resolvers.ts');
 const requestHandler = read('frontend/src/shared/api/requestHandler.ts');
 const frontendConfig = read('frontend/src/shared/config/index.ts');
 const resetForm = read('frontend/src/features/PasswordResetForm/PasswordResetForm.tsx');
-const telegramTickets = read('backend/src/modules/auth/oauth/TelegramTicketStore.ts');
+const telegramTickets = read('backend/src/modules/auth/domain/TelegramTicketRepository.ts');
 const routes = read('frontend/src/shared/lib/routes.ts');
+const legacyAuthApi = read('frontend/src/features/auth-api/authApi.ts');
 
 assert.match(authUseCases, /exchangePasswordResetToken/);
 assert.match(authUseCases, /completePasswordReset/);
@@ -49,6 +50,8 @@ assert.match(resetForm, /PASSWORD_ALLOWED_REGEX/);
 assert.match(resetForm, /Пароли не совпадают\./);
 assert.match(resetForm, /autoComplete="new-password"/);
 assert.match(routes, /resetPassword:/);
+assert.match(legacyAuthApi, /features\/password-reset\/api\/passwordResetApi/);
+assert.doesNotMatch(legacyAuthApi, /export async function requestPasswordReset/);
 
 assert.match(telegramTickets, /purpose:\s*TelegramTicketPurpose/);
 assert.match(telegramTickets, /'recovery'/);

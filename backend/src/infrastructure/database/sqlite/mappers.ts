@@ -22,6 +22,9 @@ export function mapUser(row: any): User {
     emailVerified: Boolean(row.emailVerified),
     twoFactorEnabled: Boolean(row.twoFactorEnabled),
     twoFactorSecret: row.twoFactorSecret ?? undefined,
+    twoFactorRecoveryCodeHashes: row.twoFactorRecoveryCodeHashes
+      ? (JSON.parse(row.twoFactorRecoveryCodeHashes) as string[])
+      : undefined,
     githubId: str(row.githubId),
     authVersion: Number(row.authVersion ?? 0),
     createdAt: date(row.createdAt),

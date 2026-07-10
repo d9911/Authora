@@ -19,6 +19,18 @@ export async function requestPasswordReset(email: string, next?: string): Promis
   return data.requestPasswordReset;
 }
 
+/** Compatibility wrapper for callers that still hold the original email token. */
+export async function resetPassword(token: string, newPassword: string): Promise<boolean> {
+  const data = await gqlRequest<{ resetPassword: boolean }>(
+    `mutation ResetPassword($input: ResetPasswordInput!) {
+      resetPassword(input: $input)
+    }`,
+    { input: { token, newPassword } },
+    { retry: false },
+  );
+  return data.resetPassword;
+}
+
 export async function exchangePasswordResetToken(
   token: string,
 ): Promise<RecoveryGrantPayload> {
@@ -36,10 +48,23 @@ export async function exchangePasswordResetToken(
   return data.exchangePasswordResetToken;
 }
 
-export async function completePasswordReset(newPassword: string): Promise<boolean> {
-  const data = await gqlRequest<{ completePasswordReset: boolean }>(
+export interface CompletePasswordResetPayload {
+  success: boolean;
+  channel: RecoveryChannel;
+}
+
+export async function completePasswordReset(
+  newPassword: string,
+): Promise<CompletePasswordResetPayload> {
+  const data = await gqlRequest<{ completePasswordReset: CompletePasswordResetPayload }>(
     `mutation CompletePasswordReset($input: CompletePasswordResetInput!) {
-      completePasswordReset(input: $input)
+      completePasswordReset(input: $input) {
+        success
+        channel
+        accessToken
+        refreshToken
+        user { id email hasPassword recoveryMethods }
+      }
     }`,
     { input: { recoveryToken: '', newPassword } },
     { retry: false },

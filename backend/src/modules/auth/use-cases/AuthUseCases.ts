@@ -6,8 +6,11 @@ import { RefreshTokenRepository } from '../domain/RefreshTokenRepository';
 import { EmailTokenRepository } from '../domain/EmailTokenRepository';
 import { MailGateway } from '../domain/MailGateway';
 import { RecoveryGrantRepository } from '../domain/RecoveryGrantRepository';
-import { TwoFactorService } from '../services/TwoFactorService';
-import { TelegramTicketStore } from '../oauth/TelegramTicketStore';
+import {
+  normalizeTwoFactorRecoveryCode,
+  TwoFactorService,
+} from '../services/TwoFactorService';
+import { TelegramTicketRepository } from '../domain/TelegramTicketRepository';
 import {
   comparePassword,
   hashPassword,
@@ -24,6 +27,7 @@ import {
 } from '../../../infrastructure/jwt/jwt';
 import { PASSWORD_POLICY_HINT, validatePassword } from '../domain/passwordPolicy';
 import { PasswordUseCases, RecoveryGrantPayload } from './PasswordUseCases';
+import { AuthAuditGateway } from '../domain/AuthAuditGateway';
 
 export interface AuthTokens {
   accessToken: string;
@@ -54,7 +58,8 @@ export interface AuthDeps {
   recoveryGrants: RecoveryGrantRepository;
   mail: MailGateway;
   twoFactor: TwoFactorService;
-  telegramTickets: TelegramTicketStore;
+  telegramTickets: TelegramTicketRepository;
+  audit?: AuthAuditGateway;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -200,7 +205,22 @@ export class AuthUseCases {
     if (!user.twoFactorEnabled || !user.twoFactorSecret) {
       throw new AppError(ErrorCodes.TWO_FACTOR_NOT_ENABLED, 'Two-factor is not enabled', 400);
     }
-    const valid = this.deps.twoFactor.verify(user.twoFactorSecret, input.code);
+    let valid = this.deps.twoFactor.verify(user.twoFactorSecret, input.code);
+    if (!valid) {
+      const normalizedRecoveryCode = normalizeTwoFactorRecoveryCode(input.code);
+      if (normalizedRecoveryCode) {
+        valid = await this.deps.users.consumeTwoFactorRecoveryCode(
+          user.id,
+          sha256(normalizedRecoveryCode),
+        );
+        if (valid) {
+          this.deps.audit?.record('two_factor_recovery_code_used', {
+            userId: user.id,
+            outcome: 'success',
+          });
+        }
+      }
+    }
     if (!valid) throw new AppError(ErrorCodes.INVALID_2FA_CODE, 'Invalid 2FA code', 401);
 
     const tokens = await this.issueTokens(user);
@@ -252,8 +272,24 @@ export class AuthUseCases {
     return this.passwords.exchangePasswordResetToken(token);
   }
 
-  async completePasswordReset(recoveryToken: string, newPassword: string): Promise<boolean> {
-    return this.passwords.completePasswordReset(recoveryToken, newPassword);
+  async completePasswordReset(
+    recoveryToken: string,
+    newPassword: string,
+  ): Promise<{
+    success: true;
+    channel: 'email' | 'telegram';
+    user: PublicUser;
+    accessToken?: string;
+    refreshToken?: string;
+  }> {
+    const result = await this.passwords.completePasswordReset(recoveryToken, newPassword);
+    const tokens = result.channel === 'telegram' ? await this.issueTokens(result.user) : undefined;
+    return {
+      success: true,
+      channel: result.channel,
+      user: toPublicUser(result.user),
+      ...tokens,
+    };
   }
 
   async resetPassword(token: string, newPassword: string): Promise<boolean> {
@@ -285,7 +321,9 @@ export class AuthUseCases {
 
   /* ------------------------------- 2FA ------------------------------- */
 
-  async enableTwoFactor(userId: string): Promise<{ qrDataUrl: string; otpauthUrl: string }> {
+  async enableTwoFactor(
+    userId: string,
+  ): Promise<{ qrDataUrl: string; otpauthUrl: string; recoveryCodes: string[] }> {
     const user = await this.deps.users.findById(userId);
     if (!user) throw AppError.unauthorized();
     if (user.twoFactorEnabled) {
@@ -296,9 +334,19 @@ export class AuthUseCases {
       );
     }
     const setup = await this.deps.twoFactor.generate(user.email);
+    const recoveryCodes = this.deps.twoFactor.generateRecoveryCodes();
     // Store secret but keep 2FA disabled until confirmed with a code.
-    await this.deps.users.update(userId, { twoFactorSecret: setup.secret });
-    return { qrDataUrl: setup.qrDataUrl, otpauthUrl: setup.otpauthUrl };
+    await this.deps.users.update(userId, {
+      twoFactorSecret: setup.secret,
+      twoFactorRecoveryCodeHashes: recoveryCodes.map((code) =>
+        sha256(normalizeTwoFactorRecoveryCode(code)),
+      ),
+    });
+    return {
+      qrDataUrl: setup.qrDataUrl,
+      otpauthUrl: setup.otpauthUrl,
+      recoveryCodes,
+    };
   }
 
   async confirmTwoFactor(userId: string, code: string): Promise<boolean> {
@@ -322,6 +370,7 @@ export class AuthUseCases {
     await this.deps.users.update(userId, {
       twoFactorEnabled: false,
       twoFactorSecret: null,
+      twoFactorRecoveryCodeHashes: null,
     });
     return true;
   }
@@ -339,6 +388,13 @@ export class AuthUseCases {
     if (!user && profile.email) {
       const byEmail = await this.deps.users.findByEmail(profile.email.toLowerCase());
       if (byEmail) {
+        if (!profile.emailVerified) {
+          throw new AppError(
+            ErrorCodes.FORBIDDEN,
+            'GitHub must provide a verified email before it can match an existing account',
+            403,
+          );
+        }
         user = await this.deps.users.update(byEmail.id, { githubId: profile.githubId });
       }
     }
@@ -437,6 +493,14 @@ export class AuthUseCases {
     const user = await this.deps.users.findById(userId);
     if (!user) throw AppError.unauthorized();
 
+    if (provider === 'telegram' && user.emailKind === 'synthetic') {
+      throw new AppError(
+        ErrorCodes.VALIDATION,
+        'Add and verify a recovery email before disconnecting Telegram',
+        400,
+      );
+    }
+
     const hasPassword = Boolean(user.password);
     const otherProvider = provider === 'github' ? user.telegramId : user.githubId;
     if (!hasPassword && !otherProvider) {
@@ -490,8 +554,11 @@ export class AuthUseCases {
    * `botBase` is the resolved deep-link base (from TELEGRAM_BOT_URL or getMe);
    * the caller passes it because URL resolution lives in the bot service.
    */
-  startTelegramBotLogin(linkUserId?: string, botBase = ''): { token: string; botUrl: string } {
-    const ticket = this.deps.telegramTickets.create({
+  async startTelegramBotLogin(
+    linkUserId?: string,
+    botBase = '',
+  ): Promise<{ token: string; botUrl: string }> {
+    const ticket = await this.deps.telegramTickets.create({
       purpose: linkUserId ? 'link' : 'login',
       linkUserId,
     });
@@ -513,7 +580,7 @@ export class AuthUseCases {
     | { status: 'done'; auth: AuthPayload }
     | { status: 'linked' }
   > {
-    const ticket = this.deps.telegramTickets.get(token);
+    const ticket = await this.deps.telegramTickets.get(token);
     if (!ticket) return { status: 'expired' };
     if (ticket.status === 'expired') return { status: 'expired' };
     if (ticket.status === 'cancelled') return { status: 'expired' };
@@ -521,7 +588,7 @@ export class AuthUseCases {
     if (ticket.status === 'pending' || !ticket.user) return { status: 'pending' };
 
     const verified = ticket.user;
-    this.deps.telegramTickets.consume(token);
+    await this.deps.telegramTickets.consume(token);
 
     // Link flow: attach to the authenticated user.
     if (ticket.linkUserId) {
@@ -542,13 +609,17 @@ export class AuthUseCases {
     return { status: 'done', auth };
   }
 
-  startTelegramRecovery(
+  async startTelegramRecovery(
     botBase = '',
-  ): { token: string; botUrl: string; confirmationCode: string } {
+  ): Promise<{ token: string; botUrl: string; confirmationCode: string }> {
     const confirmationCode = randomNumericCode(6);
-    const ticket = this.deps.telegramTickets.create({
+    const ticket = await this.deps.telegramTickets.create({
       purpose: 'recovery',
       confirmationCode,
+    });
+    this.deps.audit?.record('telegram_recovery_started', {
+      channel: 'telegram',
+      outcome: 'accepted',
     });
     const base = botBase.replace(/\/$/, '');
     return {
@@ -567,21 +638,26 @@ export class AuthUseCases {
     | { status: 'not_linked' }
     | { status: 'verified'; recovery: RecoveryGrantPayload }
   > {
-    const ticket = this.deps.telegramTickets.get(token);
+    const ticket = await this.deps.telegramTickets.get(token);
     if (!ticket || ticket.purpose !== 'recovery' || ticket.status === 'expired') {
       return { status: 'expired' };
     }
     if (ticket.status === 'cancelled') {
-      this.deps.telegramTickets.consume(token);
+      await this.deps.telegramTickets.consume(token);
       return { status: 'cancelled' };
     }
     if (ticket.status === 'pending' || !ticket.user) return { status: 'pending' };
 
     const verified = ticket.user;
-    this.deps.telegramTickets.consume(token);
+    await this.deps.telegramTickets.consume(token);
     const user = await this.deps.users.findByTelegramId(verified.telegramId);
     if (!user) return { status: 'not_linked' };
     const recovery = await this.passwords.issueRecoveryGrant(user.id, 'telegram');
+    this.deps.audit?.record('telegram_recovery_resolved', {
+      channel: 'telegram',
+      userId: user.id,
+      outcome: 'success',
+    });
     return { status: 'verified', recovery };
   }
 }

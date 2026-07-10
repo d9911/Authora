@@ -25,6 +25,7 @@ export interface UpdateUserDto {
   emailVerified?: boolean;
   twoFactorEnabled?: boolean;
   twoFactorSecret?: string | null;
+  twoFactorRecoveryCodeHashes?: string[] | null;
   githubId?: string | null;
   telegramId?: string | null;
   authVersion?: number;
@@ -46,4 +47,5 @@ export interface UserRepository {
     password: string,
     emailVerified?: boolean,
   ): Promise<User>;
+  consumeTwoFactorRecoveryCode(id: string, codeHash: string): Promise<boolean>;
 }

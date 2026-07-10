@@ -7,6 +7,7 @@ import { getErrorMessage } from '@/shared/lib/errors'
 
 interface ProfileState {
   profile: Profile | null
+  loaded: boolean
   loading: boolean
   saving: boolean
   error: string | null
@@ -15,6 +16,7 @@ interface ProfileState {
 
 const initialState: ProfileState = {
   profile: null,
+  loaded: false,
   loading: false,
   saving: false,
   error: null,
@@ -62,13 +64,17 @@ const profileSlice = createSlice({
     builder
       .addCase(loadMyProfileThunk.pending, (state) => {
         state.loading = true
+        state.error = null
       })
       .addCase(loadMyProfileThunk.fulfilled, (state, action) => {
         state.loading = false
+        state.loaded = true
         state.profile = action.payload
       })
-      .addCase(loadMyProfileThunk.rejected, (state) => {
+      .addCase(loadMyProfileThunk.rejected, (state, action) => {
         state.loading = false
+        state.loaded = true
+        state.error = action.error.message ?? 'Failed to load profile'
       })
       .addCase(updateProfileThunk.pending, (state) => {
         state.saving = true

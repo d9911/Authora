@@ -7,6 +7,7 @@ import {
 
 interface LocationState {
   countries: Country[];
+  loaded: boolean;
   current: Country | null;
   loading: boolean;
   error: string | null;
@@ -14,6 +15,7 @@ interface LocationState {
 
 const initialState: LocationState = {
   countries: [],
+  loaded: false,
   current: null,
   loading: false,
   error: null,
@@ -41,10 +43,12 @@ const locationSlice = createSlice({
       })
       .addCase(loadCountriesThunk.fulfilled, (state, action) => {
         state.loading = false;
+        state.loaded = true;
         state.countries = action.payload;
       })
       .addCase(loadCountriesThunk.rejected, (state, action) => {
         state.loading = false;
+        state.loaded = true;
         state.error = action.error.message ?? 'Failed to load countries';
       })
       .addCase(loadCountryByIdThunk.fulfilled, (state, action) => {

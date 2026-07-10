@@ -1,5 +1,8 @@
 import { env } from '../../../config/env';
-import { TelegramTicket, TelegramTicketStore } from './TelegramTicketStore';
+import {
+  TelegramTicket,
+  TelegramTicketRepository,
+} from '../domain/TelegramTicketRepository';
 
 interface TgUser {
   id: number;
@@ -59,7 +62,7 @@ export class TelegramBotService {
   private lastPollError: string | null = null;
   private lastConfigError: string | null = null;
 
-  constructor(private readonly tickets: TelegramTicketStore) {
+  constructor(private readonly tickets: TelegramTicketRepository) {
     if (env.telegram.botToken) {
       this.api = `https://api.telegram.org/bot${env.telegram.botToken}`;
     }
@@ -144,7 +147,7 @@ export class TelegramBotService {
           }
           for (const upd of json.result) {
             this.offset = upd.update_id + 1;
-            this.handleUpdate(upd);
+            void this.handleUpdate(upd);
           }
         } else {
           this.logPollIssue(json.description ?? 'Telegram returned ok=false for getUpdates');
@@ -158,7 +161,7 @@ export class TelegramBotService {
     }
   }
 
-  private handleUpdate(upd: TgUpdate): void {
+  private async handleUpdate(upd: TgUpdate): Promise<void> {
     if (upd.callback_query) {
       void this.handleCallback(upd.callback_query);
       return;
@@ -172,14 +175,14 @@ export class TelegramBotService {
     const from = msg.from;
 
     if (ticketToken) {
-      const ticket = this.tickets.get(ticketToken);
+      const ticket = await this.tickets.get(ticketToken);
       if (!ticket || ticket.status === 'expired' || ticket.status === 'cancelled') {
-        void this.reply(msg.chat?.id, 'Эта ссылка Authora устарела. Запустите процесс заново на сайте.');
+        await this.reply(msg.chat?.id, 'Эта ссылка Authora устарела. Запустите процесс заново на сайте.');
         return;
       }
       // eslint-disable-next-line no-console
       console.log('[telegram-bot] /start with ticket: confirmation requested');
-      void this.reply(
+      await this.reply(
         msg.chat?.id,
         this.buildConfirmationText(from, ticket),
         {
@@ -197,7 +200,7 @@ export class TelegramBotService {
     } else {
       // eslint-disable-next-line no-console
       console.log('[telegram-bot] /start without ticket');
-      void this.reply(msg.chat?.id, 'Open the website and press “Continue with Telegram”.');
+      await this.reply(msg.chat?.id, 'Open the website and press “Continue with Telegram”.');
     }
   }
 
@@ -211,16 +214,18 @@ export class TelegramBotService {
     if (!token) return;
 
     if (isCancel) {
-      this.tickets.cancel(token);
+      const ticket = await this.tickets.get(token);
+      await this.tickets.cancel(token);
       // eslint-disable-next-line no-console
-      console.log('[telegram-bot] authorization cancelled by user');
-      await this.answerCallback(query.id, 'Авторизация отменена.');
-      await this.editMessage(query.message, 'Авторизация Authora отменена.');
+      console.log('[telegram-bot] confirmation cancelled by user');
+      const action = ticket?.purpose === 'recovery' ? 'Восстановление пароля' : 'Авторизация';
+      await this.answerCallback(query.id, `${action} отменено.`);
+      await this.editMessage(query.message, `${action} Authora отменено.`);
       return;
     }
 
-    const ticket = this.tickets.get(token);
-    const ok = this.tickets.resolve(token, {
+    const ticket = await this.tickets.get(token);
+    const ok = await this.tickets.resolve(token, {
       telegramId: String(query.from.id),
       name: this.displayName(query.from),
       username: query.from.username,

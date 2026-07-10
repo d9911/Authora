@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": ".smoke-dist",
+    "rootDir": ".",
+    "noEmit": false
+  },
+  "include": ["src/**/*.ts", "smoke-test-sqlite.ts"],
+  "exclude": ["node_modules", "dist", ".smoke-dist"]
+}

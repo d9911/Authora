@@ -52,6 +52,21 @@ This plan is based on the local repository state inspected on 2026-07-09.
 
 ## Execution Log
 
+### 2026-07-10
+
+- Added complete email and linked-Telegram account recovery through one-time
+  persisted recovery grants, httpOnly proxy cookies, password replacement, and
+  global session revocation through `authVersion`.
+- Persisted Telegram login/link/recovery tickets in MongoDB and SQLite and added
+  eight hashed, one-time 2FA recovery codes to the enrollment/sign-in flow.
+- Added recovery email management and recovery-method visibility in Connected
+  accounts; synthetic GitHub/Telegram addresses are not exposed as contactable
+  email.
+- Added account-recovery source, behavior, and SQLite GraphQL smoke tests to the
+  Yarn/Makefile verification path.
+- Added `docs/AccountRecovery.md` and `docs/account-recovery-map.mmd`; refreshed
+  the project/auth parameter maps.
+
 ### 2026-07-09
 
 - Added `tests/backend-clean-architecture-boundaries.mjs` and fixed `AuthUseCases.ts` so `EmailTokenRepository` is imported from `backend/src/modules/auth/domain/EmailTokenRepository.ts`, not Mongo infrastructure.

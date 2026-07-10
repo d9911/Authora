@@ -1,0 +1,98 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Authora" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=e10]:
+        - generic [ref=e11]:
+          - link "Countries" [ref=e12] [cursor=pointer]:
+            - /url: /country
+          - link "About" [ref=e13] [cursor=pointer]:
+            - /url: /about
+        - generic [ref=e14]:
+          - button "Switch to dark theme" [ref=e15] [cursor=pointer]:
+            - generic [ref=e19]:
+              - generic [ref=e20]: Theme
+              - generic [ref=e21]: Light
+          - link [ref=e22] [cursor=pointer]:
+            - /url: /sign-in
+            - button "Sign In" [ref=e23]
+          - button "Get started" [ref=e24] [cursor=pointer]
+  - main [ref=e25]:
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - text: Welcome back
+        - heading "Sign in" [level=2] [ref=e30]
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - generic [ref=e33]: Email
+          - textbox "Email" [ref=e34]
+        - generic [ref=e35]:
+          - generic [ref=e36]: Password
+          - generic [ref=e37]:
+            - textbox "Password" [ref=e38]
+            - button "Показать пароль" [ref=e39] [cursor=pointer]: Show
+        - button "Sign in" [ref=e40] [cursor=pointer]
+        - generic [ref=e41]: or
+        - generic [ref=e42]:
+          - button "Continue with GitHub" [ref=e43] [cursor=pointer]
+          - button "Continue with Telegram" [ref=e45] [cursor=pointer]
+      - generic [ref=e46]:
+        - generic [ref=e47]: New to Authora?
+        - link "Create account" [ref=e48] [cursor=pointer]:
+          - /url: /sign-up
+      - link "Forgot password?" [ref=e50] [cursor=pointer]:
+        - /url: /forgot-password?next=%2Fprofile%2Fedit
+  - contentinfo [ref=e51]:
+    - generic [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e56]: 📋
+            - generic [ref=e57]: Authora
+          - paragraph [ref=e58]: Модуль для сбора и управления заявками с клиентских сайтов. Разработка под ключ — быстро, качественно, с гарантией результата.
+          - generic [ref=e59]:
+            - generic [ref=e60]: Denis Gutsuliak
+            - link "📧 admin@d9911.org" [ref=e61] [cursor=pointer]:
+              - /url: mailto:admin@d9911.org
+            - 'link "💬 Telegram: @d9911" [ref=e62] [cursor=pointer]':
+              - /url: https://t.me/d9911/
+        - generic [ref=e63]:
+          - generic [ref=e64]: Product
+          - generic [ref=e65]:
+            - link "Countries" [ref=e66] [cursor=pointer]:
+              - /url: /country
+            - link "Profile" [ref=e67] [cursor=pointer]:
+              - /url: /profile/edit
+        - generic [ref=e68]:
+          - generic [ref=e69]: Account
+          - generic [ref=e70]:
+            - link "Sign In" [ref=e71] [cursor=pointer]:
+              - /url: /sign-in
+            - link "Create account" [ref=e72] [cursor=pointer]:
+              - /url: /sign-up
+        - generic [ref=e73]:
+          - generic [ref=e74]: Company
+          - generic [ref=e75]:
+            - link "About" [ref=e76] [cursor=pointer]:
+              - /url: /about
+            - link "Home" [ref=e77] [cursor=pointer]:
+              - /url: /
+        - generic [ref=e78]:
+          - generic [ref=e79]: Services
+          - generic [ref=e80]:
+            - link "Web Development" [ref=e81] [cursor=pointer]:
+              - /url: https://t.me/d9911/
+            - link "Backend" [ref=e82] [cursor=pointer]:
+              - /url: https://t.me/d9911/
+            - link "Integrations" [ref=e83] [cursor=pointer]:
+              - /url: https://t.me/d9911/
+      - generic [ref=e84]:
+        - generic [ref=e85]: © 2026 Authora. All rights reserved.
+        - generic [ref=e86]:
+          - link "Privacy Policy" [ref=e87] [cursor=pointer]:
+            - /url: "#"
+          - link "Terms of Use" [ref=e88] [cursor=pointer]:
+            - /url: "#"
+          - generic [ref=e89]: Built with Next.js · FSD
+  - button "Open Next.js Dev Tools" [ref=e95] [cursor=pointer]

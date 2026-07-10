@@ -11,6 +11,14 @@ const commands = [
   ['node', ['tests/theme-hydration.mjs']],
   ['node', ['tests/sass-deprecation-warnings.mjs']],
   ['node', ['tests/oauth-cookie-handoff-fields.mjs']],
+  ['node', ['tests/account-recovery-contract.mjs']],
+  ['node', ['tests/account-recovery-session-version.mjs']],
+  ['node', ['tests/account-recovery-settings.mjs']],
+  ['node', ['tests/account-recovery-security.mjs']],
+  ['node', ['tests/account-recovery-observability.mjs']],
+  ['node', ['tests/account-recovery-persistence.mjs']],
+  ['node', ['tests/two-factor-recovery-codes.mjs']],
+  ['node', ['tests/auth-hydration-request-loop.mjs']],
 ];
 
 for (const [cmd, args] of commands) {

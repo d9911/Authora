@@ -3,7 +3,7 @@
         backend-start backend-test backend-test-sqlite security-audit load-test test-all \
         seed seed-mongo seed-sqlite docker-up docker-down \
         db-mongo-up doc-mongo db-postgres-up db-sqlite-up clean-ports \
-        check-source check-types check
+        check-source check-types check-account-recovery check
 
 BACKEND_DIR = backend
 FRONTEND_DIR = frontend
@@ -65,10 +65,10 @@ backend-start:
 
 # --- tests ---
 backend-test:
-	cd backend && npx ts-node-dev --transpile-only smoke-test.ts
+	cd backend && yarn run test:smoke:sqlite
 
 backend-test-sqlite:
-	cd backend && npx ts-node-dev --transpile-only smoke-test-sqlite.ts
+	cd backend && yarn run test:smoke:sqlite
 
 # --- security & load testing ---
 check-source:          ## fast source-level regression checks
@@ -78,10 +78,13 @@ check-types:           ## backend + frontend TypeScript checks
 	cd backend && yarn run typecheck
 	cd frontend && yarn run typecheck
 
-check: check-source check-types
+check-account-recovery: ## compiled account-recovery behavior tests
+	cd backend && yarn run test:account-recovery
+
+check: check-source check-types check-account-recovery
 
 security-audit:        ## OWASP-style security checks (boots its own server)
-	node tests/security/audit.mjs
+	cd backend && yarn node ../tests/security/audit.mjs
 
 load-test:             ## k6 (auth + oauth) + autocannon throughput
 	bash tests/run-tests.sh load

@@ -13,6 +13,9 @@
     "seed:sqlite": "ts-node-dev --transpile-only src/infrastructure/database/sqlite/seed.ts",
     "typecheck": "tsc --noEmit",
     "lint": "node ../tests/backend-clean-architecture-boundaries.mjs && tsc --noEmit",
+    "test:account-recovery": "yarn run build && node tests/account-recovery-use-cases.test.cjs && node tests/telegram-recovery-ticket.test.cjs",
+    "test:smoke:compile": "tsc -p tsconfig.smoke.json",
+    "test:smoke:sqlite": "yarn run test:smoke:compile && node tests/telegram-ticket-repository.test.cjs && node .smoke-dist/smoke-test-sqlite.js",
     "format": "prettier --write \"src/**/*.ts\""
   },
   "dependencies": {

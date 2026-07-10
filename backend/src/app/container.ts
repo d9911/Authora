@@ -3,7 +3,6 @@ import { MailService } from '../infrastructure/mail/MailService';
 import { TwoFactorService } from '../modules/auth/services/TwoFactorService';
 import { GithubOAuthService } from '../modules/auth/oauth/GithubOAuthService';
 import { TelegramAuthService } from '../modules/auth/oauth/TelegramAuthService';
-import { TelegramTicketStore } from '../modules/auth/oauth/TelegramTicketStore';
 import { TelegramBotService } from '../modules/auth/oauth/TelegramBotService';
 import { AuthUseCases } from '../modules/auth/use-cases/AuthUseCases';
 import { UserUseCases } from '../modules/user/use-cases/UserUseCases';
@@ -11,6 +10,7 @@ import { ProfileUseCases } from '../modules/profile/use-cases/ProfileUseCases';
 import { ProfilePhotoUseCases } from '../modules/profile-photo/use-cases/ProfilePhotoUseCases';
 import { ProfileImageProcessor } from '../modules/profile-photo/services/ProfileImageProcessor';
 import { LocationUseCases } from '../modules/location/use-cases/LocationUseCases';
+import { ConsoleAuthAudit } from '../modules/auth/services/ConsoleAuthAudit';
 
 export interface Container {
   repos: Repositories;
@@ -24,6 +24,7 @@ export interface Container {
   profiles: ProfileUseCases;
   profilePhotos: ProfilePhotoUseCases;
   locations: LocationUseCases;
+  authAudit: ConsoleAuthAudit;
 }
 
 let container: Container | null = null;
@@ -37,9 +38,9 @@ export function getContainer(): Container {
   const twoFactor = new TwoFactorService();
   const github = new GithubOAuthService();
   const telegram = new TelegramAuthService();
-  const telegramTickets = new TelegramTicketStore();
-  const telegramBot = new TelegramBotService(telegramTickets);
+  const telegramBot = new TelegramBotService(repos.telegramTickets);
   const profileImageProcessor = new ProfileImageProcessor();
+  const authAudit = new ConsoleAuthAudit();
 
   const auth = new AuthUseCases({
     users: repos.users,
@@ -49,7 +50,8 @@ export function getContainer(): Container {
     recoveryGrants: repos.recoveryGrants,
     mail,
     twoFactor,
-    telegramTickets,
+    telegramTickets: repos.telegramTickets,
+    audit: authAudit,
   });
   const users = new UserUseCases(repos.users);
   const profiles = new ProfileUseCases(repos.profiles, repos.users);
@@ -73,6 +75,7 @@ export function getContainer(): Container {
     profiles,
     profilePhotos,
     locations,
+    authAudit,
   };
   return container;
 }

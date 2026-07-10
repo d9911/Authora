@@ -2,6 +2,7 @@ import { AppError, ErrorCodes } from '../../../core/errors/AppError';
 import { comparePassword, hashPassword, randomNumericCode, randomToken, sha256 } from '../../../infrastructure/jwt/hash';
 import { ProfileRepository } from '../../profile/domain/ProfileRepository';
 import { UserRepository } from '../../user/domain/UserRepository';
+import { User } from '../../user/domain/User';
 import { EmailTokenRepository } from '../domain/EmailTokenRepository';
 import { MailGateway } from '../domain/MailGateway';
 import {
@@ -10,11 +11,12 @@ import {
 } from '../domain/RecoveryGrantRepository';
 import { RefreshTokenRepository } from '../domain/RefreshTokenRepository';
 import { PASSWORD_POLICY_HINT, validatePassword } from '../domain/passwordPolicy';
+import { AuthAuditGateway, AuthAuditEvent } from '../domain/AuthAuditGateway';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RESET_LINK_TTL_MS = 60 * 60 * 1000;
 const RECOVERY_GRANT_TTL_MS = 15 * 60 * 1000;
-const EMAIL_CODE_TTL_MS = 24 * 60 * 60 * 1000;
+const EMAIL_CHANGE_CODE_TTL_MS = 15 * 60 * 1000;
 
 export interface PasswordUseCaseDeps {
   users: UserRepository;
@@ -23,6 +25,7 @@ export interface PasswordUseCaseDeps {
   emailTokens: EmailTokenRepository;
   recoveryGrants: RecoveryGrantRepository;
   mail: MailGateway;
+  audit?: AuthAuditGateway;
   now?: () => Date;
 }
 
@@ -30,6 +33,11 @@ export interface RecoveryGrantPayload {
   recoveryToken: string;
   channel: RecoveryChannel;
   expiresAt: Date;
+}
+
+export interface PasswordResetCompletion {
+  user: User;
+  channel: RecoveryChannel;
 }
 
 export class PasswordUseCases {
@@ -40,6 +48,7 @@ export class PasswordUseCases {
   }
 
   async requestPasswordReset(emailInput: string, nextPath?: string): Promise<boolean> {
+    this.audit('recovery_requested', { channel: 'email', outcome: 'accepted' });
     const email = emailInput?.trim().toLowerCase();
     const user = email ? await this.deps.users.findByEmail(email) : null;
 
@@ -59,6 +68,7 @@ export class PasswordUseCases {
     try {
       await this.deps.mail.sendPasswordReset(user.email, rawToken, safeNextPath(nextPath));
     } catch (error) {
+      this.audit('recovery_delivery_failed', { channel: 'email', reason: 'provider_error' });
       // Do not turn a provider failure into account-enumeration evidence.
       console.error(
         '[account-recovery] password reset delivery failed',
@@ -74,7 +84,9 @@ export class PasswordUseCases {
       'reset_password',
     );
     if (!record) throw this.invalidRecoveryToken();
-    return this.issueRecoveryGrant(record.userId, 'email');
+    const grant = await this.issueRecoveryGrant(record.userId, 'email');
+    this.audit('recovery_token_exchanged', { channel: 'email', userId: record.userId });
+    return grant;
   }
 
   async issueRecoveryGrant(
@@ -111,7 +123,10 @@ export class PasswordUseCases {
     return { recoveryToken, channel, expiresAt };
   }
 
-  async completePasswordReset(recoveryToken: string, newPassword: string): Promise<boolean> {
+  async completePasswordReset(
+    recoveryToken: string,
+    newPassword: string,
+  ): Promise<PasswordResetCompletion> {
     if (!validatePassword(newPassword)) throw AppError.validation(PASSWORD_POLICY_HINT);
 
     const grant = await this.deps.recoveryGrants.consumeValid(sha256(recoveryToken ?? ''));
@@ -147,13 +162,19 @@ export class PasswordUseCases {
         );
       }
     }
-    return true;
+    this.audit('password_reset_completed', {
+      channel: grant.channel,
+      userId: updated.id,
+      outcome: 'success',
+    });
+    return { user: updated, channel: grant.channel };
   }
 
   /** Compatibility path for existing GraphQL clients. */
   async resetPassword(token: string, newPassword: string): Promise<boolean> {
     const grant = await this.exchangePasswordResetToken(token);
-    return this.completePasswordReset(grant.recoveryToken, newPassword);
+    await this.completePasswordReset(grant.recoveryToken, newPassword);
+    return true;
   }
 
   async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<boolean> {
@@ -188,10 +209,11 @@ export class PasswordUseCases {
       user.id,
       sha256(code),
       'change_email',
-      new Date(this.now().getTime() + EMAIL_CODE_TTL_MS),
+      new Date(this.now().getTime() + EMAIL_CHANGE_CODE_TTL_MS),
       email,
     );
     await this.deps.mail.sendEmailVerificationCode(email, code);
+    this.audit('email_change_requested', { channel: 'email', userId });
     return true;
   }
 
@@ -214,7 +236,15 @@ export class PasswordUseCases {
     });
     const profile = await this.deps.profiles.findByUserId(userId);
     if (profile && !profile.isVerified) await this.deps.profiles.update(userId, { isVerified: true });
+    this.audit('email_change_confirmed', { channel: 'email', userId });
     return true;
+  }
+
+  private audit(
+    event: AuthAuditEvent,
+    details?: Record<string, string | number | boolean | undefined>,
+  ): void {
+    this.deps.audit?.record(event, details);
   }
 
   private invalidRecoveryToken(): AppError {

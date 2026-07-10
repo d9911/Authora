@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 
 /**
  * Lightweight security middlewares (no external deps).
@@ -38,6 +39,7 @@ function createLimiter(opts: {
   max: number;
   keyPrefix: string;
   message?: string;
+  key?: (req: Request) => string;
 }) {
   const store = new Map<string, Bucket>();
 
@@ -53,7 +55,7 @@ function createLimiter(opts: {
       (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
       req.socket.remoteAddress ||
       'unknown';
-    const key = `${opts.keyPrefix}:${ip}`;
+    const key = `${opts.keyPrefix}:${opts.key?.(req) ?? ip}`;
     const now = Date.now();
     let bucket = store.get(key);
     if (!bucket || bucket.resetAt <= now) {
@@ -97,7 +99,13 @@ const SENSITIVE_OPS = [
   'signInTwoFactor',
   'signUp',
   'requestPasswordReset',
+  'exchangePasswordResetToken',
+  'completePasswordReset',
   'resetPassword',
+  'telegramRecoveryStart',
+  'telegramRecoveryPoll',
+  'requestEmailChange',
+  'confirmEmailChange',
   'confirmEmailCode',
   'resendEmailCode',
   'confirmTwoFactor',
@@ -110,13 +118,41 @@ export function authRateLimit() {
     keyPrefix: 'auth',
     message: 'Too many authentication attempts, please try again later',
   });
+  const identifierLimiter = createLimiter({
+    windowMs: 60_000,
+    max: Number(process.env.AUTH_IDENTIFIER_RATE_LIMIT_MAX ?? 5),
+    keyPrefix: 'auth-identifier',
+    message: 'Too many authentication attempts for this account, please try again later',
+    key: (req) => recoveryIdentifierHash(req) ?? 'anonymous',
+  });
 
   return (req: Request, res: Response, next: NextFunction) => {
     // Only throttle POST /graphql requests that call a sensitive mutation.
     const body = (req as Request & { body?: { query?: string } }).body;
     const query = body?.query ?? '';
-    const isSensitive = SENSITIVE_OPS.some((op) => new RegExp(`\\b${op}\\s*\\(`).test(query));
+    const isSensitive = SENSITIVE_OPS.some((op) =>
+      new RegExp(`\\b${op}\\b\\s*(?:\\(|\\{)`).test(query),
+    );
     if (!isSensitive) return next();
+    if (recoveryIdentifierHash(req)) {
+      return identifierLimiter(req, res, () => limiter(req, res, next));
+    }
     return limiter(req, res, next);
   };
+}
+
+function recoveryIdentifierHash(req: Request): string | null {
+  const body = (req as Request & {
+    body?: { variables?: Record<string, unknown> };
+  }).body;
+  const variables = body?.variables;
+  const direct = variables?.email;
+  const nested = Object.values(variables ?? {}).find(
+    (value): value is Record<string, unknown> =>
+      Boolean(value) && typeof value === 'object' && !Array.isArray(value) &&
+      typeof (value as Record<string, unknown>).email === 'string',
+  );
+  const candidate = direct ?? nested?.email;
+  if (typeof candidate !== 'string' || !candidate.trim()) return null;
+  return crypto.createHash('sha256').update(candidate.trim().toLowerCase()).digest('hex');
 }

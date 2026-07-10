@@ -83,6 +83,14 @@ export class SqliteUserRepository implements UserRepository {
       assign('twoFactorEnabled', data.twoFactorEnabled ? 1 : 0);
     if (data.twoFactorSecret !== undefined)
       assign('twoFactorSecret', data.twoFactorSecret === null ? null : data.twoFactorSecret);
+    if (data.twoFactorRecoveryCodeHashes !== undefined) {
+      assign(
+        'twoFactorRecoveryCodeHashes',
+        data.twoFactorRecoveryCodeHashes === null
+          ? null
+          : JSON.stringify(data.twoFactorRecoveryCodeHashes),
+      );
+    }
     if (data.githubId !== undefined) assign('githubId', data.githubId);
     if (data.authVersion !== undefined) assign('authVersion', data.authVersion);
 
@@ -120,5 +128,32 @@ export class SqliteUserRepository implements UserRepository {
     const updated = await this.findById(id);
     if (!updated) throw new Error(`User not found: ${id}`);
     return updated;
+  }
+
+  async consumeTwoFactorRecoveryCode(id: string, codeHash: string): Promise<boolean> {
+    const db = getSqlite();
+    const consume = db.transaction(() => {
+      const row = db
+        .prepare('SELECT twoFactorRecoveryCodeHashes FROM users WHERE id = ?')
+        .get(Number(id)) as { twoFactorRecoveryCodeHashes?: string | null } | undefined;
+      const hashes = row?.twoFactorRecoveryCodeHashes
+        ? (JSON.parse(row.twoFactorRecoveryCodeHashes) as string[])
+        : [];
+      if (!hashes.includes(codeHash)) return false;
+      const remaining = hashes.filter((hash) => hash !== codeHash);
+      const result = db
+        .prepare(
+          `UPDATE users SET twoFactorRecoveryCodeHashes = ?, updatedAt = ?
+           WHERE id = ? AND twoFactorRecoveryCodeHashes = ?`,
+        )
+        .run(
+          remaining.length ? JSON.stringify(remaining) : null,
+          nowIso(),
+          Number(id),
+          row?.twoFactorRecoveryCodeHashes,
+        );
+      return result.changes === 1;
+    });
+    return consume();
   }
 }

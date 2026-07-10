@@ -102,7 +102,11 @@ export function PasswordResetForm({ mode }: { mode: 'request' | 'reset' }) {
     }
     setBusy(true);
     try {
-      await completePasswordReset(password);
+      const result = await completePasswordReset(password);
+      if (result.channel === 'telegram') {
+        router.replace(nextPath ?? ROUTES.profileEdit);
+        return;
+      }
       const signInParams = new URLSearchParams({ recovered: '1' });
       if (nextPath) signInParams.set('next', nextPath);
       router.replace(`${ROUTES.signIn}?${signInParams.toString()}`);
@@ -188,6 +192,16 @@ export function PasswordResetForm({ mode }: { mode: 'request' | 'reset' }) {
 
   return (
     <AuthFormShell onSubmit={onReset} title="Новый пароль">
+      <input
+        type="text"
+        name="username"
+        value=""
+        autoComplete="username"
+        readOnly
+        hidden
+        aria-hidden="true"
+        tabIndex={-1}
+      />
       <PasswordInput
         id="recovery-password"
         label="Новый пароль"

@@ -1,6 +1,6 @@
 # Auth env contract
 
-Date: 2026-07-09
+Date: 2026-07-10
 
 Secret values must never be committed to docs. Use placeholders in example files
 and keep real values in local `.env`, `backend/.env`, or `backend/.env.docker`.
@@ -30,11 +30,15 @@ and keep real values in local `.env`, `backend/.env`, or `backend/.env.docker`.
 | Docker-only config | `SQLITE_FILE` | SQLite fallback DB path | backend Docker | `docker-compose.yml` | SET by Compose | Ignored when Mongo profile sets `DB_TYPE=mongo`. |
 | Tokens | `JWT_ACCESS_SECRET` | access token signing | backend local, backend Docker | `backend/src/config/env.ts`, `docker-compose.yml` | SET | Docker defaults are insecure and should be overridden outside local dev. |
 | Tokens | `JWT_REFRESH_SECRET` | refresh/OAuth token signing | backend local, backend Docker | `backend/src/config/env.ts`, `docker-compose.yml` | SET | Docker defaults are insecure and should be overridden outside local dev. |
+| Abuse controls | `RATE_LIMIT_MAX` | general API requests per minute and IP | backend local, backend Docker | `backend/src/shared/middlewares/security.ts` | OPTIONAL | Default `300`. In-memory per backend process. |
+| Abuse controls | `AUTH_RATE_LIMIT_MAX` | sensitive auth operations per minute and IP | backend local, backend Docker | `backend/src/shared/middlewares/security.ts` | OPTIONAL | Default `10`. |
+| Abuse controls | `AUTH_IDENTIFIER_RATE_LIMIT_MAX` | email/account bucket per minute | backend local, backend Docker | `backend/src/shared/middlewares/security.ts` | OPTIONAL | Default `5`; key contains SHA-256 of normalized email, not the email itself. |
 
 ## Provider separation contract
 
 - Email config is guarded by `MailService`; missing SMTP credentials mean console
-  dev mode, but configured SMTP failures return `MAIL_SEND_FAILED`.
+  dev mode. In production missing SMTP fails delivery instead of logging a reset
+  token; the public recovery response remains generic.
 - GitHub config is guarded by `GithubOAuthService.isConfigured()` and backend
   routes under `/api/auth/github*`.
 - Telegram config is guarded by `TelegramBotService`; bot login uses GraphQL
@@ -45,3 +49,19 @@ and keep real values in local `.env`, `backend/.env`, or `backend/.env.docker`.
   GitHub/Telegram.
 - Secrets are backend-only. Do not add `GITHUB_CLIENT_SECRET`, `SMTP_PASS`, or
   `TELEGRAM_BOT_TOKEN` to frontend env.
+
+## Recovery URL and cookie contract
+
+- `FRONTEND_URL` must be an absolute `http` or `https` URL. Outside localhost,
+  production startup requires HTTPS.
+- Email reset links are built with the `URL` API as
+  `${FRONTEND_URL}/reset-password?token=...`; an optional sanitized relative
+  `next` value is preserved.
+- The browser exchanges the email token through the same-origin GraphQL proxy.
+  The raw recovery grant is removed from the JSON response and stored as the
+  `recovery_token` httpOnly cookie.
+- `recovery_token` uses `SameSite=Strict`, path `/api/graphql`, and a 15-minute
+  maximum age. It is cleared after successful completion or an invalid recovery
+  response.
+- `COOKIE_SECURE=false` is required for plain `http://localhost`. Set it to
+  `true` only when the frontend is served through HTTPS.

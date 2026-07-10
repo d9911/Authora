@@ -1,30 +1,18 @@
-export interface TelegramVerifiedUser {
-  telegramId: string;
-  name?: string;
-  username?: string;
-}
+import crypto from 'crypto';
+import {
+  CreateTelegramTicketInput,
+  TelegramTicket,
+  TelegramTicketRepository,
+  TelegramVerifiedUser,
+} from '../domain/TelegramTicketRepository';
 
-export type TelegramTicketPurpose = 'login' | 'link' | 'recovery';
-export type TicketStatus = 'pending' | 'done' | 'cancelled' | 'expired';
-
-export interface CreateTelegramTicketInput {
-  purpose: TelegramTicketPurpose;
-  linkUserId?: string;
-  confirmationCode?: string;
-}
-
-export interface TelegramTicket {
-  token: string;
-  status: TicketStatus;
-  purpose: TelegramTicketPurpose;
-  createdAt: number;
-  /** If set, this is a LINK flow for the given authenticated user. */
-  linkUserId?: string;
-  /** Short code shown both in browser and bot for recovery intent confirmation. */
-  confirmationCode?: string;
-  /** Filled when the user taps Start in the bot. */
-  user?: TelegramVerifiedUser;
-}
+export type {
+  CreateTelegramTicketInput,
+  TelegramTicket,
+  TelegramTicketPurpose,
+  TelegramTicketStatus,
+  TelegramVerifiedUser,
+} from '../domain/TelegramTicketRepository';
 
 const TTL_MS = 5 * 60 * 1000; // tickets live 5 minutes
 
@@ -33,17 +21,19 @@ const TTL_MS = 5 * 60 * 1000; // tickets live 5 minutes
  * when the user clicks "Continue with Telegram", embedded in the bot deep-link
  * (?start=<token>), and resolved by the bot when the user taps Start.
  */
-export class TelegramTicketStore {
+export class TelegramTicketStore implements TelegramTicketRepository {
   private tickets = new Map<string, TelegramTicket>();
 
-  create(input: CreateTelegramTicketInput): TelegramTicket {
+  async create(input: CreateTelegramTicketInput): Promise<TelegramTicket> {
     this.gc();
     const token = cryptoRandom();
+    const createdAt = new Date();
     const ticket: TelegramTicket = {
       token,
       status: 'pending',
       purpose: input.purpose,
-      createdAt: Date.now(),
+      createdAt,
+      expiresAt: new Date(createdAt.getTime() + TTL_MS),
       linkUserId: input.linkUserId,
       confirmationCode: input.confirmationCode,
     };
@@ -51,19 +41,19 @@ export class TelegramTicketStore {
     return ticket;
   }
 
-  get(token: string): TelegramTicket | undefined {
+  async get(token: string): Promise<TelegramTicket | undefined> {
     const t = this.tickets.get(token);
     if (!t) return undefined;
-    if (Date.now() - t.createdAt > TTL_MS) {
+    if (t.expiresAt.getTime() <= Date.now()) {
       t.status = 'expired';
     }
     return t;
   }
 
-  resolve(token: string, user: TelegramVerifiedUser): boolean {
+  async resolve(token: string, user: TelegramVerifiedUser): Promise<boolean> {
     const t = this.tickets.get(token);
     if (!t || t.status !== 'pending') return false;
-    if (Date.now() - t.createdAt > TTL_MS) {
+    if (t.expiresAt.getTime() <= Date.now()) {
       t.status = 'expired';
       return false;
     }
@@ -72,7 +62,7 @@ export class TelegramTicketStore {
     return true;
   }
 
-  cancel(token: string): boolean {
+  async cancel(token: string): Promise<boolean> {
     const ticket = this.tickets.get(token);
     if (!ticket || ticket.status !== 'pending') return false;
     ticket.status = 'cancelled';
@@ -80,21 +70,19 @@ export class TelegramTicketStore {
   }
 
   /** Once consumed by the frontend, drop the ticket. */
-  consume(token: string): void {
+  async consume(token: string): Promise<void> {
     this.tickets.delete(token);
   }
 
   private gc(): void {
     const now = Date.now();
     for (const [k, t] of this.tickets) {
-      if (now - t.createdAt > TTL_MS) this.tickets.delete(k);
+      if (t.expiresAt.getTime() <= now) this.tickets.delete(k);
     }
   }
 }
 
 function cryptoRandom(): string {
   // 24 bytes -> short, URL-safe, fits Telegram's /start payload limit (64 chars).
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const crypto = require('crypto') as typeof import('crypto');
   return crypto.randomBytes(18).toString('base64url');
 }

@@ -59,25 +59,10 @@ export async function logout(): Promise<boolean> {
   return data.logout;
 }
 
-export async function requestPasswordReset(email: string): Promise<boolean> {
-  const data = await gqlRequest<{ requestPasswordReset: boolean }>(
-    `mutation RequestPasswordReset($input: RequestPasswordResetInput!) {
-      requestPasswordReset(input: $input)
-    }`,
-    { input: { email } },
-    { retry: false },
-  );
-  return data.requestPasswordReset;
-}
-
-export async function resetPassword(token: string, newPassword: string): Promise<boolean> {
-  const data = await gqlRequest<{ resetPassword: boolean }>(
-    `mutation ResetPassword($input: ResetPasswordInput!) { resetPassword(input: $input) }`,
-    { input: { token, newPassword } },
-    { retry: false },
-  );
-  return data.resetPassword;
-}
+export {
+  requestPasswordReset,
+  resetPassword,
+} from '@/features/password-reset/api/passwordResetApi';
 
 export async function confirmEmailCode(email: string, code: string): Promise<boolean> {
   const data = await gqlRequest<{ confirmEmailCode: boolean }>(
@@ -101,7 +86,9 @@ export async function resendEmailCode(email: string): Promise<boolean> {
 
 export async function enableTwoFactor(): Promise<TwoFactorSetupPayload> {
   const data = await gqlRequest<{ enableTwoFactor: TwoFactorSetupPayload }>(
-    `mutation EnableTwoFactor { enableTwoFactor { qrDataUrl otpauthUrl } }`,
+    `mutation EnableTwoFactor {
+      enableTwoFactor { qrDataUrl otpauthUrl recoveryCodes }
+    }`,
   );
   return data.enableTwoFactor;
 }

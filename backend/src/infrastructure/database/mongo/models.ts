@@ -13,6 +13,7 @@ const userSchema = new Schema(
     emailVerified: { type: Boolean, default: false },
     twoFactorEnabled: { type: Boolean, default: false },
     twoFactorSecret: String,
+    twoFactorRecoveryCodeHashes: [String],
     githubId: { type: String, index: true, sparse: true },
     authVersion: { type: Number, default: 0 },
   },
@@ -90,6 +91,27 @@ const recoveryGrantSchema = new Schema(
 );
 recoveryGrantSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
+const telegramTicketSchema = new Schema(
+  {
+    token: { type: String, required: true, unique: true, index: true },
+    status: {
+      type: String,
+      enum: ['pending', 'done', 'cancelled', 'expired'],
+      required: true,
+    },
+    purpose: { type: String, enum: ['login', 'link', 'recovery'], required: true },
+    linkUserId: String,
+    confirmationCode: String,
+    telegramId: String,
+    telegramName: String,
+    telegramUsername: String,
+    createdAt: { type: Date, required: true },
+    expiresAt: { type: Date, required: true },
+  },
+  { versionKey: false },
+);
+telegramTicketSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
 const countrySchema = new Schema(
   { name: { type: String, required: true }, code: String },
   { timestamps: true },
@@ -124,6 +146,8 @@ export const RefreshTokenModel =
 export const EmailTokenModel = mongoose.models.EmailToken || model('EmailToken', emailTokenSchema);
 export const RecoveryGrantModel =
   mongoose.models.RecoveryGrant || model('RecoveryGrant', recoveryGrantSchema);
+export const TelegramTicketModel =
+  mongoose.models.TelegramTicket || model('TelegramTicket', telegramTicketSchema);
 export const CountryModel = mongoose.models.Country || model('Country', countrySchema);
 export const RegionModel = mongoose.models.Region || model('Region', regionSchema);
 export const CityModel = mongoose.models.City || model('City', citySchema);

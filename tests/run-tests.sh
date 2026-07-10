@@ -39,14 +39,14 @@ ensure_deps() {
   # node_modules is excluded from snapshots, so (re)install on demand.
   if [ ! -x "$BE/node_modules/.bin/tsc" ]; then
     log "Installing backend dependencies (node_modules missing)"
-    (cd "$BE" && npm install)
+    (cd "$BE" && yarn install)
   fi
 }
 
 build_backend() {
   ensure_deps
   log "Building backend"
-  (cd "$BE" && npm run build)
+  (cd "$BE" && yarn run build)
 }
 
 free_port() {
@@ -61,9 +61,10 @@ start_backend() {
   free_port
   log "Starting backend on $BASE (SQLite :memory:, relaxed rate limits)"
   cd "$BE"
-  NODE_ENV=production BACKEND_PORT="$PORT" DB_TYPE=sqlite SQLITE_FILE=:memory: \
+  NODE_ENV=test BACKEND_PORT="$PORT" DB_TYPE=sqlite SQLITE_FILE=:memory: \
     JWT_ACCESS_SECRET=test_access JWT_REFRESH_SECRET=test_refresh \
-    RATE_LIMIT_MAX=100000 AUTH_RATE_LIMIT_MAX=100000 \
+    SMTP_USER= SMTP_PASS= RATE_LIMIT_MAX=100000 AUTH_RATE_LIMIT_MAX=100000 \
+    AUTH_IDENTIFIER_RATE_LIMIT_MAX=100000 \
     node dist/app/server.js >/tmp/authora-test-server.log 2>&1 &
   SERVER_PID=$!
   cd "$ROOT"

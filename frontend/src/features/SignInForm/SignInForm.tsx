@@ -30,6 +30,7 @@ export function SignInForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
+  const [useRecoveryCode, setUseRecoveryCode] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const completeAuthRedirect = async () => {
@@ -52,11 +53,13 @@ export function SignInForm() {
   };
 
   const submitTwoFactorCode = async (nextCode = code) => {
-    const normalized = normalizeNumericCode(nextCode);
-    if (!twoFactorToken || !normalized || busy) return;
+    const submittedCode = useRecoveryCode ? nextCode.trim() : normalizeNumericCode(nextCode);
+    if (!twoFactorToken || !submittedCode || busy) return;
     setBusy(true);
     try {
-      const res = await dispatch(signInTwoFactorThunk({ twoFactorToken, code: normalized }));
+      const res = await dispatch(
+        signInTwoFactorThunk({ twoFactorToken, code: submittedCode }),
+      );
       if (signInTwoFactorThunk.fulfilled.match(res)) await completeAuthRedirect();
     } finally {
       setBusy(false);
@@ -73,19 +76,48 @@ export function SignInForm() {
       <AuthFormShell
         onSubmit={onSubmit2fa}
         title="Two-factor code"
-        subtitle="Enter the 6-digit code from your authenticator app."
+        subtitle={
+          useRecoveryCode
+            ? 'Enter one of the recovery codes saved when 2FA was enabled.'
+            : 'Enter the 6-digit code from your authenticator app.'
+        }
       >
-        <OtpCodeInput
-          label="Authenticator code"
-          value={code}
-          onValueChange={setCode}
-          onComplete={(value) => void submitTwoFactorCode(value)}
-          placeholder="123456"
-          autoFocus
-        />
+        {useRecoveryCode ? (
+          <InputMain
+            label="Recovery code"
+            value={code}
+            onChange={(event) => setCode(event.target.value.toUpperCase())}
+            placeholder="ABCD-EFGH-JKLM"
+            autoComplete="one-time-code"
+            spellCheck={false}
+            mono
+            autoFocus
+          />
+        ) : (
+          <OtpCodeInput
+            label="Authenticator code"
+            value={code}
+            onValueChange={setCode}
+            onComplete={(value) => void submitTwoFactorCode(value)}
+            placeholder="123456"
+            autoFocus
+          />
+        )}
         {error && <div className={styles['auth-error']}>{error}</div>}
         <ButtonMain type="submit" fullWidth loading={busy}>
           Verify
+        </ButtonMain>
+        <ButtonMain
+          variant="ghost"
+          fullWidth
+          onClick={() => {
+            setUseRecoveryCode((current) => !current);
+            setCode('');
+            dispatch(clearAuthError());
+          }}
+          type="button"
+        >
+          {useRecoveryCode ? 'Use authenticator code' : 'Use recovery code'}
         </ButtonMain>
         <ButtonMain
           variant="ghost"

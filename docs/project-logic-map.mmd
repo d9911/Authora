@@ -1,5 +1,5 @@
 %% Authora current project logic map
-%% Generated from the local repository on 2026-07-08.
+%% Verified against the local repository on 2026-07-10.
 %% Sources:
 %% - README.md:1-38, 82-98, 253-300
 %% - backend/src/app/container.ts:13-51
@@ -10,6 +10,7 @@
 %% - backend/src/app/graphql/schema.ts:4-161
 %% - backend/src/infrastructure/database/repositories/index.ts:21-61
 %% - backend/src/modules/auth/use-cases/AuthUseCases.ts:82-255, 276-523
+%% - backend/src/modules/auth/use-cases/PasswordUseCases.ts
 %% - backend/src/modules/profile/use-cases/ProfileUseCases.ts:7-62
 %% - backend/src/modules/user/domain/User.ts:6-33
 %% - backend/src/modules/profile/domain/Profile.ts:1-15
@@ -21,6 +22,8 @@
 %% - frontend/src/shared/api/graphqlClient.ts:20-80
 %% - frontend/src/processes/store/rootReducer.ts:1-14
 %% - frontend/src/features/EditProfileForm/EditProfileForm.tsx:13-124
+%% - frontend/src/features/PasswordResetForm/PasswordResetForm.tsx
+%% - frontend/src/features/PasswordResetForm/TelegramRecoveryPanel.tsx
 
 flowchart TD
   user["User in browser"]
@@ -50,23 +53,24 @@ flowchart TD
 
     subgraph frontendApi["Frontend API layer"]
       gqlClient["gqlRequest<br/>POST /api/graphql<br/>Refresh/retry on UNAUTHORIZED or INVALID_TOKEN"]
-      sameOriginProxy["GraphQL same-origin proxy<br/>Hides backend URL<br/>Reads httpOnly cookies<br/>Injects Authorization<br/>Sets/clears cookies from auth payloads"]
-      authApi["features/auth-api<br/>signUp, signIn, 2FA, password reset, OAuth exchange/link, Telegram bot start/poll"]
+      sameOriginProxy["GraphQL same-origin proxy<br/>Hides backend URL<br/>Reads httpOnly session/recovery cookies<br/>Injects Authorization and recovery grant<br/>Strips raw tokens from responses"]
+      authApi["Split feature APIs<br/>auth compatibility barrel<br/>password-reset API<br/>account-security API"]
       profileApi["entities/profile API<br/>myProfile + updateProfile"]
       locationApi["entities/country API<br/>countries + country/region/city queries"]
     end
 
     signInForm["SignInForm<br/>Uses next query param<br/>signIn -> optional 2FA -> loadMe -> replace(nextPath)"]
     signUpForm["SignUpForm<br/>email + password + confirmPassword<br/>shared password regex<br/>redirects to confirm-email"]
-    editProfileForm["EditProfileForm<br/>Loads me + myProfile<br/>Updates user fields and profile fields<br/>Current photo fields are Avatar URL and Cover image URL"]
-    connectedAccounts["Connected account controls<br/>GitHub and Telegram link/unlink"]
+    recoveryForm["PasswordResetForm<br/>Email or Telegram recovery<br/>password + confirmPassword<br/>preserves sanitized next"]
+    editProfileForm["EditProfileForm<br/>Loads me + myProfile<br/>Updates user/profile fields<br/>Uses location selectors"]
+    connectedAccounts["Connected account controls<br/>GitHub/Telegram link/unlink<br/>add/change recovery email<br/>recovery methods and password action"]
     twoFactorControls["Two-factor controls<br/>enable -> QR/otpauth<br/>confirm/disable by code"]
   end
 
   subgraph frontendGuards["Frontend route guards and session transport"]
     nextProxy["Next proxy middleware<br/>/login -> /sign-in<br/>/profile/** requires auth cookie<br/>/sign-in and /sign-up redirect authed users to /profile/edit"]
     nextParam["next query param<br/>Stores return target for protected page redirects"]
-    cookies["httpOnly cookies on frontend origin<br/>access_token + refresh_token"]
+    cookies["httpOnly cookies on frontend origin<br/>access_token + refresh_token<br/>recovery_token scoped to /api/graphql"]
   end
 
   subgraph backend["Backend: Express + GraphQL API"]
@@ -77,7 +81,8 @@ flowchart TD
     resolvers["GraphQL resolvers<br/>requireAuth for protected operations<br/>delegate to use cases"]
 
     subgraph useCases["Application use cases"]
-      authUseCases["AuthUseCases<br/>signUp/signIn/refresh/logout<br/>email confirmation<br/>password reset/change<br/>2FA<br/>GitHub/Telegram login and linking<br/>OAuth handoff<br/>Telegram bot tickets"]
+      authUseCases["AuthUseCases facade<br/>signUp/signIn/session/2FA/OAuth<br/>delegates password and recovery rules<br/>Telegram login/link/recovery tickets"]
+      passwordUseCases["PasswordUseCases<br/>email reset exchange/completion<br/>password/session revocation<br/>add/change recovery email"]
       userUseCases["UserUseCases<br/>get current or public user data"]
       profileUseCases["ProfileUseCases<br/>getByUserId + update<br/>avatarUrl updates User<br/>coverSrc updates Profile"]
       locationUseCases["LocationUseCases<br/>countries, country, region, city"]
@@ -85,19 +90,19 @@ flowchart TD
 
     subgraph infra["Infrastructure"]
       repositories["Repository factory<br/>DB_TYPE=mongo -> Mongo repos<br/>DB_TYPE=sqlite -> SQLite repos<br/>DB_TYPE=postgres throws not implemented"]
-      mongoModels["Mongo models<br/>User includes avatarUrl<br/>Profile includes coverSrc<br/>RefreshToken stores tokenHash<br/>EmailToken stores tokenHash"]
+      mongoModels["Mongo models<br/>Users + Profiles + ProfileImages<br/>hashed RefreshToken/EmailToken<br/>hashed RecoveryGrant"]
       sqliteRepos["SQLite repositories<br/>Alternative repository implementation"]
       jwtHash["JWT + hash helpers<br/>bcrypt password hash<br/>JWT access/refresh<br/>sha256 token hashes<br/>OAuth purpose tokens"]
       mail["MailService<br/>email confirmation code<br/>password reset link"]
       githubService["GithubOAuthService<br/>authorize URL + code exchange"]
       telegramService["TelegramAuthService<br/>validates widget callback signature"]
-      telegramBot["TelegramBotService + TelegramTicketStore<br/>deep-link ticket flow"]
-      twoFactorService["TwoFactorService<br/>TOTP secret, QR, code verification"]
+      telegramBot["TelegramBotService + TelegramTicketRepository<br/>persistent deep-link ticket flow"]
+      twoFactorService["TwoFactorService<br/>TOTP secret, QR, verification<br/>one-time recovery codes"]
     end
   end
 
   subgraph dataStores["Data stores"]
-    mongoDb["MongoDB<br/>Users, Profiles, RefreshTokens, EmailTokens, Countries, Regions, Cities"]
+    mongoDb["MongoDB<br/>Users, Profiles, ProfileImages<br/>RefreshTokens, EmailTokens, RecoveryGrants, TelegramTickets<br/>Countries, Regions, Cities"]
     sqliteDb["SQLite file<br/>same repository contracts"]
     externalProviders["External providers<br/>GitHub OAuth<br/>Telegram bot/widget<br/>SMTP server"]
   end
@@ -118,6 +123,7 @@ flowchart TD
   publicRoutes --> locationApi
   authRoutes --> signInForm
   authRoutes --> signUpForm
+  authRoutes --> recoveryForm
   privateRoutes --> editProfileForm
   privateRoutes --> connectedAccounts
   privateRoutes --> twoFactorControls
@@ -125,6 +131,7 @@ flowchart TD
 
   signInForm --> authApi
   signUpForm --> authApi
+  recoveryForm --> authApi
   editProfileForm --> profileApi
   connectedAccounts --> authApi
   twoFactorControls --> authApi
@@ -144,6 +151,7 @@ flowchart TD
   gqlContext --> resolvers
   gqlSchema --> resolvers
   resolvers --> authUseCases
+  authUseCases --> passwordUseCases
   resolvers --> userUseCases
   resolvers --> profileUseCases
   resolvers --> locationUseCases
@@ -154,11 +162,13 @@ flowchart TD
   repositories --> mongoModels
   repositories --> sqliteRepos
   authUseCases --> repositories
+  passwordUseCases --> repositories
   userUseCases --> repositories
   profileUseCases --> repositories
   locationUseCases --> repositories
   authUseCases --> jwtHash
   authUseCases --> mail
+  passwordUseCases --> mail
   authUseCases --> githubService
   authUseCases --> telegramService
   authUseCases --> telegramBot
@@ -196,6 +206,25 @@ flowchart TD
   gqlClient --> invalidAccess
   invalidAccess --> failedRefresh --> authRoutes
 
+  subgraph recoveryFlow["Account recovery flow"]
+    recoveryChoice["/forgot-password<br/>Email or linked Telegram"]
+    genericReset["Email request always returns generic accepted response"]
+    emailResetToken["Email link token<br/>SHA-256 in EmailToken<br/>TTL 1 hour"]
+    telegramRecoveryTicket["Telegram bot confirmation<br/>existing telegramId only<br/>persistent ticket TTL 5 minutes"]
+    recoveryGrant["Shared RecoveryGrant<br/>SHA-256 + channel + authVersion<br/>TTL 15 minutes"]
+    recoveryCookie["Proxy strips raw grant<br/>httpOnly SameSite Strict recovery_token"]
+    completeReset["Validate password twice in UI<br/>server policy validation<br/>bcrypt replacement"]
+    revokeSessions["authVersion + 1<br/>revoke all refresh tokens and grants"]
+    recoveryResult["Email -> sign in and preserve next<br/>Telegram -> one fresh session and preserve next"]
+    twoFactorRecovery["2FA remains enabled<br/>TOTP or saved one-time recovery code"]
+  end
+
+  authRoutes --> recoveryChoice
+  recoveryChoice --> genericReset --> emailResetToken --> recoveryGrant
+  recoveryChoice --> telegramRecoveryTicket --> recoveryGrant
+  recoveryGrant --> recoveryCookie --> completeReset --> passwordUseCases --> revokeSessions --> recoveryResult --> twoFactorRecovery
+  recoveryCookie --> cookies
+
   subgraph githubFlow["GitHub OAuth flow"]
     githubClick["GithubLoginButton<br/>window.location.href = backend /api/auth/github"]
     githubState["Backend sets gh_state cookie<br/>Redirects to GitHub authorize URL"]
@@ -219,23 +248,19 @@ flowchart TD
   telegramClick --> telegramStart --> telegramBot --> telegramUserAction --> telegramPoll --> telegramDone --> cookies
 
   subgraph profilePhotoCurrent["Current profile photo and cover logic"]
-    avatarUrl["User.avatarUrl<br/>manual URL field in EditProfileForm"]
-    coverSrc["Profile.coverSrc<br/>manual URL field in EditProfileForm"]
-    updateProfile["updateProfile mutation<br/>avatarUrl goes to User patch<br/>coverSrc goes to Profile patch"]
-    noUploadPipeline["No upload/crop/delete/replace file pipeline found in current scanned sources"]
+    photoManager["ProfilePhotoManager<br/>avatar crop and cover preview"]
+    uploadImage["uploadProfileImage mutation<br/>validated and processed image bytes"]
+    onePerKind["ProfileImage repository<br/>unique userId + kind<br/>replace or delete avatar/cover"]
+    publicImageRoute["Public image route<br/>etag + processed content"]
   end
 
-  editProfileForm --> avatarUrl
-  editProfileForm --> coverSrc
-  avatarUrl --> updateProfile --> profileUseCases
-  coverSrc --> updateProfile
-  updateProfile --> noUploadPipeline
+  editProfileForm --> photoManager --> uploadImage --> onePerKind --> publicImageRoute
 
   classDef guard fill:#fff6d6,stroke:#d9a300,color:#3b2d00;
   classDef backendClass fill:#eef6ff,stroke:#4d8fd6,color:#10233f;
   classDef frontendClass fill:#f3f2ff,stroke:#7a6cff,color:#211a5a;
   classDef dataClass fill:#edf9f1,stroke:#2f9e5b,color:#0f3b20;
   class nextProxy,nextParam,cookies guard;
-  class server,expressApp,gqlContext,gqlSchema,resolvers,authUseCases,userUseCases,profileUseCases,locationUseCases,repositories,mongoModels,sqliteRepos,jwtHash,mail,githubService,telegramService,telegramBot,twoFactorService backendClass;
-  class rootLayout,header,accountTrigger,accountMenu,home,publicRoutes,authRoutes,privateRoutes,oauthRoutesFe,apiRoutesFe,redux,authState,profileState,locationState,themeState,gqlClient,sameOriginProxy,authApi,profileApi,locationApi,signInForm,signUpForm,editProfileForm,connectedAccounts,twoFactorControls frontendClass;
+  class server,expressApp,gqlContext,gqlSchema,resolvers,authUseCases,passwordUseCases,userUseCases,profileUseCases,locationUseCases,repositories,mongoModels,sqliteRepos,jwtHash,mail,githubService,telegramService,telegramBot,twoFactorService,emailResetToken,telegramRecoveryTicket,recoveryGrant,completeReset,revokeSessions,twoFactorRecovery,uploadImage,onePerKind,publicImageRoute backendClass;
+  class rootLayout,header,accountTrigger,accountMenu,home,publicRoutes,authRoutes,privateRoutes,oauthRoutesFe,apiRoutesFe,redux,authState,profileState,locationState,themeState,gqlClient,sameOriginProxy,authApi,profileApi,locationApi,signInForm,signUpForm,recoveryForm,editProfileForm,connectedAccounts,twoFactorControls,recoveryChoice,genericReset,recoveryResult,photoManager frontendClass;
   class mongoDb,sqliteDb,externalProviders dataClass;

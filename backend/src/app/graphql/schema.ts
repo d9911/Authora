@@ -67,6 +67,7 @@ export const typeDefs = /* GraphQL */ `
   type TwoFactorSetupPayload {
     qrDataUrl: String!
     otpauthUrl: String!
+    recoveryCodes: [String!]!
   }
 
   type TelegramBotStartPayload {
@@ -101,6 +102,14 @@ export const typeDefs = /* GraphQL */ `
     recoveryToken: String!
     channel: RecoveryMethod!
     expiresAt: DateTime!
+  }
+
+  type CompletePasswordResetPayload {
+    success: Boolean!
+    channel: RecoveryMethod!
+    user: User!
+    accessToken: String
+    refreshToken: String
   }
 
   enum ProfileImageKind {
@@ -203,7 +212,7 @@ export const typeDefs = /* GraphQL */ `
     resendEmailCode(email: String!): Boolean!
     requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
     exchangePasswordResetToken(token: String!): RecoveryGrantPayload!
-    completePasswordReset(input: CompletePasswordResetInput!): Boolean!
+    completePasswordReset(input: CompletePasswordResetInput!): CompletePasswordResetPayload!
     resetPassword(input: ResetPasswordInput!): Boolean!
     changePassword(oldPassword: String!, newPassword: String!): Boolean!
     requestEmailChange(email: String!): Boolean!

@@ -1,10 +1,11 @@
-import { env } from '../config/env';
+import { env, validateRecoveryEnvironment } from '../config/env';
 import { createApp } from './express';
 import { getContainer } from './container';
 import { connectMongo, disconnectMongo } from '../infrastructure/database/mongo/connection';
 import { connectSqlite, disconnectSqlite } from '../infrastructure/database/sqlite/connection';
 
 async function bootstrap(): Promise<void> {
+  validateRecoveryEnvironment();
   // Connect the selected database (chosen via DB_TYPE).
   if (env.dbType === 'mongo') {
     await connectMongo();

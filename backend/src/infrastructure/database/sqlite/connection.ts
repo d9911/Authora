@@ -43,6 +43,7 @@ export function applySchema(database: SqliteDb): void {
       emailVerified   INTEGER NOT NULL DEFAULT 0,
       twoFactorEnabled INTEGER NOT NULL DEFAULT 0,
       twoFactorSecret TEXT,
+      twoFactorRecoveryCodeHashes TEXT,
       githubId        TEXT,
       authVersion     INTEGER NOT NULL DEFAULT 0,
       createdAt       TEXT NOT NULL,
@@ -123,6 +124,20 @@ export function applySchema(database: SqliteDb): void {
     CREATE INDEX IF NOT EXISTS idx_recovery_hash ON recovery_grants(tokenHash);
     CREATE INDEX IF NOT EXISTS idx_recovery_user ON recovery_grants(userId);
 
+    CREATE TABLE IF NOT EXISTS telegram_tickets (
+      token              TEXT PRIMARY KEY,
+      status             TEXT NOT NULL,
+      purpose            TEXT NOT NULL,
+      linkUserId         TEXT,
+      confirmationCode   TEXT,
+      telegramId         TEXT,
+      telegramName       TEXT,
+      telegramUsername   TEXT,
+      createdAt          TEXT NOT NULL,
+      expiresAt          TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_telegram_tickets_expires ON telegram_tickets(expiresAt);
+
     CREATE TABLE IF NOT EXISTS countries (
       id        INTEGER PRIMARY KEY AUTOINCREMENT,
       name      TEXT NOT NULL,
@@ -159,6 +174,9 @@ export function applySchema(database: SqliteDb): void {
   }
   if (!userColumns.some((column) => column.name === 'authVersion')) {
     database.exec('ALTER TABLE users ADD COLUMN authVersion INTEGER NOT NULL DEFAULT 0')
+  }
+  if (!userColumns.some((column) => column.name === 'twoFactorRecoveryCodeHashes')) {
+    database.exec('ALTER TABLE users ADD COLUMN twoFactorRecoveryCodeHashes TEXT')
   }
   const emailTokenColumns = database.prepare('PRAGMA table_info(email_tokens)').all() as Array<{
     name: string

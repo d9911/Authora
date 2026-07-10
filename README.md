@@ -1,7 +1,7 @@
 # Authora — Auth, Profile & Public Locations
 
 Monorepo for a fullstack application with email/password auth, JWT access/refresh,
-email confirmation, password recovery, 2FA, GitHub/Telegram auth (post-MVP),
+email confirmation, email/Telegram account recovery, 2FA, GitHub/Telegram auth,
 profile editing, and public country/region/city pages.
 
 Two parts:
@@ -222,7 +222,7 @@ Postgres means adding one more set of repository implementations there.
 - [x] Database layer (Mongo + SQLite) + repository abstraction + seed + `DB_TYPE` switch
 - [x] User / Profile module
 - [x] Email/password auth + JWT access/refresh (rotation)
-- [x] Email confirmation + password reset (token flow)
+- [x] Email/Telegram account recovery (one-time grant + session revocation)
 - [x] 2FA (speakeasy + qrcode)
 - [x] Frontend (Next.js, FSD, Redux) + PWA
 - [x] Docker Compose (backend + frontend)
@@ -243,9 +243,11 @@ make security-audit   # 22 OWASP-style checks (auth gating, JWT tampering,
 make load-test        # k6 functional+load (auth & GitHub/Telegram flows) +
                       # autocannon throughput benchmark
 make test-all
+make check                 # source contracts + typechecks + recovery behavior
+make backend-test-sqlite   # local GraphQL recovery smoke, no external DB
 ```
 
-Latest results: **security 22/22**, **k6 auth checks 100% / 0 failed**,
+Latest local results: **security 25/25**, **k6 auth checks 100% / 0 failed**,
 **k6 oauth 13/13**, **autocannon ~700 req/s** on the authed hot path.
 Hardening added from the audit (rate limiting, security headers, 413 on oversized
 bodies) lives in `backend/src/shared/middlewares/security.ts`.

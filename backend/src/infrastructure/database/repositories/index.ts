@@ -7,6 +7,7 @@ import { ProfileImageRepository } from '../../../modules/profile-photo/domain/Pr
 
 import { EmailTokenRepository } from '../../../modules/auth/domain/EmailTokenRepository';
 import { RecoveryGrantRepository } from '../../../modules/auth/domain/RecoveryGrantRepository';
+import { TelegramTicketRepository } from '../../../modules/auth/domain/TelegramTicketRepository';
 
 import { MongoUserRepository } from '../mongo/MongoUserRepository';
 import { MongoProfileRepository } from '../mongo/MongoProfileRepository';
@@ -15,6 +16,7 @@ import { MongoLocationRepository } from '../mongo/MongoLocationRepository';
 import { MongoEmailTokenRepository } from '../mongo/MongoEmailTokenRepository';
 import { MongoProfileImageRepository } from '../mongo/MongoProfileImageRepository';
 import { MongoRecoveryGrantRepository } from '../mongo/MongoRecoveryGrantRepository';
+import { MongoTelegramTicketRepository } from '../mongo/MongoTelegramTicketRepository';
 
 import { SqliteUserRepository } from '../sqlite/SqliteUserRepository';
 import { SqliteProfileRepository } from '../sqlite/SqliteProfileRepository';
@@ -23,6 +25,7 @@ import { SqliteLocationRepository } from '../sqlite/SqliteLocationRepository';
 import { SqliteEmailTokenRepository } from '../sqlite/SqliteEmailTokenRepository';
 import { SqliteProfileImageRepository } from '../sqlite/SqliteProfileImageRepository';
 import { SqliteRecoveryGrantRepository } from '../sqlite/SqliteRecoveryGrantRepository';
+import { SqliteTelegramTicketRepository } from '../sqlite/SqliteTelegramTicketRepository';
 
 export interface Repositories {
   users: UserRepository;
@@ -30,6 +33,7 @@ export interface Repositories {
   refreshTokens: RefreshTokenRepository;
   emailTokens: EmailTokenRepository;
   recoveryGrants: RecoveryGrantRepository;
+  telegramTickets: TelegramTicketRepository;
   profileImages: ProfileImageRepository;
   locations: LocationRepository;
 }
@@ -50,6 +54,7 @@ export function createRepositories(): Repositories {
         refreshTokens: new MongoRefreshTokenRepository(),
         emailTokens: new MongoEmailTokenRepository(),
         recoveryGrants: new MongoRecoveryGrantRepository(),
+        telegramTickets: new MongoTelegramTicketRepository(),
         profileImages: new MongoProfileImageRepository(),
         locations: new MongoLocationRepository(),
       };
@@ -60,6 +65,7 @@ export function createRepositories(): Repositories {
         refreshTokens: new SqliteRefreshTokenRepository(),
         emailTokens: new SqliteEmailTokenRepository(),
         recoveryGrants: new SqliteRecoveryGrantRepository(),
+        telegramTickets: new SqliteTelegramTicketRepository(),
         profileImages: new SqliteProfileImageRepository(),
         locations: new SqliteLocationRepository(),
       };
