@@ -81,7 +81,7 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
     }
   };
 
-  const fallbackLabel = (user.nickname || user.name || user.email).charAt(0).toUpperCase();
+  const fallbackLabel = (user.nickname || user.name || user.email || 'A').charAt(0).toUpperCase();
 
   return (
     <div className={styles['photo-manager']}>

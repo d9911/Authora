@@ -4,6 +4,7 @@ const userSchema = new Schema(
   {
     name: String,
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
+    emailKind: { type: String, enum: ['contactable', 'synthetic'], default: 'contactable' },
     password: String,
     nickname: String,
     phoneNumber: String,
@@ -13,6 +14,7 @@ const userSchema = new Schema(
     twoFactorEnabled: { type: Boolean, default: false },
     twoFactorSecret: String,
     githubId: { type: String, index: true, sparse: true },
+    authVersion: { type: Number, default: 0 },
   },
   { timestamps: true },
 );
@@ -62,12 +64,31 @@ const emailTokenSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     tokenHash: { type: String, required: true, index: true },
-    type: { type: String, enum: ['verify_email', 'reset_password'], required: true },
+    type: {
+      type: String,
+      enum: ['verify_email', 'reset_password', 'change_email'],
+      required: true,
+    },
+    expiresAt: { type: Date, required: true },
+    usedAt: Date,
+    targetEmail: String,
+  },
+  { timestamps: { createdAt: true, updatedAt: false } },
+);
+emailTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+const recoveryGrantSchema = new Schema(
+  {
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    tokenHash: { type: String, required: true, unique: true, index: true },
+    channel: { type: String, enum: ['email', 'telegram'], required: true },
+    authVersion: { type: Number, required: true },
     expiresAt: { type: Date, required: true },
     usedAt: Date,
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );
+recoveryGrantSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const countrySchema = new Schema(
   { name: { type: String, required: true }, code: String },
@@ -101,6 +122,8 @@ export const ProfileImageModel =
 export const RefreshTokenModel =
   mongoose.models.RefreshToken || model('RefreshToken', refreshTokenSchema);
 export const EmailTokenModel = mongoose.models.EmailToken || model('EmailToken', emailTokenSchema);
+export const RecoveryGrantModel =
+  mongoose.models.RecoveryGrant || model('RecoveryGrant', recoveryGrantSchema);
 export const CountryModel = mongoose.models.Country || model('Country', countrySchema);
 export const RegionModel = mongoose.models.Region || model('Region', regionSchema);
 export const CityModel = mongoose.models.City || model('City', citySchema);

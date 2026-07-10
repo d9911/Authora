@@ -16,6 +16,7 @@ function map(doc: any): EmailTokenRecord {
     type: doc.type,
     expiresAt: doc.expiresAt,
     usedAt: doc.usedAt ?? undefined,
+    targetEmail: doc.targetEmail ?? undefined,
   };
 }
 
@@ -25,17 +26,42 @@ export class MongoEmailTokenRepository implements EmailTokenRepository {
     tokenHash: string,
     type: EmailTokenType,
     expiresAt: Date,
+    targetEmail?: string,
   ): Promise<void> {
-    await EmailTokenModel.create({ userId, tokenHash, type, expiresAt });
+    await EmailTokenModel.create({ userId, tokenHash, type, expiresAt, targetEmail });
   }
 
-  async findValid(tokenHash: string, type: EmailTokenType): Promise<EmailTokenRecord | null> {
+  async findValid(
+    tokenHash: string,
+    type: EmailTokenType,
+    userId?: string,
+  ): Promise<EmailTokenRecord | null> {
     const doc = await EmailTokenModel.findOne({
       tokenHash,
       type,
+      ...(userId ? { userId } : {}),
       usedAt: { $exists: false },
       expiresAt: { $gt: new Date() },
     }).lean();
+    return doc ? map(doc) : null;
+  }
+
+  async consumeValid(
+    tokenHash: string,
+    type: EmailTokenType,
+    userId?: string,
+  ): Promise<EmailTokenRecord | null> {
+    const doc = await EmailTokenModel.findOneAndUpdate(
+      {
+        tokenHash,
+        type,
+        ...(userId ? { userId } : {}),
+        usedAt: { $exists: false },
+        expiresAt: { $gt: new Date() },
+      },
+      { $set: { usedAt: new Date() } },
+      { new: false },
+    ).lean();
     return doc ? map(doc) : null;
   }
 

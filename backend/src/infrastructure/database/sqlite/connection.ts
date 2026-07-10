@@ -34,6 +34,7 @@ export function applySchema(database: SqliteDb): void {
       id              INTEGER PRIMARY KEY AUTOINCREMENT,
       name            TEXT,
       email           TEXT NOT NULL UNIQUE,
+      emailKind       TEXT NOT NULL DEFAULT 'contactable',
       password        TEXT,
       nickname        TEXT,
       phoneNumber     TEXT,
@@ -43,6 +44,7 @@ export function applySchema(database: SqliteDb): void {
       twoFactorEnabled INTEGER NOT NULL DEFAULT 0,
       twoFactorSecret TEXT,
       githubId        TEXT,
+      authVersion     INTEGER NOT NULL DEFAULT 0,
       createdAt       TEXT NOT NULL,
       updatedAt       TEXT NOT NULL
     );
@@ -102,9 +104,24 @@ export function applySchema(database: SqliteDb): void {
       type       TEXT NOT NULL,
       expiresAt  TEXT NOT NULL,
       usedAt     TEXT,
+      targetEmail TEXT,
       createdAt  TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_email_hash ON email_tokens(tokenHash);
+
+    CREATE TABLE IF NOT EXISTS recovery_grants (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId      INTEGER NOT NULL,
+      tokenHash   TEXT NOT NULL UNIQUE,
+      channel     TEXT NOT NULL,
+      authVersion INTEGER NOT NULL,
+      expiresAt   TEXT NOT NULL,
+      usedAt      TEXT,
+      createdAt   TEXT NOT NULL,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_recovery_hash ON recovery_grants(tokenHash);
+    CREATE INDEX IF NOT EXISTS idx_recovery_user ON recovery_grants(userId);
 
     CREATE TABLE IF NOT EXISTS countries (
       id        INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -135,6 +152,27 @@ export function applySchema(database: SqliteDb): void {
     CREATE INDEX IF NOT EXISTS idx_cities_country ON cities(countryId);
     CREATE INDEX IF NOT EXISTS idx_cities_region ON cities(regionId);
   `)
+
+  const userColumns = database.prepare('PRAGMA table_info(users)').all() as Array<{ name: string }>
+  if (!userColumns.some((column) => column.name === 'emailKind')) {
+    database.exec("ALTER TABLE users ADD COLUMN emailKind TEXT NOT NULL DEFAULT 'contactable'")
+  }
+  if (!userColumns.some((column) => column.name === 'authVersion')) {
+    database.exec('ALTER TABLE users ADD COLUMN authVersion INTEGER NOT NULL DEFAULT 0')
+  }
+  const emailTokenColumns = database.prepare('PRAGMA table_info(email_tokens)').all() as Array<{
+    name: string
+  }>
+  if (!emailTokenColumns.some((column) => column.name === 'targetEmail')) {
+    database.exec('ALTER TABLE email_tokens ADD COLUMN targetEmail TEXT')
+  }
+
+  database.prepare(
+    `UPDATE users
+     SET emailKind = 'synthetic'
+     WHERE email LIKE 'tg_%@telegram.local'
+        OR email LIKE 'gh_%@users.noreply.github.com'`,
+  ).run()
 }
 
 export async function connectSqlite(): Promise<void> {

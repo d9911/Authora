@@ -11,6 +11,7 @@ export class MongoUserRepository implements UserRepository {
   async create(data: CreateUserDto): Promise<User> {
     const doc = await UserModel.create({
       email: data.email.toLowerCase(),
+      emailKind: data.emailKind ?? 'contactable',
       password: data.password,
       name: data.name,
       nickname: data.nickname,
@@ -19,6 +20,7 @@ export class MongoUserRepository implements UserRepository {
       avatarUrl: data.avatarUrl,
       githubId: data.githubId,
       emailVerified: data.emailVerified ?? false,
+      authVersion: data.authVersion ?? 0,
     });
     return mapUser(doc);
   }
@@ -56,6 +58,22 @@ export class MongoUserRepository implements UserRepository {
     if (Object.keys(unset).length) update.$unset = unset;
 
     const doc = await UserModel.findByIdAndUpdate(id, update, { new: true }).lean();
+    if (!doc) throw new Error(`User not found: ${id}`);
+    return mapUser(doc);
+  }
+
+  async updatePasswordAndIncrementAuthVersion(
+    id: string,
+    password: string,
+    emailVerified?: boolean,
+  ): Promise<User> {
+    const set: Record<string, unknown> = { password };
+    if (emailVerified !== undefined) set.emailVerified = emailVerified;
+    const doc = await UserModel.findByIdAndUpdate(
+      id,
+      { $set: set, $inc: { authVersion: 1 } },
+      { new: true },
+    ).lean();
     if (!doc) throw new Error(`User not found: ${id}`);
     return mapUser(doc);
   }

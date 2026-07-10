@@ -4,7 +4,7 @@ export const typeDefs = /* GraphQL */ `
   type User {
     id: ID!
     name: String
-    email: String!
+    email: String
     nickname: String
     phoneNumber: String
     telegramId: String
@@ -12,6 +12,8 @@ export const typeDefs = /* GraphQL */ `
     emailVerified: Boolean!
     twoFactorEnabled: Boolean!
     githubId: String
+    hasPassword: Boolean!
+    recoveryMethods: [RecoveryMethod!]!
     createdAt: DateTime!
     updatedAt: DateTime!
   }
@@ -78,6 +80,29 @@ export const typeDefs = /* GraphQL */ `
     auth: AuthPayload
   }
 
+  type TelegramRecoveryStartPayload {
+    token: String!
+    botUrl: String!
+    confirmationCode: String!
+  }
+
+  type TelegramRecoveryPollPayload {
+    # pending | verified | cancelled | expired | not_linked
+    status: String!
+    recovery: RecoveryGrantPayload
+  }
+
+  enum RecoveryMethod {
+    EMAIL
+    TELEGRAM
+  }
+
+  type RecoveryGrantPayload {
+    recoveryToken: String!
+    channel: RecoveryMethod!
+    expiresAt: DateTime!
+  }
+
   enum ProfileImageKind {
     AVATAR
     COVER
@@ -121,10 +146,16 @@ export const typeDefs = /* GraphQL */ `
 
   input RequestPasswordResetInput {
     email: String!
+    next: String
   }
 
   input ResetPasswordInput {
     token: String!
+    newPassword: String!
+  }
+
+  input CompletePasswordResetInput {
+    recoveryToken: String!
     newPassword: String!
   }
 
@@ -171,8 +202,12 @@ export const typeDefs = /* GraphQL */ `
     confirmEmailCode(email: String!, code: String!): Boolean!
     resendEmailCode(email: String!): Boolean!
     requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
+    exchangePasswordResetToken(token: String!): RecoveryGrantPayload!
+    completePasswordReset(input: CompletePasswordResetInput!): Boolean!
     resetPassword(input: ResetPasswordInput!): Boolean!
     changePassword(oldPassword: String!, newPassword: String!): Boolean!
+    requestEmailChange(email: String!): Boolean!
+    confirmEmailChange(code: String!): Boolean!
     enableTwoFactor: TwoFactorSetupPayload!
     confirmTwoFactor(code: String!): Boolean!
     disableTwoFactor(code: String!): Boolean!
@@ -186,6 +221,8 @@ export const typeDefs = /* GraphQL */ `
     # Telegram bot deep-link flow: start (optionally linking) and poll.
     telegramBotStart(link: Boolean): TelegramBotStartPayload!
     telegramBotPoll(token: String!): TelegramBotPollPayload!
+    telegramRecoveryStart: TelegramRecoveryStartPayload!
+    telegramRecoveryPoll(token: String!): TelegramRecoveryPollPayload!
     # OAuth linking for authenticated users: get a short-lived token to start the
     # provider flow with ?link=<token>, and unlink a provider.
     oauthLinkToken: String!

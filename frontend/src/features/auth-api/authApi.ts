@@ -7,7 +7,7 @@ import { AuthPayload, TwoFactorSetupPayload, User } from '@/shared/types';
 // signal — never the raw tokens.
 const AUTH_FIELDS = `accessToken refreshToken needTwoFactor twoFactorToken user {
   id name email nickname phoneNumber telegramId avatarUrl
-  emailVerified twoFactorEnabled githubId createdAt updatedAt
+  emailVerified twoFactorEnabled githubId hasPassword recoveryMethods createdAt updatedAt
 }`;
 
 export async function signUp(input: {
@@ -132,7 +132,7 @@ export async function oauthExchange(handoff: string): Promise<AuthPayload> {
         accessToken
         refreshToken
         needTwoFactor
-        user { id name email emailVerified twoFactorEnabled githubId telegramId }
+        user { id name email emailVerified twoFactorEnabled githubId telegramId hasPassword recoveryMethods }
       }
     }`,
     { handoff },
@@ -196,7 +196,7 @@ export async function telegramBotPoll(token: string): Promise<TelegramBotPoll> {
           accessToken
           refreshToken
           needTwoFactor
-          user { id name email emailVerified twoFactorEnabled githubId telegramId }
+          user { id name email emailVerified twoFactorEnabled githubId telegramId hasPassword recoveryMethods }
         }
       }
     }`,

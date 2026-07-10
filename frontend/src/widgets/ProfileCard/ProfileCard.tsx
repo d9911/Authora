@@ -2,6 +2,9 @@ import { Profile, User } from '@/shared/types'
 import styles from './ProfileCard.module.scss'
 
 export function ProfileCard({ user, profile }: { user: User; profile: Profile | null }) {
+  const displayName = user.name || user.nickname || user.email || 'Authora user'
+  const avatarLabel = displayName.charAt(0).toUpperCase()
+
   return (
     <div className={styles['profile-card']}>
       {profile?.coverSrc && (
@@ -16,14 +19,16 @@ export function ProfileCard({ user, profile }: { user: User; profile: Profile | 
             // eslint-disable-next-line @next/next/no-img-element
             <img src={user.avatarUrl} alt="avatar" />
           ) : (
-            (user.name || user.email).charAt(0).toUpperCase()
+            avatarLabel
           )}
         </div>
         <div className={styles['profile-info']}>
-          <h4>{user.name || user.email}</h4>
+          <h4>{displayName}</h4>
           <div className={styles['profile-email']}>
-            <span>{user.email}</span>
-            {user.emailVerified ? <span className="tag tag-verified">✓ verified</span> : <span>· unverified</span>}
+            <span>{user.email ?? 'No recovery email'}</span>
+            {user.email ? (
+              user.emailVerified ? <span className="tag tag-verified">✓ verified</span> : <span>· unverified</span>
+            ) : null}
           </div>
         </div>
       </div>

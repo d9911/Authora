@@ -6,6 +6,7 @@ import { AppError, ErrorCodes } from '../../core/errors/AppError';
 export interface AccessTokenPayload {
   sub: string; // user id
   email: string;
+  authVersion: number;
 }
 
 export function signAccessToken(payload: AccessTokenPayload): string {
@@ -14,7 +15,12 @@ export function signAccessToken(payload: AccessTokenPayload): string {
   } as SignOptions);
 }
 
-export function signRefreshToken(payload: { sub: string }): string {
+export interface RefreshTokenPayload {
+  sub: string;
+  authVersion: number;
+}
+
+export function signRefreshToken(payload: RefreshTokenPayload): string {
   // jti makes every refresh token unique even within the same second,
   // so token rotation never produces a colliding hash.
   return jwt.sign({ ...payload, jti: crypto.randomUUID() }, env.jwt.refreshSecret, {
@@ -30,9 +36,12 @@ export function verifyAccessToken(token: string): AccessTokenPayload {
   }
 }
 
-export function verifyRefreshToken(token: string): { sub: string } {
+export function verifyRefreshToken(token: string): RefreshTokenPayload {
   try {
-    return jwt.verify(token, env.jwt.refreshSecret) as { sub: string };
+    const payload = jwt.verify(token, env.jwt.refreshSecret) as Partial<RefreshTokenPayload> & {
+      sub: string;
+    };
+    return { sub: payload.sub, authVersion: Number(payload.authVersion ?? 0) };
   } catch {
     throw new AppError(ErrorCodes.INVALID_TOKEN, 'Invalid or expired refresh token', 401);
   }
@@ -41,7 +50,7 @@ export function verifyRefreshToken(token: string): { sub: string } {
 /** Resolve refresh token expiry as an absolute Date for DB storage. */
 export function refreshTokenExpiryDate(): Date {
   const decoded = jwt.decode(
-    signRefreshToken({ sub: 'probe' }),
+    signRefreshToken({ sub: 'probe', authVersion: 0 }),
   ) as { exp?: number } | null;
   if (decoded?.exp) return new Date(decoded.exp * 1000);
   // Fallback: 30 days

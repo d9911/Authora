@@ -1,7 +1,8 @@
-import { User } from './User';
+import { EmailKind, User } from './User';
 
 export interface CreateUserDto {
   email: string;
+  emailKind?: EmailKind;
   password?: string;
   name?: string;
   nickname?: string;
@@ -10,10 +11,13 @@ export interface CreateUserDto {
   avatarUrl?: string;
   githubId?: string;
   emailVerified?: boolean;
+  authVersion?: number;
 }
 
 export interface UpdateUserDto {
   name?: string;
+  email?: string;
+  emailKind?: EmailKind;
   nickname?: string;
   phoneNumber?: string;
   avatarUrl?: string | null;
@@ -23,6 +27,7 @@ export interface UpdateUserDto {
   twoFactorSecret?: string | null;
   githubId?: string | null;
   telegramId?: string | null;
+  authVersion?: number;
 }
 
 /**
@@ -36,4 +41,9 @@ export interface UserRepository {
   findByGithubId(githubId: string): Promise<User | null>;
   findByTelegramId(telegramId: string): Promise<User | null>;
   update(id: string, data: UpdateUserDto): Promise<User>;
+  updatePasswordAndIncrementAuthVersion(
+    id: string,
+    password: string,
+    emailVerified?: boolean,
+  ): Promise<User>;
 }

@@ -3,7 +3,7 @@
 export interface User {
   id: string;
   name?: string;
-  email: string;
+  email: string | null;
   nickname?: string;
   phoneNumber?: string;
   telegramId?: string;
@@ -11,6 +11,8 @@ export interface User {
   emailVerified: boolean;
   twoFactorEnabled: boolean;
   githubId?: string;
+  hasPassword: boolean;
+  recoveryMethods: Array<'EMAIL' | 'TELEGRAM'>;
   createdAt: string;
   updatedAt: string;
 }

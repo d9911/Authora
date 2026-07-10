@@ -1,4 +1,4 @@
-export type EmailTokenType = 'verify_email' | 'reset_password';
+export type EmailTokenType = 'verify_email' | 'reset_password' | 'change_email';
 
 export interface EmailTokenRecord {
   id: string;
@@ -6,6 +6,7 @@ export interface EmailTokenRecord {
   type: EmailTokenType;
   expiresAt: Date;
   usedAt?: Date;
+  targetEmail?: string;
 }
 
 /**
@@ -15,8 +16,23 @@ export interface EmailTokenRecord {
  * Persistence-agnostic: implemented by Mongo and SQLite alike.
  */
 export interface EmailTokenRepository {
-  create(userId: string, tokenHash: string, type: EmailTokenType, expiresAt: Date): Promise<void>;
-  findValid(tokenHash: string, type: EmailTokenType): Promise<EmailTokenRecord | null>;
+  create(
+    userId: string,
+    tokenHash: string,
+    type: EmailTokenType,
+    expiresAt: Date,
+    targetEmail?: string,
+  ): Promise<void>;
+  findValid(
+    tokenHash: string,
+    type: EmailTokenType,
+    userId?: string,
+  ): Promise<EmailTokenRecord | null>;
+  consumeValid(
+    tokenHash: string,
+    type: EmailTokenType,
+    userId?: string,
+  ): Promise<EmailTokenRecord | null>;
   markUsed(id: string): Promise<void>;
   invalidateForUser(userId: string, type: EmailTokenType): Promise<void>;
 }

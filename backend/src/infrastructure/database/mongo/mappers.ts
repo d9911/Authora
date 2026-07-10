@@ -1,4 +1,4 @@
-import { User } from '../../../modules/user/domain/User';
+import { inferEmailKind, User } from '../../../modules/user/domain/User';
 import { Profile } from '../../../modules/profile/domain/Profile';
 import { ProfileImage } from '../../../modules/profile-photo/domain/ProfileImage';
 import { Country, Region, City } from '../../../modules/location/domain';
@@ -11,6 +11,7 @@ export function mapUser(doc: any): User {
     id: idOf(doc._id),
     name: doc.name ?? undefined,
     email: doc.email,
+    emailKind: doc.emailKind ?? inferEmailKind(doc.email),
     password: doc.password ?? undefined,
     nickname: doc.nickname ?? undefined,
     phoneNumber: doc.phoneNumber ?? undefined,
@@ -20,6 +21,7 @@ export function mapUser(doc: any): User {
     twoFactorEnabled: Boolean(doc.twoFactorEnabled),
     twoFactorSecret: doc.twoFactorSecret ?? undefined,
     githubId: doc.githubId ?? undefined,
+    authVersion: Number(doc.authVersion ?? 0),
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };

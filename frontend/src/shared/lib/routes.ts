@@ -8,6 +8,7 @@ export const ROUTES = {
   signIn: '/sign-in',
   signUp: '/sign-up',
   forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
   confirmEmail: '/confirm-email',
   telegramOpening: '/oauth/telegram/opening',
   country: (id: string) => `/country/${id}`,

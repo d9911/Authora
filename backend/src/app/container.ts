@@ -46,6 +46,7 @@ export function getContainer(): Container {
     profiles: repos.profiles,
     refreshTokens: repos.refreshTokens,
     emailTokens: repos.emailTokens,
+    recoveryGrants: repos.recoveryGrants,
     mail,
     twoFactor,
     telegramTickets,

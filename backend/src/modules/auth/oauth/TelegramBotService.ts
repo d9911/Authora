@@ -1,5 +1,5 @@
 import { env } from '../../../config/env';
-import { TelegramTicketStore } from './TelegramTicketStore';
+import { TelegramTicket, TelegramTicketStore } from './TelegramTicketStore';
 
 interface TgUser {
   id: number;
@@ -172,15 +172,23 @@ export class TelegramBotService {
     const from = msg.from;
 
     if (ticketToken) {
+      const ticket = this.tickets.get(ticketToken);
+      if (!ticket || ticket.status === 'expired' || ticket.status === 'cancelled') {
+        void this.reply(msg.chat?.id, 'Эта ссылка Authora устарела. Запустите процесс заново на сайте.');
+        return;
+      }
       // eslint-disable-next-line no-console
       console.log('[telegram-bot] /start with ticket: confirmation requested');
       void this.reply(
         msg.chat?.id,
-        this.buildConfirmationText(from),
+        this.buildConfirmationText(from, ticket),
         {
           inline_keyboard: [
             [
-              { text: 'Да, авторизоваться', callback_data: `${CONFIRM_PREFIX}${ticketToken}` },
+              {
+                text: ticket.purpose === 'recovery' ? 'Да, восстановить пароль' : 'Да, авторизоваться',
+                callback_data: `${CONFIRM_PREFIX}${ticketToken}`,
+              },
               { text: 'Отмена', callback_data: `${CANCEL_PREFIX}${ticketToken}` },
             ],
           ],
@@ -203,6 +211,7 @@ export class TelegramBotService {
     if (!token) return;
 
     if (isCancel) {
+      this.tickets.cancel(token);
       // eslint-disable-next-line no-console
       console.log('[telegram-bot] authorization cancelled by user');
       await this.answerCallback(query.id, 'Авторизация отменена.');
@@ -210,6 +219,7 @@ export class TelegramBotService {
       return;
     }
 
+    const ticket = this.tickets.get(token);
     const ok = this.tickets.resolve(token, {
       telegramId: String(query.from.id),
       name: this.displayName(query.from),
@@ -224,7 +234,7 @@ export class TelegramBotService {
     await this.editMessage(
       query.message,
       ok
-        ? this.buildConfirmedText(query.from)
+        ? this.buildConfirmedText(query.from, ticket)
         : '⚠️ Эта ссылка авторизации устарела. Попробуйте снова на сайте.',
     );
   }
@@ -297,9 +307,18 @@ export class TelegramBotService {
     console.warn(`[telegram-bot] getUpdates issue: ${message}`);
   }
 
-  private buildConfirmationText(user: TgUser): string {
+  private buildConfirmationText(user: TgUser, ticket: TelegramTicket): string {
+    const purpose =
+      ticket.purpose === 'recovery'
+        ? 'восстановить пароль в приложении Authora'
+        : ticket.purpose === 'link'
+          ? 'привязать Telegram к вашему аккаунту Authora'
+          : 'авторизоваться в приложении Authora';
     return [
-      'Вы готовы авторизоваться в приложении Authora через свой Telegram аккаунт?',
+      `Вы готовы ${purpose} через свой Telegram аккаунт?`,
+      ...(ticket.confirmationCode
+        ? ['', `Код запроса на сайте: ${ticket.confirmationCode}`]
+        : []),
       '',
       'В систему Authora будут записаны эти Telegram-данные:',
       '',
@@ -307,9 +326,10 @@ export class TelegramBotService {
     ].join('\n');
   }
 
-  private buildConfirmedText(user: TgUser): string {
+  private buildConfirmedText(user: TgUser, ticket?: TelegramTicket): string {
+    const action = ticket?.purpose === 'recovery' ? 'Восстановление пароля' : 'Авторизация';
     return [
-      '✅ Авторизация Authora подтверждена.',
+      `✅ ${action} Authora подтверждено.`,
       '',
       'В систему Authora будут записаны эти Telegram-данные:',
       '',

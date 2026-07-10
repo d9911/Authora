@@ -19,7 +19,7 @@ export interface GraphQLContext {
  * signal (instead of silently treating the caller as anonymous), which lets
  * the frontend transparently refresh and retry.
  */
-export function buildContext(req: IncomingMessage): GraphQLContext {
+export async function buildContext(req: IncomingMessage): Promise<GraphQLContext> {
   const container = getContainer();
   let userId: string | null = null;
   let tokenInvalid = false;
@@ -31,7 +31,9 @@ export function buildContext(req: IncomingMessage): GraphQLContext {
     if (token) {
       try {
         const payload = verifyAccessToken(token);
-        userId = payload.sub;
+        const user = await container.repos.users.findById(payload.sub);
+        if (!user || user.authVersion !== payload.authVersion) tokenInvalid = true;
+        else userId = payload.sub;
       } catch {
         tokenInvalid = true; // present but expired/invalid → signal refresh
       }

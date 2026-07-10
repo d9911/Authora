@@ -38,6 +38,11 @@ export const resolvers = {
     COVER: 'cover',
   },
 
+  RecoveryMethod: {
+    EMAIL: 'email',
+    TELEGRAM: 'telegram',
+  },
+
   Query: {
     me: (_p: unknown, _a: unknown, ctx: GraphQLContext) => {
       if (ctx.userId) return ctx.container.users.getById(ctx.userId)
@@ -66,7 +71,9 @@ export const resolvers = {
     signInTwoFactor: (_p: unknown, args: { input: any }, ctx: GraphQLContext) => {
       const { twoFactorToken, code } = args.input
       const payload = verifyAccessToken(twoFactorToken) // ticket from signIn step
-      return ctx.container.auth.signInTwoFactor({ userId: payload.sub, code }).then(normalizeAuth)
+      return ctx.container.auth
+        .signInTwoFactor({ userId: payload.sub, code, authVersion: payload.authVersion })
+        .then(normalizeAuth)
     },
 
     refreshToken: (_p: unknown, args: { input: any }, ctx: GraphQLContext) => ctx.container.auth.refresh(args.input.refreshToken).then(normalizeAuth),
@@ -77,13 +84,36 @@ export const resolvers = {
 
     resendEmailCode: (_p: unknown, args: { email: string }, ctx: GraphQLContext) => ctx.container.auth.resendEmailCode(args.email),
 
-    requestPasswordReset: (_p: unknown, args: { input: any }, ctx: GraphQLContext) => ctx.container.auth.requestPasswordReset(args.input.email),
+    requestPasswordReset: (_p: unknown, args: { input: any }, ctx: GraphQLContext) =>
+      ctx.container.auth.requestPasswordReset(args.input.email, args.input.next),
+
+    exchangePasswordResetToken: (
+      _p: unknown,
+      args: { token: string },
+      ctx: GraphQLContext,
+    ) => ctx.container.auth.exchangePasswordResetToken(args.token),
+
+    completePasswordReset: (_p: unknown, args: { input: any }, ctx: GraphQLContext) =>
+      ctx.container.auth.completePasswordReset(
+        args.input.recoveryToken,
+        args.input.newPassword,
+      ),
 
     resetPassword: (_p: unknown, args: { input: any }, ctx: GraphQLContext) => ctx.container.auth.resetPassword(args.input.token, args.input.newPassword),
 
     changePassword: (_p: unknown, args: { oldPassword: string; newPassword: string }, ctx: GraphQLContext) => {
       const userId = requireAuth(ctx)
       return ctx.container.auth.changePassword(userId, args.oldPassword, args.newPassword)
+    },
+
+    requestEmailChange: (_p: unknown, args: { email: string }, ctx: GraphQLContext) => {
+      const userId = requireAuth(ctx)
+      return ctx.container.auth.requestEmailChange(userId, args.email)
+    },
+
+    confirmEmailChange: (_p: unknown, args: { code: string }, ctx: GraphQLContext) => {
+      const userId = requireAuth(ctx)
+      return ctx.container.auth.confirmEmailChange(userId, args.code)
     },
 
     enableTwoFactor: (_p: unknown, _a: unknown, ctx: GraphQLContext) => {
@@ -144,6 +174,26 @@ export const resolvers = {
         return { status: 'done', auth: normalizeAuth(result.auth) }
       }
       return { status: result.status, auth: null }
+    },
+
+    telegramRecoveryStart: async (_p: unknown, _a: unknown, ctx: GraphQLContext) => {
+      const botBase = await ctx.container.telegramBot.getBotUrl()
+      if (!botBase) {
+        throw AppError.providerNotConfigured(ctx.container.telegramBot.configErrorMessage())
+      }
+      return ctx.container.auth.startTelegramRecovery(botBase)
+    },
+
+    telegramRecoveryPoll: async (
+      _p: unknown,
+      args: { token: string },
+      ctx: GraphQLContext,
+    ) => {
+      const result = await ctx.container.auth.pollTelegramRecovery(args.token)
+      if (result.status === 'verified') {
+        return { status: result.status, recovery: result.recovery }
+      }
+      return { status: result.status, recovery: null }
     },
   },
 }

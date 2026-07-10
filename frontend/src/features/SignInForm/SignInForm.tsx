@@ -11,7 +11,7 @@ import {
   signInThunk,
   signInTwoFactorThunk,
 } from '@/processes/store/slices/authSlice';
-import { ButtonMain, InputMain, OtpCodeInput, PasswordInput } from '@/shared/ui';
+import { ButtonMain, FeedbackText, InputMain, OtpCodeInput, PasswordInput } from '@/shared/ui';
 import { GithubLoginButton } from '@/features/GithubLoginButton/GithubLoginButton';
 import { TelegramLoginButton } from '@/features/TelegramLoginButton/TelegramLoginButton';
 import { normalizeNumericCode } from '@/shared/lib/otp';
@@ -23,6 +23,8 @@ export function SignInForm() {
   const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
   const nextPath = safeNextPath(searchParams.get('next'));
+  const recovered = searchParams.get('recovered') === '1';
+  const forgotPasswordHref = `${ROUTES.forgotPassword}?next=${encodeURIComponent(nextPath)}`;
   const { error, twoFactorToken } = useAppSelector((s) => s.auth);
 
   const [email, setEmail] = useState('');
@@ -111,7 +113,7 @@ export function SignInForm() {
             </Link>
           </div>
           <div className={styles['auth-footer']}>
-            <Link href={ROUTES.forgotPassword}>Forgot password?</Link>
+            <Link href={forgotPasswordHref}>Forgot password?</Link>
           </div>
         </>
       }
@@ -131,6 +133,11 @@ export function SignInForm() {
         required
         autoComplete="current-password"
       />
+      {recovered ? (
+        <FeedbackText tone="success" role="status" aria-live="polite">
+          Пароль изменён. Войдите с новым паролем.
+        </FeedbackText>
+      ) : null}
       {error && <div className={styles['auth-error']}>{error}</div>}
       <ButtonMain type="submit" fullWidth loading={busy}>
         Sign in

@@ -13,6 +13,7 @@ export const config = {
   cookies: {
     accessToken: 'access_token',
     refreshToken: 'refresh_token',
+    recoveryToken: 'recovery_token',
   },
 
   // Browser-facing proxy endpoint.

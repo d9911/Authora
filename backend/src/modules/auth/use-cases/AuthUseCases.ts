@@ -1,17 +1,17 @@
 import { AppError, ErrorCodes } from '../../../core/errors/AppError';
-import { PublicUser, toPublicUser } from '../../user/domain/User';
+import { PublicUser, toPublicUser, User } from '../../user/domain/User';
 import { UserRepository } from '../../user/domain/UserRepository';
 import { ProfileRepository } from '../../profile/domain/ProfileRepository';
 import { RefreshTokenRepository } from '../domain/RefreshTokenRepository';
 import { EmailTokenRepository } from '../domain/EmailTokenRepository';
-import { MailService } from '../../../infrastructure/mail/MailService';
+import { MailGateway } from '../domain/MailGateway';
+import { RecoveryGrantRepository } from '../domain/RecoveryGrantRepository';
 import { TwoFactorService } from '../services/TwoFactorService';
 import { TelegramTicketStore } from '../oauth/TelegramTicketStore';
 import {
   comparePassword,
   hashPassword,
   randomNumericCode,
-  randomToken,
   sha256,
 } from '../../../infrastructure/jwt/hash';
 import {
@@ -23,6 +23,7 @@ import {
   verifyRefreshToken,
 } from '../../../infrastructure/jwt/jwt';
 import { PASSWORD_POLICY_HINT, validatePassword } from '../domain/passwordPolicy';
+import { PasswordUseCases, RecoveryGrantPayload } from './PasswordUseCases';
 
 export interface AuthTokens {
   accessToken: string;
@@ -50,25 +51,33 @@ export interface AuthDeps {
   profiles: ProfileRepository;
   refreshTokens: RefreshTokenRepository;
   emailTokens: EmailTokenRepository;
-  mail: MailService;
+  recoveryGrants: RecoveryGrantRepository;
+  mail: MailGateway;
   twoFactor: TwoFactorService;
   telegramTickets: TelegramTicketStore;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const ONE_HOUR = 60 * 60 * 1000;
 const CODE_TTL = 24 * 60 * 60 * 1000; // email confirmation code valid for 24 hours
 
 export class AuthUseCases {
-  constructor(private readonly deps: AuthDeps) {}
+  private readonly passwords: PasswordUseCases;
+
+  constructor(private readonly deps: AuthDeps) {
+    this.passwords = new PasswordUseCases(deps);
+  }
 
   /* ----------------------------- helpers ----------------------------- */
 
-  private async issueTokens(userId: string, email: string): Promise<AuthTokens> {
-    const accessToken = signAccessToken({ sub: userId, email });
-    const refreshToken = signRefreshToken({ sub: userId });
+  private async issueTokens(user: User): Promise<AuthTokens> {
+    const accessToken = signAccessToken({
+      sub: user.id,
+      email: user.email,
+      authVersion: user.authVersion,
+    });
+    const refreshToken = signRefreshToken({ sub: user.id, authVersion: user.authVersion });
     await this.deps.refreshTokens.save(
-      userId,
+      user.id,
       sha256(refreshToken),
       refreshTokenExpiryDate(),
     );
@@ -95,6 +104,7 @@ export class AuthUseCases {
     const passwordHash = await hashPassword(input.password);
     const user = await this.deps.users.create({
       email,
+      emailKind: 'contactable',
       password: passwordHash,
       name: input.name,
       nickname: input.nickname,
@@ -107,7 +117,7 @@ export class AuthUseCases {
     // Email confirmation CODE (6 digits, stored hashed).
     await this.issueEmailCode(user.id, email);
 
-    const tokens = await this.issueTokens(user.id, user.email);
+    const tokens = await this.issueTokens(user);
     return { ...tokens, user: toPublicUser(user) };
   }
 
@@ -165,24 +175,35 @@ export class AuthUseCases {
 
     if (user.twoFactorEnabled) {
       // Issue a short-lived ticket scoped to the 2FA step only.
-      const twoFactorToken = signAccessToken({ sub: user.id, email: user.email });
+      const twoFactorToken = signAccessToken({
+        sub: user.id,
+        email: user.email,
+        authVersion: user.authVersion,
+      });
       return { needTwoFactor: true, twoFactorToken };
     }
 
-    const tokens = await this.issueTokens(user.id, user.email);
+    const tokens = await this.issueTokens(user);
     return { ...tokens, user: toPublicUser(user) };
   }
 
-  async signInTwoFactor(input: { userId: string; code: string }): Promise<AuthPayload> {
+  async signInTwoFactor(input: {
+    userId: string;
+    code: string;
+    authVersion?: number;
+  }): Promise<AuthPayload> {
     const user = await this.deps.users.findById(input.userId);
     if (!user) throw AppError.unauthorized();
+    if (input.authVersion !== undefined && user.authVersion !== input.authVersion) {
+      throw new AppError(ErrorCodes.INVALID_TOKEN, 'Two-factor ticket is no longer valid', 401);
+    }
     if (!user.twoFactorEnabled || !user.twoFactorSecret) {
       throw new AppError(ErrorCodes.TWO_FACTOR_NOT_ENABLED, 'Two-factor is not enabled', 400);
     }
     const valid = this.deps.twoFactor.verify(user.twoFactorSecret, input.code);
     if (!valid) throw new AppError(ErrorCodes.INVALID_2FA_CODE, 'Invalid 2FA code', 401);
 
-    const tokens = await this.issueTokens(user.id, user.email);
+    const tokens = await this.issueTokens(user);
     return { ...tokens, user: toPublicUser(user) };
   }
 
@@ -202,10 +223,13 @@ export class AuthUseCases {
 
     const user = await this.deps.users.findById(payload.sub);
     if (!user) throw AppError.unauthorized();
+    if (user.authVersion !== payload.authVersion) {
+      throw new AppError(ErrorCodes.INVALID_TOKEN, 'Refresh token revoked', 401);
+    }
 
     // Rotation: revoke the used token, issue a fresh pair.
     await this.deps.refreshTokens.revokeByHash(hash);
-    const tokens = await this.issueTokens(user.id, user.email);
+    const tokens = await this.issueTokens(user);
     return { ...tokens, user: toPublicUser(user) };
   }
 
@@ -220,36 +244,20 @@ export class AuthUseCases {
 
   /* ------------------------- password recovery ----------------------- */
 
-  async requestPasswordReset(email: string): Promise<boolean> {
-    const user = await this.deps.users.findByEmail(email?.trim().toLowerCase());
-    // Always return true to avoid leaking which emails are registered.
-    if (!user) return true;
+  async requestPasswordReset(email: string, nextPath?: string): Promise<boolean> {
+    return this.passwords.requestPasswordReset(email, nextPath);
+  }
 
-    await this.deps.emailTokens.invalidateForUser(user.id, 'reset_password');
-    const rawToken = randomToken();
-    await this.deps.emailTokens.create(
-      user.id,
-      sha256(rawToken),
-      'reset_password',
-      new Date(Date.now() + ONE_HOUR),
-    );
-    await this.deps.mail.sendPasswordReset(user.email, rawToken);
-    return true;
+  async exchangePasswordResetToken(token: string): Promise<RecoveryGrantPayload> {
+    return this.passwords.exchangePasswordResetToken(token);
+  }
+
+  async completePasswordReset(recoveryToken: string, newPassword: string): Promise<boolean> {
+    return this.passwords.completePasswordReset(recoveryToken, newPassword);
   }
 
   async resetPassword(token: string, newPassword: string): Promise<boolean> {
-    if (!validatePassword(newPassword)) {
-      throw AppError.validation(PASSWORD_POLICY_HINT);
-    }
-    const record = await this.deps.emailTokens.findValid(sha256(token), 'reset_password');
-    if (!record) throw new AppError(ErrorCodes.INVALID_TOKEN, 'Invalid or expired token', 400);
-
-    const passwordHash = await hashPassword(newPassword);
-    await this.deps.users.update(record.userId, { password: passwordHash });
-    await this.deps.emailTokens.markUsed(record.id);
-    // Invalidate all sessions after a password change.
-    await this.deps.refreshTokens.revokeAllForUser(record.userId);
-    return true;
+    return this.passwords.resetPassword(token, newPassword);
   }
 
   async changePassword(
@@ -257,16 +265,22 @@ export class AuthUseCases {
     oldPassword: string,
     newPassword: string,
   ): Promise<boolean> {
-    const user = await this.deps.users.findById(userId);
-    if (!user || !user.password) throw AppError.unauthorized();
-    const ok = await comparePassword(oldPassword, user.password);
-    if (!ok) throw AppError.invalidCredentials('Current password is incorrect');
-    if (!validatePassword(newPassword)) {
-      throw AppError.validation(PASSWORD_POLICY_HINT);
-    }
-    await this.deps.users.update(userId, { password: await hashPassword(newPassword) });
-    await this.deps.refreshTokens.revokeAllForUser(userId);
-    return true;
+    return this.passwords.changePassword(userId, oldPassword, newPassword);
+  }
+
+  async requestEmailChange(userId: string, email: string): Promise<boolean> {
+    return this.passwords.requestEmailChange(userId, email);
+  }
+
+  async confirmEmailChange(userId: string, code: string): Promise<boolean> {
+    return this.passwords.confirmEmailChange(userId, code);
+  }
+
+  async issueRecoveryGrant(
+    userId: string,
+    channel: 'email' | 'telegram',
+  ): Promise<RecoveryGrantPayload> {
+    return this.passwords.issueRecoveryGrant(userId, channel);
   }
 
   /* ------------------------------- 2FA ------------------------------- */
@@ -335,6 +349,7 @@ export class AuthUseCases {
       const email = (profile.email ?? `gh_${profile.githubId}@users.noreply.github.com`).toLowerCase();
       user = await this.deps.users.create({
         email,
+        emailKind: profile.email ? 'contactable' : 'synthetic',
         name: profile.name,
         avatarUrl: profile.avatarUrl,
         githubId: profile.githubId,
@@ -346,7 +361,7 @@ export class AuthUseCases {
       });
     }
 
-    const tokens = await this.issueTokens(user.id, user.email);
+    const tokens = await this.issueTokens(user);
     return { ...tokens, user: toPublicUser(user) };
   }
 
@@ -361,6 +376,7 @@ export class AuthUseCases {
       const email = `tg_${data.telegramId}@telegram.local`;
       user = await this.deps.users.create({
         email,
+        emailKind: 'synthetic',
         name: data.name,
         nickname: data.username,
         avatarUrl: data.avatarUrl,
@@ -370,7 +386,7 @@ export class AuthUseCases {
       await this.deps.profiles.create({ userId: user.id, isVerified: false });
     }
 
-    const tokens = await this.issueTokens(user.id, user.email);
+    const tokens = await this.issueTokens(user);
     return { ...tokens, user: toPublicUser(user) };
   }
 
@@ -460,7 +476,7 @@ export class AuthUseCases {
     const { sub } = verifyOAuthToken(handoffToken, 'oauth_handoff');
     const user = await this.deps.users.findById(sub);
     if (!user) throw AppError.unauthorized();
-    const tokens = await this.issueTokens(user.id, user.email);
+    const tokens = await this.issueTokens(user);
     return { ...tokens, user: toPublicUser(user) };
   }
 
@@ -475,7 +491,10 @@ export class AuthUseCases {
    * the caller passes it because URL resolution lives in the bot service.
    */
   startTelegramBotLogin(linkUserId?: string, botBase = ''): { token: string; botUrl: string } {
-    const ticket = this.deps.telegramTickets.create(linkUserId);
+    const ticket = this.deps.telegramTickets.create({
+      purpose: linkUserId ? 'link' : 'login',
+      linkUserId,
+    });
     const base = botBase.replace(/\/$/, '');
     const botUrl = base ? `${base}?start=${ticket.token}` : '';
     return { token: ticket.token, botUrl };
@@ -497,6 +516,8 @@ export class AuthUseCases {
     const ticket = this.deps.telegramTickets.get(token);
     if (!ticket) return { status: 'expired' };
     if (ticket.status === 'expired') return { status: 'expired' };
+    if (ticket.status === 'cancelled') return { status: 'expired' };
+    if (ticket.purpose === 'recovery') return { status: 'expired' };
     if (ticket.status === 'pending' || !ticket.user) return { status: 'pending' };
 
     const verified = ticket.user;
@@ -519,6 +540,49 @@ export class AuthUseCases {
       username: verified.username,
     });
     return { status: 'done', auth };
+  }
+
+  startTelegramRecovery(
+    botBase = '',
+  ): { token: string; botUrl: string; confirmationCode: string } {
+    const confirmationCode = randomNumericCode(6);
+    const ticket = this.deps.telegramTickets.create({
+      purpose: 'recovery',
+      confirmationCode,
+    });
+    const base = botBase.replace(/\/$/, '');
+    return {
+      token: ticket.token,
+      botUrl: base ? `${base}?start=${ticket.token}` : '',
+      confirmationCode,
+    };
+  }
+
+  async pollTelegramRecovery(
+    token: string,
+  ): Promise<
+    | { status: 'pending' }
+    | { status: 'cancelled' }
+    | { status: 'expired' }
+    | { status: 'not_linked' }
+    | { status: 'verified'; recovery: RecoveryGrantPayload }
+  > {
+    const ticket = this.deps.telegramTickets.get(token);
+    if (!ticket || ticket.purpose !== 'recovery' || ticket.status === 'expired') {
+      return { status: 'expired' };
+    }
+    if (ticket.status === 'cancelled') {
+      this.deps.telegramTickets.consume(token);
+      return { status: 'cancelled' };
+    }
+    if (ticket.status === 'pending' || !ticket.user) return { status: 'pending' };
+
+    const verified = ticket.user;
+    this.deps.telegramTickets.consume(token);
+    const user = await this.deps.users.findByTelegramId(verified.telegramId);
+    if (!user) return { status: 'not_linked' };
+    const recovery = await this.passwords.issueRecoveryGrant(user.id, 'telegram');
+    return { status: 'verified', recovery };
   }
 }
 

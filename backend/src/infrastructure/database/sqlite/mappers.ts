@@ -1,4 +1,4 @@
-import { User } from '../../../modules/user/domain/User';
+import { inferEmailKind, User } from '../../../modules/user/domain/User';
 import { Profile } from '../../../modules/profile/domain/Profile';
 import { ProfileImage } from '../../../modules/profile-photo/domain/ProfileImage';
 import { Country, Region, City } from '../../../modules/location/domain';
@@ -13,6 +13,7 @@ export function mapUser(row: any): User {
     id: String(row.id),
     name: row.name ?? undefined,
     email: row.email,
+    emailKind: row.emailKind ?? inferEmailKind(row.email),
     password: row.password ?? undefined,
     nickname: row.nickname ?? undefined,
     phoneNumber: row.phoneNumber ?? undefined,
@@ -22,6 +23,7 @@ export function mapUser(row: any): User {
     twoFactorEnabled: Boolean(row.twoFactorEnabled),
     twoFactorSecret: row.twoFactorSecret ?? undefined,
     githubId: str(row.githubId),
+    authVersion: Number(row.authVersion ?? 0),
     createdAt: date(row.createdAt),
     updatedAt: date(row.updatedAt),
   };

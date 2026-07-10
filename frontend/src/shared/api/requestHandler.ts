@@ -37,6 +37,21 @@ const COOKIE_BASE = {
 };
 const ACCESS_MAX_AGE = 60 * 60; // 1h
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30; // 30d
+const RECOVERY_MAX_AGE = 15 * 60; // 15m
+const RECOVERY_COOKIE_BASE = {
+  ...COOKIE_BASE,
+  sameSite: 'strict' as const,
+  path: '/api/graphql',
+};
+
+const SESSION_INDEPENDENT_OPERATIONS = [
+  'requestPasswordReset',
+  'exchangePasswordResetToken',
+  'completePasswordReset',
+  'resetPassword',
+  'telegramRecoveryStart',
+  'telegramRecoveryPoll',
+] as const;
 
 function isOperation(query: string, name: string): boolean {
   return new RegExp(`\\b${name}\\b`).test(query);
@@ -92,6 +107,7 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
 
   let accessToken = req.cookies.get(config.cookies.accessToken)?.value;
   let refreshToken = req.cookies.get(config.cookies.refreshToken)?.value;
+  const recoveryToken = req.cookies.get(config.cookies.recoveryToken)?.value;
   const query = body.query ?? '';
   const variables = { ...(body.variables ?? {}) } as Record<string, unknown>;
 
@@ -100,11 +116,20 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
   let setRefresh: string | null = null;
 
   const isRefreshCall = callsMutation(query, 'refreshToken');
+  const isSessionIndependent = SESSION_INDEPENDENT_OPERATIONS.some((operation) =>
+    isOperation(query, operation),
+  );
 
   // PROACTIVE REFRESH: no access token but we have a refresh token → mint a new
   // access token before forwarding, so the request is authenticated. Skip when
   // the request itself is the refresh mutation (handled below) or logout.
-  if (!accessToken && refreshToken && !isRefreshCall && !isOperation(query, 'logout')) {
+  if (
+    !accessToken &&
+    refreshToken &&
+    !isRefreshCall &&
+    !isOperation(query, 'logout') &&
+    !isSessionIndependent
+  ) {
     const pair = await serverRefresh(refreshToken);
     if (pair) {
       accessToken = pair.accessToken;
@@ -135,6 +160,11 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
   if (isOperation(query, 'logout') && refreshToken && variables.refreshToken === undefined) {
     variables.refreshToken = refreshToken;
   }
+  if (callsMutation(query, 'completePasswordReset')) {
+    const varName = inputVarName(query, 'completePasswordReset') ?? 'input';
+    const existing = (variables[varName] as Record<string, unknown>) ?? {};
+    variables[varName] = { ...existing, recoveryToken: recoveryToken ?? '' };
+  }
 
   let upstream: Response;
   try {
@@ -142,7 +172,9 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
+        ...(accessToken && !isSessionIndependent
+          ? { authorization: `Bearer ${accessToken}` }
+          : {}),
       },
       body: JSON.stringify({ query, variables, operationName: body.operationName }),
       cache: 'no-store',
@@ -186,7 +218,29 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  const clearCookies = isOperation(query, 'logout') && data.logout === true;
+  let setRecovery: string | null = null;
+  const recoveryCandidates = [
+    data.exchangePasswordResetToken as { recoveryToken?: string } | undefined,
+    (data.telegramRecoveryPoll as { recovery?: { recoveryToken?: string } } | undefined)?.recovery,
+  ];
+  for (const payload of recoveryCandidates) {
+    if (!payload?.recoveryToken) continue;
+    setRecovery = payload.recoveryToken;
+    delete payload.recoveryToken;
+  }
+
+  const passwordResetCompleted =
+    (isOperation(query, 'completePasswordReset') && data.completePasswordReset === true) ||
+    (isOperation(query, 'resetPassword') && data.resetPassword === true);
+  const clearAuthCookies =
+    (isOperation(query, 'logout') && data.logout === true) || passwordResetCompleted;
+  const recoveryInvalid = (
+    json.errors as Array<{ extensions?: { code?: string } }> | undefined
+  )?.some((error) =>
+    ['RECOVERY_TOKEN_INVALID', 'RECOVERY_TOKEN_EXPIRED'].includes(
+      error.extensions?.code ?? '',
+    ),
+  );
 
   const res = NextResponse.json(json, { status: upstream.status });
 
@@ -199,9 +253,21 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
       maxAge: REFRESH_MAX_AGE,
     });
   }
-  if (clearCookies) {
+  if (setRecovery) {
+    res.cookies.set(config.cookies.recoveryToken, setRecovery, {
+      ...RECOVERY_COOKIE_BASE,
+      maxAge: RECOVERY_MAX_AGE,
+    });
+  }
+  if (clearAuthCookies) {
     res.cookies.set(config.cookies.accessToken, '', { ...COOKIE_BASE, maxAge: 0 });
     res.cookies.set(config.cookies.refreshToken, '', { ...COOKIE_BASE, maxAge: 0 });
+  }
+  if (passwordResetCompleted || recoveryInvalid) {
+    res.cookies.set(config.cookies.recoveryToken, '', {
+      ...RECOVERY_COOKIE_BASE,
+      maxAge: 0,
+    });
   }
 
   return res;
@@ -211,4 +277,11 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
 function refreshInputVarName(query: string): string | null {
   const m = query.match(/refreshToken\s*\(\s*input\s*:\s*\$(\w+)/);
   return m ? m[1] : null;
+}
+
+function inputVarName(query: string, mutationName: string): string | null {
+  const match = query.match(
+    new RegExp(`${mutationName}\\s*\\(\\s*input\\s*:\\s*\\$(\\w+)`),
+  );
+  return match ? match[1] : null;
 }

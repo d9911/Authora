@@ -3,7 +3,7 @@ import { User } from '@/shared/types';
 
 const USER_FIELDS = `
   id name email nickname phoneNumber telegramId avatarUrl
-  emailVerified twoFactorEnabled githubId createdAt updatedAt
+  emailVerified twoFactorEnabled githubId hasPassword recoveryMethods createdAt updatedAt
 `;
 
 export async function fetchMe(): Promise<User | null> {

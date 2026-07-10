@@ -15,13 +15,14 @@ export class SqliteUserRepository implements UserRepository {
       .prepare(
         `INSERT INTO users
          (name, email, password, nickname, phoneNumber, telegramId, avatarUrl,
-          emailVerified, twoFactorEnabled, githubId, createdAt, updatedAt)
+          emailKind, emailVerified, twoFactorEnabled, githubId, authVersion, createdAt, updatedAt)
          VALUES (@name, @email, @password, @nickname, @phoneNumber, @telegramId, @avatarUrl,
-                 @emailVerified, 0, @githubId, @createdAt, @updatedAt)`,
+                 @emailKind, @emailVerified, 0, @githubId, @authVersion, @createdAt, @updatedAt)`,
       )
       .run({
         name: data.name ?? null,
         email: data.email.toLowerCase(),
+        emailKind: data.emailKind ?? 'contactable',
         password: data.password ?? null,
         nickname: data.nickname ?? null,
         phoneNumber: data.phoneNumber ?? null,
@@ -29,6 +30,7 @@ export class SqliteUserRepository implements UserRepository {
         avatarUrl: data.avatarUrl ?? null,
         emailVerified: data.emailVerified ? 1 : 0,
         githubId: data.githubId ?? null,
+        authVersion: data.authVersion ?? 0,
         createdAt: now,
         updatedAt: now,
       });
@@ -69,6 +71,8 @@ export class SqliteUserRepository implements UserRepository {
     };
 
     if (data.name !== undefined) assign('name', data.name);
+    if (data.email !== undefined) assign('email', data.email.toLowerCase());
+    if (data.emailKind !== undefined) assign('emailKind', data.emailKind);
     if (data.nickname !== undefined) assign('nickname', data.nickname);
     if (data.phoneNumber !== undefined) assign('phoneNumber', data.phoneNumber);
     if (data.telegramId !== undefined) assign('telegramId', data.telegramId);
@@ -80,10 +84,39 @@ export class SqliteUserRepository implements UserRepository {
     if (data.twoFactorSecret !== undefined)
       assign('twoFactorSecret', data.twoFactorSecret === null ? null : data.twoFactorSecret);
     if (data.githubId !== undefined) assign('githubId', data.githubId);
+    if (data.authVersion !== undefined) assign('authVersion', data.authVersion);
 
     fields.push('updatedAt = @updatedAt');
     db.prepare(`UPDATE users SET ${fields.join(', ')} WHERE id = @id`).run(params);
 
+    const updated = await this.findById(id);
+    if (!updated) throw new Error(`User not found: ${id}`);
+    return updated;
+  }
+
+  async updatePasswordAndIncrementAuthVersion(
+    id: string,
+    password: string,
+    emailVerified?: boolean,
+  ): Promise<User> {
+    const db = getSqlite();
+    const params = {
+      id: Number(id),
+      password,
+      emailVerified: emailVerified === undefined ? null : emailVerified ? 1 : 0,
+      updatedAt: nowIso(),
+    };
+    db.prepare(
+      `UPDATE users
+       SET password = @password,
+           authVersion = authVersion + 1,
+           emailVerified = CASE
+             WHEN @emailVerified IS NULL THEN emailVerified
+             ELSE @emailVerified
+           END,
+           updatedAt = @updatedAt
+       WHERE id = @id`,
+    ).run(params);
     const updated = await this.findById(id);
     if (!updated) throw new Error(`User not found: ${id}`);
     return updated;

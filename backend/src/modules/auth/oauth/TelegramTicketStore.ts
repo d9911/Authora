@@ -4,14 +4,24 @@ export interface TelegramVerifiedUser {
   username?: string;
 }
 
-export type TicketStatus = 'pending' | 'done' | 'expired';
+export type TelegramTicketPurpose = 'login' | 'link' | 'recovery';
+export type TicketStatus = 'pending' | 'done' | 'cancelled' | 'expired';
+
+export interface CreateTelegramTicketInput {
+  purpose: TelegramTicketPurpose;
+  linkUserId?: string;
+  confirmationCode?: string;
+}
 
 export interface TelegramTicket {
   token: string;
   status: TicketStatus;
+  purpose: TelegramTicketPurpose;
   createdAt: number;
   /** If set, this is a LINK flow for the given authenticated user. */
   linkUserId?: string;
+  /** Short code shown both in browser and bot for recovery intent confirmation. */
+  confirmationCode?: string;
   /** Filled when the user taps Start in the bot. */
   user?: TelegramVerifiedUser;
 }
@@ -26,14 +36,16 @@ const TTL_MS = 5 * 60 * 1000; // tickets live 5 minutes
 export class TelegramTicketStore {
   private tickets = new Map<string, TelegramTicket>();
 
-  create(linkUserId?: string): TelegramTicket {
+  create(input: CreateTelegramTicketInput): TelegramTicket {
     this.gc();
     const token = cryptoRandom();
     const ticket: TelegramTicket = {
       token,
       status: 'pending',
+      purpose: input.purpose,
       createdAt: Date.now(),
-      linkUserId,
+      linkUserId: input.linkUserId,
+      confirmationCode: input.confirmationCode,
     };
     this.tickets.set(token, ticket);
     return ticket;
@@ -57,6 +69,13 @@ export class TelegramTicketStore {
     }
     t.user = user;
     t.status = 'done';
+    return true;
+  }
+
+  cancel(token: string): boolean {
+    const ticket = this.tickets.get(token);
+    if (!ticket || ticket.status !== 'pending') return false;
+    ticket.status = 'cancelled';
     return true;
   }
 

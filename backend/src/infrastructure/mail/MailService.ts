@@ -1,6 +1,7 @@
 import nodemailer, { Transporter } from 'nodemailer';
 import { env } from '../../config/env';
 import { AppError } from '../../core/errors/AppError';
+import { MailGateway } from '../../modules/auth/domain/MailGateway';
 
 export interface SendMailParams {
   to: string;
@@ -14,7 +15,7 @@ export interface SendMailParams {
  * configured, emails are logged to the console instead of being sent,
  * so the auth flows remain testable locally.
  */
-export class MailService {
+export class MailService implements MailGateway {
   private transporter: Transporter | null = null;
 
   private getTransporter(): Transporter | null {
@@ -42,6 +43,9 @@ export class MailService {
   async send(params: SendMailParams): Promise<void> {
     const transporter = this.getTransporter();
     if (!transporter) {
+      if (env.isProd) {
+        throw AppError.mailSendFailed('Email delivery is not configured');
+      }
       this.logToConsole(params, 'DEV (SMTP not configured)');
       return;
     }
@@ -136,13 +140,33 @@ export class MailService {
     });
   }
 
-  async sendPasswordReset(to: string, token: string): Promise<void> {
-    const link = `${env.app.frontendUrl}/reset-password?token=${token}`;
+  async sendPasswordReset(to: string, token: string, nextPath?: string): Promise<void> {
+    const resetUrl = new URL('/reset-password', env.app.frontendUrl);
+    resetUrl.searchParams.set('token', token);
+    if (nextPath) resetUrl.searchParams.set('next', nextPath);
+    const link = resetUrl.toString();
     await this.send({
       to,
       subject: 'Reset your password',
       text: `Reset your password: ${link}`,
       html: `<p>You requested a password reset. Click the link below (valid for 1 hour):</p><p><a href="${link}">${link}</a></p>`,
+    });
+  }
+
+  async sendPasswordChanged(to: string): Promise<void> {
+    await this.send({
+      to,
+      subject: 'Your Authora password was changed',
+      text: [
+        'Your Authora password was changed.',
+        '',
+        'All existing sessions have been signed out.',
+        'If you did not make this change, start account recovery immediately.',
+      ].join('\n'),
+      html: `
+        <p>Your Authora password was changed.</p>
+        <p>All existing sessions have been signed out.</p>
+        <p>If you did not make this change, start account recovery immediately.</p>`,
     });
   }
 }

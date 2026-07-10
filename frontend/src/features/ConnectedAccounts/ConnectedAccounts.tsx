@@ -31,7 +31,7 @@ function ConnectedAccountRow({
   connected: boolean;
   connectedLabel?: string;
   missingLabel?: string;
-  detail?: string;
+  detail?: string | null;
   children: ReactNode;
 }) {
   return (

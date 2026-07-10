@@ -1,7 +1,16 @@
+import { Suspense } from 'react';
 import { PasswordResetForm } from '@/features/PasswordResetForm/PasswordResetForm';
+import { LoaderMain } from '@/shared/ui';
 
-export const metadata = { title: 'Forgot password' };
+export const metadata = {
+  title: 'Account recovery',
+  robots: { index: false, follow: false },
+};
 
 export default function ForgotPasswordPage() {
-  return <PasswordResetForm />;
+  return (
+    <Suspense fallback={<LoaderMain />}>
+      <PasswordResetForm mode="request" />
+    </Suspense>
+  );
 }
