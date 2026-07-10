@@ -1,4 +1,5 @@
 .claude/
+.playwright-cli/
 CLAUDE.md
 coverage/
 */output.txt

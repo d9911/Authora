@@ -17,7 +17,7 @@ Two parts:
 
 **Backend**
 
-- Node.js 20 + TypeScript 6
+- Node.js 24 + TypeScript 6/7
 - Express 5 + GraphQL (`graphql-http` + `@graphql-tools/schema`)
 - Clean Architecture + Feature Modules (domain / use-cases / infrastructure / graphql)
 - MongoDB via Mongoose **and** SQLite via better-sqlite3, switchable through

@@ -2,6 +2,11 @@
   "name": "authora-frontend",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=24.0.0 <25.0.0",
+    "yarn": "1.22.x"
+  },
   "scripts": {
     "dev": "next dev -p 5178 -H 0.0.0.0",
     "build": "next build --webpack",
