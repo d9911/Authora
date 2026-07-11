@@ -2,6 +2,7 @@ import nodemailer, { Transporter } from 'nodemailer';
 import { env } from '../../config/env';
 import { AppError } from '../../core/errors/AppError';
 import { MailGateway } from '../../modules/auth/domain/MailGateway';
+import { escapeHtml, renderEmailTemplate } from './emailTemplate';
 
 export interface SendMailParams {
   to: string;
@@ -66,6 +67,7 @@ export class MailService implements MailGateway {
 
   async sendEmailVerificationCode(to: string, code: string): Promise<void> {
     const confirmUrl = `${env.app.frontendUrl}/confirm-email?email=${encodeURIComponent(to)}`;
+    const safeCode = escapeHtml(code);
     await this.send({
       to,
       subject: `Authora email verification code: ${code}`,
@@ -79,64 +81,34 @@ export class MailService implements MailGateway {
         '',
         'If you did not request this code, you can safely ignore this email.',
       ].join('\n'),
-      html: `
-        <!doctype html>
-        <html lang="en">
-          <body style="margin:0;padding:0;background:#f5f4f8;font-family:Inter,Arial,sans-serif;color:#17141f">
-            <div style="display:none;max-height:0;overflow:hidden;opacity:0">
-              Your Authora confirmation code expires in 24 hours.
-            </div>
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f4f8;padding:32px 16px">
-              <tr>
-                <td align="center">
-                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #ded9ea;border-radius:20px;overflow:hidden">
-                    <tr>
-                      <td style="height:4px;background:#5b4bff"></td>
-                    </tr>
-                    <tr>
-                      <td style="padding:32px 32px 24px">
-                        <p style="margin:0 0 10px;color:#5b4bff;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase">
-                          Authora
-                        </p>
-                        <h1 style="margin:0;color:#17141f;font-size:28px;line-height:1.2;font-weight:700">
-                          Verify your email
-                        </h1>
-                        <p style="margin:14px 0 0;color:#5c6c75;font-size:15px;line-height:1.55">
-                          Use this code to confirm that this email address belongs to you.
-                        </p>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style="padding:0 32px 26px">
-                        <div style="background:#f2f0ff;border:1px solid #d8d2ff;border-radius:18px;padding:24px;text-align:center">
-                          <p style="margin:0 0 12px;color:#5c6c75;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase">
-                            Confirmation code
-                          </p>
-                          <div style="font-family:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;font-size:36px;line-height:1;font-weight:700;letter-spacing:8px;color:#17141f">
-                            ${code}
-                          </div>
-                          <p style="margin:14px 0 0;color:#5c6c75;font-size:14px">
-                            This code expires in 24 hours.
-                          </p>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style="padding:0 32px 32px">
-                        <a href="${confirmUrl}" style="display:inline-block;background:#5b4bff;color:#ffffff;text-decoration:none;border-radius:999px;padding:13px 22px;font-weight:700;font-size:14px">
-                          Open verification page
-                        </a>
-                        <p style="margin:20px 0 0;color:#7a7289;font-size:13px;line-height:1.55">
-                          If you did not request this code, you can safely ignore this email.
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
-          </body>
-        </html>`,
+      html: renderEmailTemplate({
+        preheader: 'Your Authora confirmation code expires in 24 hours.',
+        eyebrow: 'Email verification',
+        title: 'Verify your email',
+        accentColor: '#3157d5',
+        contentHtml: `
+          <p style="margin:0 0 18px;">Use this code to confirm that this email address belongs to you.</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;background-color:#f4f7ff;border:1px solid #d9e2ff;border-radius:12px;">
+            <tr>
+              <td align="center" style="padding:22px 16px;">
+                <p style="margin:0 0 10px;color:#69758a;font-size:12px;line-height:18px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Confirmation code</p>
+                <p style="margin:0;color:#172033;font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace;font-size:32px;line-height:38px;font-weight:700;letter-spacing:6px;word-break:break-all;">${safeCode}</p>
+                <p style="margin:10px 0 0;color:#69758a;font-size:13px;line-height:20px;">This code expires in 24 hours.</p>
+              </td>
+            </tr>
+          </table>`,
+        action: {
+          label: 'Open verification page',
+          url: confirmUrl,
+          color: '#3157d5',
+        },
+        notice: {
+          icon: '✓',
+          iconLabel: 'Verification',
+          title: "Didn't request this code?",
+          text: 'You can safely ignore this email. No changes will be made to your account.',
+        },
+      }),
     });
   }
 
@@ -148,25 +120,84 @@ export class MailService implements MailGateway {
     await this.send({
       to,
       subject: 'Reset your password',
-      text: `Reset your password: ${link}`,
-      html: `<p>You requested a password reset. Click the link below (valid for 1 hour):</p><p><a href="${link}">${link}</a></p>`,
+      text: [
+        'Reset your password',
+        '',
+        'We received a request to reset the password for your Authora account.',
+        'Click the button below to create a new password.',
+        '',
+        `Reset password: ${link}`,
+        '',
+        'This link expires in 1 hour.',
+        '',
+        "If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.",
+      ].join('\n'),
+      html: renderEmailTemplate({
+        preheader: 'Create a new password for your Authora account. This link expires in 1 hour.',
+        eyebrow: 'Account recovery',
+        title: 'Reset your password',
+        accentColor: '#3157d5',
+        contentHtml: `
+          <p style="margin:0 0 14px;">We received a request to reset the password for your Authora account.</p>
+          <p style="margin:0;">Click the button below to create a new password.</p>`,
+        action: {
+          label: 'Reset password',
+          url: link,
+          color: '#3157d5',
+        },
+        notice: {
+          icon: '◷',
+          iconLabel: 'Clock',
+          title: 'This link expires in 1 hour.',
+          text: "If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.",
+          backgroundColor: '#f4f7ff',
+          borderColor: '#d9e2ff',
+        },
+      }),
     });
   }
 
   async sendPasswordChanged(to: string): Promise<void> {
+    const recoveryUrl = new URL('/forgot-password', env.app.frontendUrl).toString();
     await this.send({
       to,
-      subject: 'Your Authora password was changed',
+      subject: 'Password changed successfully',
       text: [
-        'Your Authora password was changed.',
+        'Password changed successfully',
         '',
-        'All existing sessions have been signed out.',
-        'If you did not make this change, start account recovery immediately.',
+        'Your Authora password has been changed successfully.',
+        '',
+        "For your security, all existing sessions have been signed out and you'll need to sign in again on your devices.",
+        '',
+        "If you didn't make this change, your account may be compromised. Recover your account immediately.",
+        '',
+        `Recover account: ${recoveryUrl}`,
+        '',
+        'Security tip: Authora will never ask for your password by email.',
       ].join('\n'),
-      html: `
-        <p>Your Authora password was changed.</p>
-        <p>All existing sessions have been signed out.</p>
-        <p>If you did not make this change, start account recovery immediately.</p>`,
+      html: renderEmailTemplate({
+        preheader: 'Your Authora password was changed and all existing sessions were signed out.',
+        eyebrow: 'Security notification',
+        title: 'Password changed successfully',
+        accentColor: '#c92a2a',
+        contentHtml: `
+          <p style="margin:0 0 14px;">Your Authora password has been changed successfully.</p>
+          <p style="margin:0 0 14px;">For your security, all existing sessions have been signed out and you'll need to sign in again on your devices.</p>
+          <p style="margin:0;color:#8f1d1d;font-weight:700;">If you didn't make this change, your account may be compromised. Recover your account immediately.</p>`,
+        action: {
+          label: 'Recover account',
+          url: recoveryUrl,
+          color: '#c92a2a',
+        },
+        notice: {
+          icon: '🔒',
+          iconLabel: 'Lock',
+          title: 'Security tip:',
+          text: 'Authora will never ask for your password by email.',
+          backgroundColor: '#fff7f7',
+          borderColor: '#f2cccc',
+        },
+      }),
     });
   }
 }

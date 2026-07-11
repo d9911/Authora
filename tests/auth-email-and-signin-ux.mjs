@@ -10,6 +10,7 @@ const authFormStyles = read('frontend/src/features/AuthForm/AuthForm.module.scss
 const confirmEmail = read('frontend/src/features/ConfirmEmailForm/ConfirmEmailForm.tsx');
 const authUseCases = read('backend/src/modules/auth/use-cases/AuthUseCases.ts');
 const mailService = read('backend/src/infrastructure/mail/MailService.ts');
+const emailTemplate = read('backend/src/infrastructure/mail/emailTemplate.ts');
 
 const checks = [
   [
@@ -34,10 +35,11 @@ const checks = [
   ],
   [
     'email template has a branded HTML layout',
-    /max-width:\s*640px/.test(mailService) &&
+    /max-width:\s*600px/.test(emailTemplate) &&
+      /Authora account security/.test(emailTemplate) &&
       /Verify your email/.test(mailService) &&
       /Open verification page/.test(mailService) &&
-      /If you did not request this code/.test(mailService),
+      /safely ignore this email/.test(mailService),
   ],
 ];
 
