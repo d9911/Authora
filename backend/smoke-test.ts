@@ -1,38 +1,62 @@
 /* eslint-disable no-console */
 /**
  * End-to-end smoke test against an in-memory MongoDB.
- * Run with: npx ts-node-dev --transpile-only smoke-test.ts
+ * Run from the repository root with: node tests/run-mongo-smoke.mjs
  */
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import type { Server } from 'node:http';
+
+let mongod: MongoMemoryServer | undefined;
+let server: Server | undefined;
+let disconnectMongo: (() => Promise<void>) | undefined;
+
+async function cleanup() {
+  if (server) {
+    await new Promise<void>((resolve) => server?.close(() => resolve()));
+    server = undefined;
+  }
+  if (disconnectMongo) {
+    await disconnectMongo();
+    disconnectMongo = undefined;
+  }
+  if (mongod) {
+    await mongod.stop();
+    mongod = undefined;
+  }
+}
 
 async function main() {
-  const mongod = await MongoMemoryServer.create();
+  const port = Number(process.env.MONGO_SMOKE_PORT || 3999);
+  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+    throw new Error(`MONGO_SMOKE_PORT must be an integer from 1 to 65535; received ${port}`);
+  }
+
+  mongod = await MongoMemoryServer.create();
   const uri = mongod.getUri();
   process.env.MONGO_URI = uri;
   process.env.DB_TYPE = 'mongo';
-  process.env.BACKEND_PORT = '3999';
+  process.env.BACKEND_PORT = String(port);
   process.env.JWT_ACCESS_SECRET = 'test_access';
   process.env.JWT_REFRESH_SECRET = 'test_refresh';
   process.env.JWT_ACCESS_EXPIRES = '15m';
   // SMTP not configured -> emails logged to console
 
-  const { connectMongo, disconnectMongo } = await import(
-    './src/infrastructure/database/mongo/connection'
-  );
-  const { createApp } = await import('./src/app/express');
-  await connectMongo();
+  const mongoConnection = await import('./src/infrastructure/database/mongo/connection.js');
+  disconnectMongo = mongoConnection.disconnectMongo;
+  const { createApp } = await import('./src/app/express.js');
+  await mongoConnection.connectMongo();
 
   // seed locations
   const { CountryModel, RegionModel, CityModel } = await import(
-    './src/infrastructure/database/mongo/models'
+    './src/infrastructure/database/mongo/models.js'
   );
   const country = await CountryModel.create({ name: 'Russia', code: 'RU' });
   const region = await RegionModel.create({ name: 'Moscow Oblast', countryId: country._id });
   await CityModel.create({ name: 'Moscow', countryId: country._id, regionId: region._id });
 
   const app = createApp();
-  const server = app.listen(3999);
-  const base = 'http://localhost:3999';
+  server = app.listen(port, '127.0.0.1');
+  const base = `http://127.0.0.1:${port}`;
 
   const gql = async (query: string, variables?: any, token?: string) => {
     const res = await fetch(`${base}/graphql`, {
@@ -138,7 +162,7 @@ async function main() {
 
   // confirm 2FA with valid TOTP code
   const speakeasy = await import('speakeasy');
-  const { UserModel } = await import('./src/infrastructure/database/mongo/models');
+  const { UserModel } = await import('./src/infrastructure/database/mongo/models.js');
   const userDoc: any = await UserModel.findOne({ email: 'alice@example.com' }).lean();
   const code = speakeasy.totp({ secret: userDoc.twoFactorSecret, encoding: 'base32' });
   const confirm2fa = await gql(`mutation($c:String!){ confirmTwoFactor(code:$c) }`, { c: code }, accessToken);
@@ -173,13 +197,24 @@ async function main() {
 
   console.log(`\nRESULT: ${passed} passed, ${failed} failed\n`);
 
-  server.close();
-  await disconnectMongo();
-  await mongod.stop();
-  process.exit(failed === 0 ? 0 : 1);
+  process.exitCode = failed === 0 ? 0 : 1;
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+const interrupt = (signal: NodeJS.Signals) => {
+  void cleanup().finally(() => process.exit(signal === 'SIGINT' ? 130 : 143));
+};
+const onSigint = () => interrupt('SIGINT');
+const onSigterm = () => interrupt('SIGTERM');
+process.once('SIGINT', onSigint);
+process.once('SIGTERM', onSigterm);
+
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    process.off('SIGINT', onSigint);
+    process.off('SIGTERM', onSigterm);
+    await cleanup();
+  });

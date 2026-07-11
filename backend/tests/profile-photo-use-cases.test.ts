@@ -13,8 +13,10 @@ class FakeUsers implements UserRepository {
   user: User = {
     id: 'user-1',
     email: 'user@example.com',
+    emailKind: 'contactable',
     emailVerified: true,
     twoFactorEnabled: false,
+    authVersion: 0,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
   };
@@ -59,6 +61,26 @@ class FakeUsers implements UserRepository {
       updatedAt: new Date('2026-01-02T00:00:00.000Z'),
     };
     return this.user;
+  }
+
+  async updatePasswordAndIncrementAuthVersion(
+    id: string,
+    password: string,
+    emailVerified?: boolean,
+  ): Promise<User> {
+    assert.equal(id, this.user.id);
+    this.user = {
+      ...this.user,
+      password,
+      emailVerified: emailVerified ?? this.user.emailVerified,
+      authVersion: this.user.authVersion + 1,
+      updatedAt: new Date('2026-01-02T00:00:00.000Z'),
+    };
+    return this.user;
+  }
+
+  async consumeTwoFactorRecoveryCode(): Promise<boolean> {
+    return false;
   }
 }
 

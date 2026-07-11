@@ -1,70 +1,260 @@
-# Authora — testing harness
+# Authora test runner
 
-Three complementary tools to validate **security**, **functionality** and
-**performance** of the API (incl. the GitHub/Telegram auth & linking flows).
-
-| Tool                      | What it checks                                                                                                         | File                                  |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| **Security audit** (Node) | OWASP-style checks: auth gating, JWT tampering, token leakage, injection, CSRF/signature, CORS, rate-limiting, headers | `security/audit.mjs`                  |
-| **k6** (Grafana)          | Functional + load: auth lifecycle under load, OAuth/bot flows                                                          | `load/k6-auth.js`, `load/k6-oauth.js` |
-| **Account recovery**      | Compiled use-case tests plus an SQLite GraphQL smoke for token/session lifecycle                                       | `backend/tests/account-recovery-use-cases.test.cjs`, `backend/smoke-test-sqlite.ts` |
-| **autocannon** (Node)     | Raw HTTP throughput benchmark                                                                                          | `load/autocannon-bench.mjs`           |
-
-## Run
+The canonical full-project test command is:
 
 ```bash
-make check-source       # fast source-level regression checks (no server)
-make check-types        # backend + frontend TypeScript checks
-make check              # source + types + compiled recovery behavior
-make backend-test-sqlite # 34-check local GraphQL/account-recovery smoke
-make security-audit     # boots its own in-memory server, runs 25 checks
-make load-test          # k6 (auth + oauth) + autocannon (boots a server)
-make test-all           # everything
-
-# or directly:
-node tests/check-source.mjs
-node tests/security/audit.mjs
-tests/run-tests.sh load
+make test
 ```
 
-`run-tests.sh` is **fully self-contained** — it will, on demand:
+It runs the project's unique checks strictly one at a time, records every result,
+continues after a failure, and returns a CI-safe exit code after printing the complete
+summary. Existing Makefile targets remain available for compatibility, but they are not
+used as aggregate dependencies by `make test` because several of them repeat the same
+underlying checks.
 
-- `yarn install` the backend if `node_modules` is missing,
-- `yarn run build`,
-- download **k6** to `tests/bin/k6` (no system install needed),
-- install **autocannon** (`--no-save`),
-- boot the backend on SQLite `:memory:` with **relaxed rate limits**
-  (`RATE_LIMIT_MAX` / `AUTH_RATE_LIMIT_MAX`) so the load tools aren't throttled,
-- free the test port on rerun and tear the server down at the end.
+The project requires Node.js 24 and Yarn 1.22. Install the existing workspace dependencies
+before the first run:
 
-So a clean checkout can run `make test-all` with nothing pre-installed.
-Tune load with env: `VUS=20 DURATION=30s make load-test`.
+```bash
+make install
+```
 
-## What "good" looks like
+## Output modes
 
-- **Security audit:** `RESULT: 25 passed, 0 failed` (exit 0). Any `high`/`critical`
-  failure exits non-zero.
-- **k6 auth:** `checks 100%`, `http_req_failed 0%`, `public_reads p(95) < 300ms`.
-  Sign-up latency is intentionally **bcrypt-bound** (~0.6s) — measured under its
-  own `signup_duration` threshold, not the fast-path budget.
-- **k6 oauth:** all 13 checks pass — GitHub redirect/CSRF, Telegram signature
-  rejection, bot ticket lifecycle, link-auth gating.
-- **autocannon:** ~700+ req/s on the authenticated `me` hot path, 0 non-2xx.
+```bash
+make test              # compact progress; complete output is written to logs
+make test VERBOSE=1    # stream each child process's stdout/stderr and keep the logs
+make test NO_COLOR=1   # plain text with no ANSI escape sequences
+```
 
-## Security controls verified / added
+Colors are enabled only when stdout is a TTY and `NO_COLOR` is not set. Output redirected
+to a file or produced in CI remains readable plain text. Status words are always printed,
+so color is never the only status indicator.
 
-The audit drove these hardening additions (`backend/src/shared/middlewares/security.ts`):
+In compact mode, a failed step prints the last significant lines from its log and the
+path to the full log. `VERBOSE=1` additionally mirrors child output while the step runs.
 
-- **Rate limiting** — general (`300/min`) + strict auth limiter (`10/min`) on
-  credential mutations plus hashed identifier buckets (`5/min`) → brute-force
-  returns `429`.
-- **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`,
-  `Referrer-Policy`, `Permissions-Policy`, CSP, `X-Powered-By` removed.
-- **Body limit** — oversized payloads return `413` (not `500`).
+## Check order
 
-Already-present controls confirmed by the audit: refresh-token rotation &
-reuse-rejection, purpose-scoped tokens (access≠refresh≠oauth), no password /
-2FA-secret leakage, GraphQL type-safety blocking NoSQL operator injection,
-non-enumerable login & password-reset, one-time hashed recovery grants,
-session revocation through `authVersion`, Telegram HMAC signature check, GitHub
-OAuth CSRF `state`, CORS allow-list.
+The production catalog contains 50 unique steps: 46 required checks followed by 4
+optional environment-dependent checks. The order is fixed and is never parallelized.
+
+| Position | Category | Checks, in execution order | Required | Server/tool requirements |
+| --- | --- | --- | --- | --- |
+| 1 | Runner | Runner unit/integration tests | yes | Node.js |
+| 2-29 | Source regressions | 28 source checks listed below | yes | Node.js; no server |
+| 30 | Makefile regression | `doc-mongo` fallback fixture | yes | fake local `docker`/`yarn`; no Docker daemon or MongoDB |
+| 31-32 | Types | Backend TypeScript, frontend TypeScript | yes | Yarn |
+| 33-36 | Backend build and recovery | Backend build, mail templates, account-recovery use cases, Telegram recovery ticket | yes | Yarn and Node.js |
+| 37-39 | SQLite | Smoke compile, Telegram ticket repository, SQLite GraphQL smoke | yes | self-hosted local SQLite smoke |
+| 40-42 | Profile photo | Test compile, image processor, profile-photo use cases | yes | Yarn and Node.js |
+| 43 | Refresh flow | Refresh-token rotation integration | yes | self-hosted local backend |
+| 44-46 | Production/runtime | Frontend production build, i18n HTTP routing, security audit | yes | self-hosted local frontend/backend |
+| 47 | Mongo | Legacy in-memory Mongo smoke | no | `mongodb-memory-server` |
+| 48-49 | k6 | Auth load, OAuth functional load | no | runnable `k6`; self-hosted local backend |
+| 50 | Autocannon | HTTP throughput benchmark | no | backend `autocannon`; self-hosted local backend |
+
+The 28 source checks at positions 2-29 run in this exact order:
+
+1. i18n config and routing
+2. i18n locale routing contract
+3. i18n locale key parity
+4. i18n used translation keys
+5. i18n source coverage
+6. i18n production fallback
+7. i18n metadata
+8. i18n auth integration
+9. i18n mobile header
+10. auth flow and registration
+11. backend clean-architecture boundaries
+12. frontend FSD boundaries
+13. auth auto-code and redirect
+14. auth email and sign-in UX
+15. connected-accounts email
+16. Docker Compose environment files
+17. Telegram bot config guard
+18. theme hydration
+19. Sass deprecation guard
+20. OAuth cookie handoff fields
+21. account-recovery contract
+22. account-recovery session version
+23. account-recovery settings
+24. account-recovery security
+25. account-recovery observability
+26. account-recovery persistence
+27. two-factor recovery codes
+28. auth hydration request loop
+
+`tests/source-checks.mjs` is the shared registry for this source group, so
+`make check-source` and `make test` do not maintain separate copies of that list. The full
+audit table, including every command, working directory, type, dependency, duplicate
+relationship, and expected exit code, is in
+`docs/superpowers/plans/2026-07-11-authora-test-runner.md`.
+
+### Excluded duplicates and aggregators
+
+`make test` calls leaf checks instead of these overlapping entry points:
+
+- `backend-test` and `backend-test-sqlite` are aliases for the same SQLite smoke script;
+- `check`, `check-types`, and `check-account-recovery` aggregate checks already present as
+  individual steps;
+- backend/frontend `lint` repeat boundary/source and TypeScript checks;
+- `check-source` is preserved, but its 28 leaves run independently in the full runner so
+  one source failure does not suppress the remaining source checks;
+- `check-i18n-http` aggregates the production-fallback test and an HTTP check against
+  `I18N_BASE_URL`; the full runner executes the fallback once and owns a separate local
+  production frontend lifecycle for its HTTP leaf;
+- `test-all` contains only security and load testing; it is not the full project suite;
+- the backend build runs once and its output is reused by recovery, refresh, security, and
+  load phases.
+
+## PASS, WARN, and FAIL
+
+- `PASS` means the command started, exited with code `0`, and satisfied its declared
+  postconditions.
+- `WARN` is produced only by an explicit runner rule, such as an unavailable optional
+  tool. The runner does not infer warnings by searching arbitrary stdout/stderr text.
+- `FAIL` means a check returned non-zero, could not start, exited on a signal, timed out,
+  or missed a required postcondition. Required setup/readiness failures are also `FAIL`.
+
+An optional check is `WARN` only when its declared prerequisite is unavailable. If the
+optional tool is present and the executed check reports a real error, that result is
+`FAIL`, not a silent skip.
+
+The process exit codes are:
+
+| Exit code | Meaning |
+| --- | --- |
+| `0` | No check failed; `WARN` results are allowed |
+| `1` | One or more checks failed |
+| `130` | The user interrupted the suite with Ctrl+C |
+| other non-zero | Internal runner/startup failure |
+
+On interruption, the runner terminates the current process tree and any frontend/backend
+it started, writes the partial summary, and exits non-zero.
+
+## Logs and machine-readable summary
+
+Every run replaces only the runner-owned `.test-results/` directory:
+
+```text
+.test-results/
+  logs/
+    01-runner-tests.log
+    02-i18n-config-and-routing.log
+    ...
+  summary.json
+```
+
+Each result in `summary.json` contains the stable check ID, label, status, exit code,
+duration, and relative log path. The document also contains ISO start/finish timestamps,
+total duration, and PASS/WARN/FAIL counters. It intentionally does not record the full
+environment. Known secret environment values and bearer credentials are redacted from
+captured child output.
+
+## Self-hosted HTTP checks
+
+The full runner does not require a manually started application server:
+
+- the frontend is built once, started in production mode on an available loopback port,
+  checked for readiness, used by `tests/i18n-http-routing.mjs`, and stopped in cleanup;
+- refresh and security checks use local test backends with SQLite/in-memory data;
+- available load tools run only against a local test backend with relaxed test-only rate
+  limits;
+- servers started by the runner are stopped after success, failure, timeout, SIGINT, or
+  SIGTERM.
+
+No production URL is the default target for security or load testing.
+
+## Optional dependencies and WARN remediation
+
+The repository does not contain a CI workflow that makes Mongo or load tools mandatory.
+Consequently, missing prerequisites for the four optional steps produce explicit `WARN`
+results and do not change an otherwise successful exit code.
+
+### Mongo smoke
+
+The legacy `backend/smoke-test.ts` requires `mongodb-memory-server`, which is not currently
+declared in `backend/package.json`. To enable the check:
+
+```bash
+cd backend
+yarn add --dev mongodb-memory-server
+```
+
+`mongodb-memory-server` may need to obtain a compatible MongoDB binary on its first run.
+The normal required suite does not require a separately running MongoDB service.
+
+### k6
+
+The runner accepts a runnable system `k6` found on `PATH`. It does not download
+a binary automatically. On macOS:
+
+```bash
+brew install k6
+```
+
+For other supported platforms, follow the
+[official k6 installation instructions](https://grafana.com/docs/k6/latest/set-up/install-k6/).
+The current ignored local `tests/bin/k6` artifact is a Linux x86-64 binary and is not a
+compatible macOS fallback.
+
+### Autocannon
+
+The benchmark loads `autocannon` from backend dependencies and never installs packages
+during a test run. To enable it persistently:
+
+```bash
+cd backend
+yarn add --dev autocannon@7
+```
+
+Load duration and concurrency remain configurable for the legacy load entry point, for
+example:
+
+```bash
+VUS=20 DURATION=30s make load-test                 # k6 duration
+AUTOCANNON_DURATION=30 CONNECTIONS=75 make load-test # autocannon seconds
+```
+
+## CI usage
+
+A CI job can use the same entry point and rely on its final exit code:
+
+```bash
+make install
+make test NO_COLOR=1
+```
+
+Do not append `|| true`: that would hide a required test failure. Preserve
+`.test-results/logs/` and `.test-results/summary.json` as job artifacts when diagnosing a
+failed run. If a future CI policy makes Mongo or load testing mandatory, install those
+tools in the job before `make test`; missing tools currently have the documented optional
+`WARN` policy.
+
+## Compatibility targets
+
+These existing commands keep their narrower historical purpose:
+
+```bash
+make check-source          # fail-fast run of the 28 source checks
+make check-types           # backend + frontend TypeScript
+make check-account-recovery # backend build + three recovery behavior tests
+make check                 # source + types + account recovery aggregate
+make backend-test          # SQLite smoke (alias)
+make backend-test-sqlite   # SQLite smoke (same command as backend-test)
+make check-i18n-http       # i18n HTTP against I18N_BASE_URL (default :5178)
+make security-audit        # self-hosted local security audit
+make load-test             # local k6 + autocannon; prerequisites must be installed
+make test-all              # legacy security + load aggregate only
+```
+
+The legacy load scripts now propagate actual tool/test failures and do not claim success
+when a tool is missing. Use `make test` for the complete deduplicated suite and consolidated
+summary.
+
+`frontend/e2e-test.mjs` was also found during the audit, but it is not an applicable
+runner step yet: it depends on the undeclared Mongo memory package, fixed ports, and
+pre-localization routes such as `/country` and `/profile/edit`. It remains documented as
+legacy instead of being reported as PASS without execution. Migrating that script to the
+locale-prefixed URL contract and managed ports is a separate prerequisite.

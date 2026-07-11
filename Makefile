@@ -1,6 +1,6 @@
 # ---- Root Makefile for the Authora monorepo ----
 .PHONY: setup init install dev backend-dev frontend-dev backend-build frontend-build \
-        backend-start backend-test backend-test-sqlite security-audit load-test test-all \
+        backend-start backend-test backend-test-sqlite security-audit load-test test-all test \
         seed seed-mongo seed-sqlite docker-up docker-down \
         db-mongo-up doc-mongo db-postgres-up db-sqlite-up clean-ports \
         check-source check-types check-account-recovery check-i18n-http check
@@ -64,6 +64,9 @@ backend-start:
 	cd backend && pm2 start ecosystem.config.js
 
 # --- tests ---
+test:                  ## run every project test sequentially with colored results
+	@VERBOSE="$(VERBOSE)" NO_COLOR="$(NO_COLOR)" TEST_RUNNER_PROFILE="$(TEST_RUNNER_PROFILE)" node tests/test-runner.mjs
+
 backend-test:
 	cd backend && yarn run test:smoke:sqlite
 

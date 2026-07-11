@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../.test-results/build/profile-photo",
+    "rootDir": ".",
+    "noEmit": false
+  },
+  "include": [
+    "tests/profile-photo-processor.test.ts",
+    "tests/profile-photo-use-cases.test.ts"
+  ],
+  "exclude": ["node_modules", "dist", ".smoke-dist"]
+}

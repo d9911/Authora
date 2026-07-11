@@ -8,16 +8,22 @@
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { setTimeout as wait } from 'node:timers/promises';
 
 const BE_DIR = new URL('../../backend/', import.meta.url).pathname;
-const PORT = 3201;
+const TEST_BACKEND_ENTRY = new URL('../start-test-backend.mjs', import.meta.url).pathname;
+const PORT_TEXT = process.env.SECURITY_AUDIT_PORT || '3201';
+const PORT = Number(PORT_TEXT);
 const BASE = `http://127.0.0.1:${PORT}`;
 const GQL = `${BASE}/graphql`;
+const SKIP_BUILD = process.env.SECURITY_AUDIT_SKIP_BUILD === '1';
+const REQUEST_TIMEOUT_MS = Number(process.env.SECURITY_AUDIT_REQUEST_TIMEOUT_MS || 10_000);
 
 let pass = 0;
 let fail = 0;
 const failures = [];
+const childCloseStates = new WeakMap();
 
 function check(name, ok, severity = 'medium', detail) {
   const tag = ok ? '✓' : '✗';
@@ -29,10 +35,21 @@ function check(name, ok, severity = 'medium', detail) {
   }
 }
 
+function auditFetch(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+  return fetch(url, {
+    ...options,
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+}
+
 async function gql(query, variables, token) {
   const headers = { 'content-type': 'application/json' };
   if (token) headers.authorization = `Bearer ${token}`;
-  const res = await fetch(GQL, { method: 'POST', headers, body: JSON.stringify({ query, variables }) });
+  const res = await auditFetch(GQL, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ query, variables }),
+  });
   let json = {};
   try {
     json = await res.json();
@@ -42,10 +59,15 @@ async function gql(query, variables, token) {
   return { res, json };
 }
 
-async function waitForHealth(tries = 60) {
+async function waitForHealth(server, tries = 60) {
   for (let i = 0; i < tries; i++) {
+    if (server.exitCode !== null || server.signalCode !== null) {
+      throw new Error(
+        `backend exited before readiness (code=${server.exitCode}, signal=${server.signalCode})`,
+      );
+    }
     try {
-      const r = await fetch(`${BASE}/health`);
+      const r = await auditFetch(`${BASE}/health`, {}, Math.min(REQUEST_TIMEOUT_MS, 2_000));
       if (r.ok) return true;
     } catch {
       /* not up yet */
@@ -58,49 +80,143 @@ async function waitForHealth(tries = 60) {
 function run(cmd, args) {
   return new Promise((resolve, reject) => {
     const p = spawn(cmd, args, { cwd: BE_DIR, stdio: 'inherit' });
-    p.on('exit', (c) => (c === 0 ? resolve() : reject(new Error(`${cmd} ${args.join(' ')} failed`))));
+    let settled = false;
+    const finish = (error) => {
+      if (settled) return;
+      settled = true;
+      if (error) reject(error);
+      else resolve();
+    };
+    p.once('error', (error) => finish(new Error(`could not start ${cmd}: ${error.message}`)));
+    p.once('exit', (code, signal) => {
+      if (code === 0) finish();
+      else {
+        finish(
+          new Error(
+            `${cmd} ${args.join(' ')} failed (${signal ? `signal ${signal}` : `exit ${code}`})`,
+          ),
+        );
+      }
+    });
+  });
+}
+
+function trackChildClose(child) {
+  const state = { closed: false, promise: null };
+  state.promise = new Promise((resolve) => {
+    child.once('close', () => {
+      state.closed = true;
+      resolve();
+    });
+  });
+  childCloseStates.set(child, state);
+  return child;
+}
+
+async function waitForClose(child, timeoutMs) {
+  if (!child) return true;
+  const state = childCloseStates.get(child);
+  if (!state || state.closed) return true;
+  return Promise.race([
+    state.promise.then(() => true),
+    wait(timeoutMs, undefined, { ref: false }).then(() => false),
+  ]);
+}
+
+async function stopChild(child) {
+  if (!child || childCloseStates.get(child)?.closed) return;
+  if (child.exitCode === null && child.signalCode === null) child.kill('SIGTERM');
+  if (await waitForClose(child, 5_000)) return;
+  child.kill('SIGKILL');
+  await waitForClose(child, 2_000);
+}
+
+function assertPortFree(port) {
+  return new Promise((resolve, reject) => {
+    const probe = createServer();
+    probe.once('error', (error) => {
+      reject(new Error(`security audit port ${port} is unavailable: ${error.message}`));
+    });
+    probe.listen(port, '127.0.0.1', () => {
+      probe.close((error) => {
+        if (error) reject(error);
+        else resolve();
+      });
+    });
   });
 }
 
 async function main() {
-  // node_modules is excluded from snapshots - install on demand, then build.
-  if (!existsSync(`${BE_DIR}node_modules/.bin/tsc`)) {
-    console.log('[audit] installing backend dependencies…');
-    await run('yarn', ['install']);
+  if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65_535) {
+    throw new Error(`SECURITY_AUDIT_PORT must be an integer from 1 to 65535; received ${PORT_TEXT}`);
   }
-  await run('yarn', ['run', 'build']);
+  if (!Number.isFinite(REQUEST_TIMEOUT_MS) || REQUEST_TIMEOUT_MS <= 0) {
+    throw new Error('SECURITY_AUDIT_REQUEST_TIMEOUT_MS must be a positive number');
+  }
 
-  const server = spawn('node', ['dist/app/server.js'], {
-    cwd: BE_DIR,
-    env: {
-      ...process.env,
-      NODE_ENV: 'test',
-      BACKEND_PORT: String(PORT),
-      DB_TYPE: 'sqlite',
-      SQLITE_FILE: ':memory:',
-      JWT_ACCESS_SECRET: 'audit_access_secret',
-      JWT_REFRESH_SECRET: 'audit_refresh_secret',
-      CORS_ORIGINS: 'http://localhost:5178',
-      SMTP_USER: '',
-      SMTP_PASS: '',
-      TELEGRAM_BOT_TOKEN: '',
-      TELEGRAM_BOT_URL: '',
-      GITHUB_CLIENT_ID: '',
-      GITHUB_CLIENT_SECRET: '',
-      AUTH_IDENTIFIER_RATE_LIMIT_MAX: '100',
-    },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  // node_modules is excluded from snapshots - install on demand, then build.
+  if (!SKIP_BUILD) {
+    if (!existsSync(`${BE_DIR}node_modules/.bin/tsc`)) {
+      console.log('[audit] installing backend dependencies…');
+      await run('yarn', ['install']);
+    }
+    await run('yarn', ['run', 'build']);
+  }
+  await assertPortFree(PORT);
+
+  const server = trackChildClose(
+    spawn('node', [TEST_BACKEND_ENTRY], {
+      cwd: BE_DIR,
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+        BACKEND_PORT: String(PORT),
+        DB_TYPE: 'sqlite',
+        SQLITE_FILE: ':memory:',
+        JWT_ACCESS_SECRET: 'audit_access_secret',
+        JWT_REFRESH_SECRET: 'audit_refresh_secret',
+        CORS_ORIGINS: 'http://localhost:5178',
+        SMTP_USER: '',
+        SMTP_PASS: '',
+        TELEGRAM_BOT_TOKEN: '',
+        TELEGRAM_BOT_URL: '',
+        GITHUB_CLIENT_ID: '',
+        GITHUB_CLIENT_SECRET: '',
+        AUTH_IDENTIFIER_RATE_LIMIT_MAX: '100',
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }),
+  );
   let serverLog = '';
   server.stdout?.on('data', (chunk) => {
     serverLog += chunk.toString();
+    if (serverLog.length > 40_000) serverLog = serverLog.slice(-40_000);
   });
   server.stderr?.on('data', (chunk) => {
     serverLog += chunk.toString();
+    if (serverLog.length > 40_000) serverLog = serverLog.slice(-40_000);
   });
 
+  let signalInProgress = false;
+  const stopForSignal = (signal) => {
+    if (signalInProgress) return;
+    signalInProgress = true;
+    void stopChild(server).finally(() => {
+      process.exit(signal === 'SIGINT' ? 130 : 143);
+    });
+  };
+  const onSigint = () => stopForSignal('SIGINT');
+  const onSigterm = () => stopForSignal('SIGTERM');
+  process.on('SIGINT', onSigint);
+  process.on('SIGTERM', onSigterm);
+
   try {
-    await waitForHealth();
+    await Promise.race([
+      waitForHealth(server),
+      new Promise((_, reject) => {
+        server.once('error', (error) => reject(new Error(`could not start backend: ${error.message}`)));
+      }),
+    ]);
     console.log('\n=== Authora security audit ===\n');
 
     // Register a known user to exercise authenticated paths.
@@ -282,7 +398,7 @@ async function main() {
 
     /* 14. Telegram callback rejects forged signature */
     {
-      const res = await fetch(
+      const res = await auditFetch(
         `${BASE}/api/auth/telegram/callback?id=1&hash=deadbeefdeadbeef&auth_date=1`,
         { redirect: 'manual' },
       );
@@ -297,7 +413,7 @@ async function main() {
 
     /* 15. GitHub callback rejects mismatched CSRF state */
     {
-      const res = await fetch(`${BASE}/api/auth/github/callback?code=x&state=forged`, {
+      const res = await auditFetch(`${BASE}/api/auth/github/callback?code=x&state=forged`, {
         redirect: 'manual',
       });
       const loc = res.headers.get('location') || '';
@@ -310,7 +426,9 @@ async function main() {
 
     /* 16. CORS does not reflect arbitrary origins */
     {
-      const res = await fetch(`${BASE}/health`, { headers: { Origin: 'https://evil.example' } });
+      const res = await auditFetch(`${BASE}/health`, {
+        headers: { Origin: 'https://evil.example' },
+      });
       const acao = res.headers.get('access-control-allow-origin');
       check(
         'CORS does not allow arbitrary origin',
@@ -323,7 +441,7 @@ async function main() {
     /* 17. Oversized payload is rejected (body limit) */
     {
       const big = 'a'.repeat(17 * 1024 * 1024); // Above the 16MB JSON upload limit.
-      const res = await fetch(GQL, {
+      const res = await auditFetch(GQL, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ query: `query { __typename }`, variables: { big } }),
@@ -350,7 +468,7 @@ async function main() {
 
     /* 20. Security headers present (X-Content-Type-Options etc.) */
     {
-      const res = await fetch(`${BASE}/health`);
+      const res = await auditFetch(`${BASE}/health`);
       check(
         'Security header: X-Content-Type-Options nosniff',
         res.headers.get('x-content-type-options') === 'nosniff',
@@ -363,7 +481,7 @@ async function main() {
     {
       let limited = false;
       for (let i = 0; i < 30; i++) {
-        const r = await fetch(GQL, {
+        const r = await auditFetch(GQL, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
@@ -385,14 +503,23 @@ async function main() {
       for (const f of failures) console.log(`  - [${f.severity}] ${f.name}`);
     }
     const blocking = failures.filter((f) => f.severity === 'high' || f.severity === 'critical');
-    server.kill('SIGKILL');
-    process.exit(blocking.length ? 1 : 0);
+    return blocking.length ? 1 : 0;
   } catch (e) {
     console.error('audit error:', e);
     if (serverLog.trim()) console.error('\nbackend output:\n' + serverLog.trim());
-    server.kill('SIGKILL');
-    process.exit(2);
+    return 2;
+  } finally {
+    process.off('SIGINT', onSigint);
+    process.off('SIGTERM', onSigterm);
+    await stopChild(server);
   }
 }
 
-main();
+main()
+  .then((exitCode) => {
+    process.exitCode = exitCode;
+  })
+  .catch((error) => {
+    console.error('audit error:', error);
+    process.exitCode = 2;
+  });
