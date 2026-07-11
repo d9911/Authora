@@ -17,7 +17,7 @@ const nextConfig = {
           { key: 'Service-Worker-Allowed', value: '/' },
         ],
       },
-      ...['/forgot-password', '/reset-password'].map((source) => ({
+      ...['/forgot-password', '/reset-password', '/confirm-email'].map((source) => ({
         source,
         headers: [
           { key: 'Cache-Control', value: 'no-store, max-age=0' },

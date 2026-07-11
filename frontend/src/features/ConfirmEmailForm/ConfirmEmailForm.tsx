@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { loadMeThunk } from '@/processes/store/slices/authSlice';
 import { confirmEmailCode, resendEmailCode } from '@/features/auth-api/authApi';
@@ -22,37 +22,56 @@ export function ConfirmEmailForm() {
   const [resending, setResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const autoSubmitKeyRef = useRef<string | null>(null);
+
+  const urlEmail = params.get('email')?.trim() ?? '';
+  const urlCodeParam = params.get('code');
+  const urlCode = normalizeNumericCode(urlCodeParam ?? '');
+
+  const submitCode = useCallback(
+    async (nextCode = code, nextEmail = email) => {
+      const normalized = normalizeNumericCode(nextCode);
+      const normalizedEmail = nextEmail.trim();
+      if (busy) return;
+      if (!normalizedEmail) {
+        setError('Enter your email address.');
+        return;
+      }
+      if (normalized.length !== DEFAULT_OTP_LENGTH) {
+        setError('Enter the 6-digit code from your email.');
+        return;
+      }
+      setError(null);
+      setMsg(null);
+      setBusy(true);
+      try {
+        await confirmEmailCode(normalizedEmail, normalized);
+        await dispatch(loadMeThunk());
+        setMsg('Email confirmed ✓ Redirecting…');
+        router.replace(ROUTES.home);
+      } catch (e) {
+        setError(getErrorMessage(e));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [busy, code, dispatch, email, router],
+  );
 
   useEffect(() => {
-    const e = params.get('email');
-    if (e) setEmail(e);
-  }, [params]);
+    if (urlEmail) setEmail(urlEmail);
+    if (urlCodeParam !== null) setCode(urlCode);
+  }, [urlCode, urlCodeParam, urlEmail]);
 
-  const submitCode = async (nextCode = code) => {
-    const normalized = normalizeNumericCode(nextCode);
-    if (busy) return;
-    if (!email.trim()) {
-      setError('Enter your email address.');
-      return;
-    }
-    if (normalized.length !== DEFAULT_OTP_LENGTH) {
-      setError('Enter the 6-digit code from your email.');
-      return;
-    }
-    setError(null);
-    setMsg(null);
-    setBusy(true);
-    try {
-      await confirmEmailCode(email.trim(), normalized);
-      await dispatch(loadMeThunk());
-      setMsg('Email confirmed ✓ Redirecting…');
-      router.replace(ROUTES.home);
-    } catch (e) {
-      setError(getErrorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  };
+  useEffect(() => {
+    if (!urlEmail || urlCode.length !== DEFAULT_OTP_LENGTH) return;
+
+    const autoSubmitKey = JSON.stringify([urlEmail, urlCode]);
+    if (autoSubmitKeyRef.current === autoSubmitKey) return;
+
+    autoSubmitKeyRef.current = autoSubmitKey;
+    void submitCode(urlCode, urlEmail);
+  }, [submitCode, urlCode, urlEmail]);
 
   const onSubmit = (ev: FormEvent) => {
     ev.preventDefault();

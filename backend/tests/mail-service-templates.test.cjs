@@ -72,6 +72,20 @@ async function main() {
   assert.doesNotMatch(verification.html, /<script/i);
   assert.match(verification.html, /Open verification page/);
 
+  const verificationLink = await capture(
+    'sendEmailVerificationCode',
+    'user+tag@example.com',
+    '223609',
+  );
+  assert.match(
+    verificationLink.text,
+    /Open verification page: https:\/\/app\.authora\.test\/confirm-email\?email=user%2Btag%40example\.com&code=223609/,
+  );
+  assert.match(
+    verificationLink.html,
+    /href="https:\/\/app\.authora\.test\/confirm-email\?email=user%2Btag%40example\.com&amp;code=223609"/,
+  );
+
   console.log('Mail service template tests passed');
 }
 

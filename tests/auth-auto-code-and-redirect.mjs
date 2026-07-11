@@ -11,6 +11,7 @@ const confirmEmail = read('frontend/src/features/ConfirmEmailForm/ConfirmEmailFo
 const connectedAccounts = read('frontend/src/features/ConnectedAccounts/ConnectedAccounts.tsx');
 const githubLoginButton = read('frontend/src/features/GithubLoginButton/GithubLoginButton.tsx');
 const telegramLoginButton = read('frontend/src/features/TelegramLoginButton/TelegramLoginButton.tsx');
+const nextConfig = read('frontend/next.config.mjs');
 const dockerCompose = read('docker-compose.yml');
 const backendEnvExample = read('backend/.env.example');
 const githubOAuthService = read('backend/src/modules/auth/oauth/GithubOAuthService.ts');
@@ -47,6 +48,28 @@ const checks = [
   [
     'confirm-email auto-submits when six digits are entered',
     /OtpCodeInput/.test(confirmEmail) && /onComplete=\{\(value\) => void submitCode\(value\)\}/.test(confirmEmail),
+  ],
+  [
+    'confirm-email prefills email and code from the verification URL',
+    /params\.get\('email'\)/.test(confirmEmail) &&
+      /params\.get\('code'\)/.test(confirmEmail) &&
+      /setEmail\(urlEmail\)/.test(confirmEmail) &&
+      /setCode\(urlCode\)/.test(confirmEmail),
+  ],
+  [
+    'confirm-email submits complete URL credentials only once',
+    /nextEmail = email/.test(confirmEmail) &&
+      /urlCode\.length !== DEFAULT_OTP_LENGTH/.test(confirmEmail) &&
+      /autoSubmitKeyRef\.current === autoSubmitKey/.test(confirmEmail) &&
+      /autoSubmitKeyRef\.current = autoSubmitKey/.test(confirmEmail) &&
+      /submitCode\(urlCode, urlEmail\)/.test(confirmEmail),
+  ],
+  [
+    'confirm-email protects URL credentials from caches, referrers, and indexing',
+    /\['\/forgot-password', '\/reset-password', '\/confirm-email'\]/.test(nextConfig) &&
+      /Cache-Control[^\n]+no-store/.test(nextConfig) &&
+      /Referrer-Policy[^\n]+no-referrer/.test(nextConfig) &&
+      /X-Robots-Tag[^\n]+noindex, nofollow/.test(nextConfig),
   ],
   [
     'confirm-email refreshes auth state and redirects home after success',

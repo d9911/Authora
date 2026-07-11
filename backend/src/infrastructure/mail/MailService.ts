@@ -66,7 +66,10 @@ export class MailService implements MailGateway {
   }
 
   async sendEmailVerificationCode(to: string, code: string): Promise<void> {
-    const confirmUrl = `${env.app.frontendUrl}/confirm-email?email=${encodeURIComponent(to)}`;
+    const confirmUrl = new URL('/confirm-email', env.app.frontendUrl);
+    confirmUrl.searchParams.set('email', to);
+    confirmUrl.searchParams.set('code', code);
+    const link = confirmUrl.toString();
     const safeCode = escapeHtml(code);
     await this.send({
       to,
@@ -77,7 +80,7 @@ export class MailService implements MailGateway {
         `Your confirmation code is ${code}.`,
         'This code expires in 24 hours.',
         '',
-        `Open verification page: ${confirmUrl}`,
+        `Open verification page: ${link}`,
         '',
         'If you did not request this code, you can safely ignore this email.',
       ].join('\n'),
@@ -99,7 +102,7 @@ export class MailService implements MailGateway {
           </table>`,
         action: {
           label: 'Open verification page',
-          url: confirmUrl,
+          url: link,
           color: '#3157d5',
         },
         notice: {
