@@ -1,6 +1,7 @@
 'use client';
 
 import { ChangeEvent, ReactNode, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ButtonMain } from '@/shared/ui';
 import { PROFILE_IMAGE_ACCEPT } from '../model/imageCrop';
 import styles from './ProfilePhotoManager.module.scss';
@@ -38,6 +39,7 @@ export function ProfileImageUploaderPanel({
   onFile,
   onDelete,
 }: ProfileImageUploaderPanelProps) {
+  const { t } = useTranslation('profile');
   const inputRef = useRef<HTMLInputElement>(null);
   const src = localPreview ?? imageUrl;
 
@@ -66,7 +68,7 @@ export function ProfileImageUploaderPanel({
             className={styles['file-input']}
             type="file"
             accept={PROFILE_IMAGE_ACCEPT}
-            aria-label={`Choose ${title.toLowerCase()} image`}
+            aria-label={t('photos.accessibility.chooseImage', { title })}
             onChange={onChange}
           />
           <ButtonMain type="button" size="small" loading={busy} onClick={() => inputRef.current?.click()}>
@@ -74,7 +76,7 @@ export function ProfileImageUploaderPanel({
           </ButtonMain>
           {imageUrl && (
             <ButtonMain type="button" size="small" variant="danger" disabled={busy} onClick={onDelete}>
-              Delete
+              {t('photos.actions.delete')}
             </ButtonMain>
           )}
         </div>

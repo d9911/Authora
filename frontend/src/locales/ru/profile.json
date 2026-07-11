@@ -1,0 +1,127 @@
+{
+  "edit": {
+    "metadataTitle": "Редактирование профиля",
+    "loading": "Загрузка профиля…",
+    "title": "Редактирование профиля",
+    "fields": {
+      "name": "Имя",
+      "nickname": "Никнейм",
+      "phoneNumber": "Номер телефона",
+      "dateOfBirth": "Дата рождения",
+      "gender": "Пол",
+      "address": "Адрес",
+      "timezone": "Часовой пояс",
+      "bio": "О себе",
+      "description": "Описание"
+    },
+    "location": {
+      "country": {
+        "label": "Страна",
+        "placeholder": "Выберите страну"
+      },
+      "region": {
+        "label": "Регион",
+        "placeholder": "Все регионы"
+      },
+      "city": {
+        "label": "Город",
+        "placeholder": "Не выбран"
+      }
+    },
+    "saved": "Профиль сохранён ✓",
+    "save": "Сохранить изменения"
+  },
+  "photos": {
+    "eyebrow": "Фотографии профиля",
+    "title": "Аватар и обложка",
+    "avatar": {
+      "ariaLabel": "Изображение аватара",
+      "title": "Аватар",
+      "description": "Сохраняется как центрированное WebP-изображение 512×512 и отображается круглым.",
+      "previewAlt": "Предпросмотр аватара",
+      "upload": "Загрузить аватар",
+      "replace": "Заменить аватар"
+    },
+    "cover": {
+      "ariaLabel": "Изображение обложки",
+      "title": "Обложка",
+      "description": "Сохраняется как центрированное WebP-изображение 1920×640 для фона профиля.",
+      "previewAlt": "Предпросмотр обложки",
+      "empty": "Обложка не загружена",
+      "upload": "Загрузить обложку",
+      "replace": "Заменить обложку"
+    },
+    "actions": {
+      "delete": "Удалить"
+    },
+    "accessibility": {
+      "chooseImage": "Выбрать изображение: {{title}}"
+    },
+    "errors": {
+      "unsupportedType": "Выберите изображение в формате JPEG, PNG или WebP.",
+      "tooLarge": "Размер изображения не должен превышать {{maxSizeMb}} МБ."
+    },
+    "confirmDeleteAvatar": "Удалить аватар?",
+    "confirmDeleteCover": "Удалить обложку?"
+  },
+  "security": {
+    "title": "Подключённые аккаунты",
+    "description": "Привяжите внешние аккаунты для быстрого входа.",
+    "status": {
+      "connected": "Подключён",
+      "notConnected": "Не подключён",
+      "verified": "Подтверждён",
+      "codeSent": "Код отправлен",
+      "notVerified": "Не подтверждён",
+      "configured": "Настроен",
+      "notConfigured": "Не настроен"
+    },
+    "email": {
+      "label": "Email",
+      "notLoaded": "Email пользователя ещё не загружен.",
+      "codeSent": "Код подтверждения отправлен на {{email}}",
+      "codeRequired": "Введите код подтверждения из письма.",
+      "confirmed": "Email подтверждён ✓",
+      "newRequired": "Введите новый email.",
+      "newCodeSent": "Код подтверждения отправлен на {{email}}",
+      "changeConfirmed": "Email для входа и восстановления подтверждён.",
+      "newAriaLabel": "Новый email для восстановления",
+      "newCodeAriaLabel": "Код подтверждения нового email",
+      "codeAriaLabel": "Код подтверждения email",
+      "codePlaceholder": "Код",
+      "confirm": "Подтвердить email",
+      "sendCode": "Отправить код",
+      "resendCode": "Отправить код снова",
+      "change": "Изменить email"
+    },
+    "password": {
+      "label": "Пароль",
+      "reset": "Сбросить пароль",
+      "set": "Установить пароль"
+    },
+    "recovery": {
+      "email": "Email",
+      "telegram": "Telegram",
+      "none": "Способ восстановления не настроен",
+      "methods": "Способы восстановления: {{methods}}"
+    },
+    "providers": {
+      "linked": "Аккаунт {{provider}} привязан ✓",
+      "disconnected": "{{provider}} отключён",
+      "connect": "Подключить",
+      "disconnect": "Отключить"
+    },
+    "actions": {
+      "cancel": "Отмена",
+      "confirm": "Подтвердить"
+    }
+  },
+  "card": {
+    "fallbackUser": "Пользователь Authora",
+    "coverAlt": "Обложка профиля",
+    "avatarAlt": "Аватар",
+    "noRecoveryEmail": "Email для восстановления не указан",
+    "verified": "✓ подтверждён",
+    "unverified": "· не подтверждён"
+  }
+}

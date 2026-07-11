@@ -2,16 +2,22 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Trans, useTranslation } from 'react-i18next';
 import { loadMeThunk } from '@/processes/store/slices/authSlice';
 import { confirmEmailCode, resendEmailCode } from '@/features/auth-api/authApi';
 import { ButtonMain, FeedbackText, InputMain, OtpCodeInput } from '@/shared/ui';
 import { useAppDispatch } from '@/processes/store/hooks';
-import { getErrorMessage } from '@/shared/lib/errors';
+import { ErrorDescriptor, getErrorDescriptor } from '@/shared/lib/errors';
 import { DEFAULT_OTP_LENGTH, normalizeNumericCode } from '@/shared/lib/otp';
-import { ROUTES } from '@/shared/lib/routes';
+import { getLocalizedRoutes } from '@/shared/lib/routes';
+import { translateError, useCurrentLocale } from '@/shared/i18n';
 import { AuthFormShell } from '@/features/AuthForm/AuthFormShell';
 
 export function ConfirmEmailForm() {
+  const { t } = useTranslation('auth');
+  const { t: tErrors } = useTranslation('errors');
+  const locale = useCurrentLocale();
+  const routes = getLocalizedRoutes(locale);
   const router = useRouter();
   const dispatch = useAppDispatch();
   const params = useSearchParams();
@@ -20,7 +26,7 @@ export function ConfirmEmailForm() {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [resending, setResending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorDescriptor | { localized: string } | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const autoSubmitKeyRef = useRef<string | null>(null);
 
@@ -34,11 +40,11 @@ export function ConfirmEmailForm() {
       const normalizedEmail = nextEmail.trim();
       if (busy) return;
       if (!normalizedEmail) {
-        setError('Enter your email address.');
+        setError({ localized: t('confirmEmail.errors.emailRequired') });
         return;
       }
       if (normalized.length !== DEFAULT_OTP_LENGTH) {
-        setError('Enter the 6-digit code from your email.');
+        setError({ localized: t('confirmEmail.errors.invalidCodeLength') });
         return;
       }
       setError(null);
@@ -47,15 +53,15 @@ export function ConfirmEmailForm() {
       try {
         await confirmEmailCode(normalizedEmail, normalized);
         await dispatch(loadMeThunk());
-        setMsg('Email confirmed ✓ Redirecting…');
-        router.replace(ROUTES.home);
+        setMsg(t('confirmEmail.success.confirmedRedirecting'));
+        router.replace(routes.home);
       } catch (e) {
-        setError(getErrorMessage(e));
+        setError(getErrorDescriptor(e));
       } finally {
         setBusy(false);
       }
     },
-    [busy, code, dispatch, email, router],
+    [busy, code, dispatch, email, router, routes.home, t],
   );
 
   useEffect(() => {
@@ -82,15 +88,15 @@ export function ConfirmEmailForm() {
     setError(null);
     setMsg(null);
     if (!email.trim()) {
-      setError('Enter your email address.');
+      setError({ localized: t('confirmEmail.errors.emailRequired') });
       return;
     }
     setResending(true);
     try {
       await resendEmailCode(email.trim());
-      setMsg('A new code has been sent to your email.');
+      setMsg(t('confirmEmail.success.codeResent'));
     } catch (e) {
-      setError(getErrorMessage(e));
+      setError(getErrorDescriptor(e));
     } finally {
       setResending(false);
     }
@@ -99,17 +105,20 @@ export function ConfirmEmailForm() {
   return (
     <AuthFormShell
       onSubmit={onSubmit}
-      eyebrow="Verify"
-      title="Confirm your email"
+      eyebrow={t('confirmEmail.eyebrow')}
+      title={t('confirmEmail.title')}
       subtitle={
-        <>
-          We sent a 6-digit code to <strong>{email || 'your email'}</strong>. Enter it below.
-        </>
+        <Trans
+          t={t}
+          i18nKey="confirmEmail.subtitle"
+          values={{ email: email || t('confirmEmail.emailFallback') }}
+          components={{ strong: <strong /> }}
+        />
       }
     >
       {!params.get('email') && (
         <InputMain
-          label="Email"
+          label={t('confirmEmail.fields.email')}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -119,7 +128,7 @@ export function ConfirmEmailForm() {
       )}
 
       <OtpCodeInput
-        label="Confirmation code"
+        label={t('confirmEmail.fields.code')}
         value={code}
         onValueChange={setCode}
         onComplete={(value) => void submitCode(value)}
@@ -128,7 +137,11 @@ export function ConfirmEmailForm() {
         autoFocus
       />
 
-      {error && <FeedbackText tone="error">{error}</FeedbackText>}
+      {error && (
+        <FeedbackText tone="error">
+          {'localized' in error ? error.localized : translateError(tErrors, error)}
+        </FeedbackText>
+      )}
       {msg && <FeedbackText tone="success">{msg}</FeedbackText>}
 
       <div
@@ -136,7 +149,7 @@ export function ConfirmEmailForm() {
         style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}
       >
         <ButtonMain type="submit" fullWidth loading={busy} disabled={code.length !== DEFAULT_OTP_LENGTH}>
-          Confirm
+          {t('confirmEmail.actions.confirm')}
         </ButtonMain>
 
         <ButtonMain
@@ -146,7 +159,7 @@ export function ConfirmEmailForm() {
           loading={resending}
           onClick={onResend}
         >
-          Resend code
+          {t('confirmEmail.actions.resend')}
         </ButtonMain>
       </div>
     </AuthFormShell>

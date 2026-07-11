@@ -7,13 +7,24 @@ const source = readFileSync(
   resolve(root, 'frontend/src/features/ConnectedAccounts/ConnectedAccounts.tsx'),
   'utf8',
 );
+const ruProfile = JSON.parse(
+  readFileSync(resolve(root, 'frontend/src/locales/ru/profile.json'), 'utf8'),
+);
+const enProfile = JSON.parse(
+  readFileSync(resolve(root, 'frontend/src/locales/en/profile.json'), 'utf8'),
+);
 
 const checks = [
   [
     'imports email confirmation API',
     /confirmEmailCode/.test(source) && /resendEmailCode/.test(source),
   ],
-  ['renders Email account row', /label="Email"/.test(source)],
+  [
+    'renders a localized Email account row',
+    /label=\{t\('security\.email\.label'\)\}/.test(source) &&
+      ruProfile.security?.email?.label === 'Email' &&
+      enProfile.security?.email?.label === 'Email',
+  ],
   ['tracks email verification status', /emailVerified/.test(source)],
   ['lets profile request an email code', /requestEmailCode/.test(source)],
   ['lets profile confirm an email code', /confirmEmail/.test(source)],

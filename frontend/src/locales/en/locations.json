@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "countries": {
+      "title": "Countries"
+    },
+    "country": {
+      "title": "Country"
+    },
+    "region": {
+      "title": "Region"
+    },
+    "city": {
+      "title": "City"
+    }
+  },
+  "countries": {
+    "title": "Countries",
+    "viewRegions": "view regions →",
+    "emptyTitle": "No countries yet",
+    "emptyMessage": "Seed the database to populate the atlas."
+  },
+  "country": {
+    "all": "All countries",
+    "regions": "Regions",
+    "emptyRegions": "No regions yet."
+  },
+  "region": {
+    "back": "Back to country",
+    "cities": "Cities",
+    "viewCities": "view cities →",
+    "emptyCities": "No cities yet."
+  },
+  "city": {
+    "back": "Back to region",
+    "eyebrow": "City"
+  },
+  "fields": {
+    "country": "Country",
+    "region": "Region",
+    "city": "City",
+    "selectCountry": "Select country",
+    "allRegions": "All regions",
+    "noCity": "No city"
+  }
+}

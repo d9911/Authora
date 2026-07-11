@@ -1,17 +1,32 @@
 import { Region } from '@/shared/types';
-import { ROUTES } from '@/shared/lib/routes';
+import { type SupportedLocale } from '@/shared/i18n/config';
+import { getLocalizedRoutes } from '@/shared/lib/routes';
 import { LocationList } from '@/widgets/LocationLists/LocationList';
 
-export function RegionList({ regions }: { regions: Region[] }) {
+interface RegionListProps {
+  regions: Region[];
+  locale: SupportedLocale;
+  viewCitiesLabel: string;
+  emptyMessage: string;
+}
+
+export function RegionList({
+  regions,
+  locale,
+  viewCitiesLabel,
+  emptyMessage,
+}: RegionListProps) {
+  const routes = getLocalizedRoutes(locale);
+
   return (
     <LocationList
       items={regions.map((region) => ({
         id: region.id,
-        href: ROUTES.region(region.id),
+        href: routes.region(region.id),
         title: region.name,
-        description: 'view cities →',
+        description: viewCitiesLabel,
       }))}
-      emptyMessage="No regions."
+      emptyMessage={emptyMessage}
     />
   );
 }

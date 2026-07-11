@@ -2,18 +2,24 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import {
   telegramRecoveryPoll,
   telegramRecoveryStart,
 } from '@/features/password-reset/api/passwordResetApi';
 import { ButtonMain, FeedbackText } from '@/shared/ui';
-import { getErrorMessage } from '@/shared/lib/errors';
-import { ROUTES } from '@/shared/lib/routes';
+import { ErrorDescriptor, getErrorDescriptor } from '@/shared/lib/errors';
+import { getLocalizedRoutes } from '@/shared/lib/routes';
+import { translateError, useCurrentLocale } from '@/shared/i18n';
 import styles from './PasswordResetForm.module.scss';
 
 const POLL_INTERVAL_MS = 2000;
 
 export function TelegramRecoveryPanel({ nextPath }: { nextPath: string | null }) {
+  const { t } = useTranslation('auth');
+  const { t: tErrors } = useTranslation('errors');
+  const locale = useCurrentLocale();
+  const routes = getLocalizedRoutes(locale);
   const router = useRouter();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const active = useRef(true);
@@ -21,7 +27,7 @@ export function TelegramRecoveryPanel({ nextPath }: { nextPath: string | null })
   const [waiting, setWaiting] = useState(false);
   const [confirmationCode, setConfirmationCode] = useState<string | null>(null);
   const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorDescriptor | { localized: string } | null>(null);
 
   useEffect(() => {
     active.current = true;
@@ -34,7 +40,7 @@ export function TelegramRecoveryPanel({ nextPath }: { nextPath: string | null })
   const finishPath = () => {
     const params = new URLSearchParams({ ready: '1', channel: 'telegram' });
     if (nextPath) params.set('next', nextPath);
-    router.replace(`${ROUTES.resetPassword}?${params.toString()}`);
+    router.replace(`${routes.resetPassword}?${params.toString()}`);
   };
 
   const schedulePoll = (token: string) => {
@@ -53,18 +59,18 @@ export function TelegramRecoveryPanel({ nextPath }: { nextPath: string | null })
           return;
         }
         if (result.status === 'cancelled') {
-          setError('Восстановление отменено в Telegram.');
+          setError({ localized: t('passwordRecovery.telegram.error.cancelled') });
           return;
         }
         if (result.status === 'not_linked') {
-          setError('Этот Telegram не привязан ни к одному аккаунту Authora.');
+          setError({ localized: t('passwordRecovery.telegram.error.notLinked') });
           return;
         }
-        setError('Ссылка восстановления устарела. Запустите процесс ещё раз.');
+        setError({ localized: t('passwordRecovery.telegram.error.expired') });
       } catch (pollError) {
         if (!active.current) return;
         setWaiting(false);
-        setError(getErrorMessage(pollError, 'Не удалось проверить Telegram.'));
+        setError(getErrorDescriptor(pollError));
       }
     }, POLL_INTERVAL_MS);
   };
@@ -74,7 +80,7 @@ export function TelegramRecoveryPanel({ nextPath }: { nextPath: string | null })
     setConfirmationCode(null);
     setFallbackUrl(null);
     setBusy(true);
-    const popup = window.open(ROUTES.telegramOpening, '_blank');
+    const popup = window.open(routes.telegramOpening, '_blank');
     try {
       if (popup) popup.opener = null;
     } catch {
@@ -82,7 +88,11 @@ export function TelegramRecoveryPanel({ nextPath }: { nextPath: string | null })
     }
     try {
       const result = await telegramRecoveryStart();
-      if (!result.botUrl) throw new Error('Telegram bot is not configured on the server.');
+      if (!result.botUrl) {
+        setError({ localized: t('passwordRecovery.telegram.error.botNotConfigured') });
+        popup?.close();
+        return;
+      }
       setConfirmationCode(result.confirmationCode);
       setFallbackUrl(result.botUrl);
       if (popup) popup.location.replace(result.botUrl);
@@ -94,7 +104,7 @@ export function TelegramRecoveryPanel({ nextPath }: { nextPath: string | null })
       } catch {
         // Ignore popup lifecycle errors.
       }
-      setError(getErrorMessage(startError, 'Не удалось открыть Telegram.'));
+      setError(getErrorDescriptor(startError));
     } finally {
       setBusy(false);
     }
@@ -103,23 +113,29 @@ export function TelegramRecoveryPanel({ nextPath }: { nextPath: string | null })
   return (
     <div className={styles['telegram-panel']}>
       <p className={styles['recovery-copy']}>
-        Используйте Telegram, который был привязан к аккаунту до потери доступа.
+        {t('passwordRecovery.telegram.description')}
       </p>
       <ButtonMain type="button" fullWidth loading={busy} disabled={waiting} onClick={start}>
-        {waiting ? 'Ожидаем подтверждение в Telegram' : 'Восстановить через Telegram'}
+        {waiting
+          ? t('passwordRecovery.telegram.action.waiting')
+          : t('passwordRecovery.telegram.action.start')}
       </ButtonMain>
       {waiting && confirmationCode ? (
         <div className={styles['confirmation-code']} aria-live="polite">
-          <span>Сверьте код на сайте и в сообщении бота</span>
+          <span>{t('passwordRecovery.telegram.confirmationCode.description')}</span>
           <strong>{confirmationCode}</strong>
         </div>
       ) : null}
       {waiting && fallbackUrl ? (
         <a className={styles['telegram-link']} href={fallbackUrl} target="_blank" rel="noreferrer">
-          Открыть Telegram вручную
+          {t('passwordRecovery.telegram.action.openManually')}
         </a>
       ) : null}
-      {error ? <FeedbackText tone="error">{error}</FeedbackText> : null}
+      {error ? (
+        <FeedbackText tone="error">
+          {'localized' in error ? error.localized : translateError(tErrors, error)}
+        </FeedbackText>
+      ) : null}
     </div>
   );
 }

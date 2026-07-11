@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/processes/store/hooks';
 import {
   clearAuthError,
@@ -15,17 +16,28 @@ import { ButtonMain, FeedbackText, InputMain, OtpCodeInput, PasswordInput } from
 import { GithubLoginButton } from '@/features/GithubLoginButton/GithubLoginButton';
 import { TelegramLoginButton } from '@/features/TelegramLoginButton/TelegramLoginButton';
 import { normalizeNumericCode } from '@/shared/lib/otp';
-import { ROUTES, safeNextPath } from '@/shared/lib/routes';
+import {
+  getLocalizedRoutes,
+  getPostAuthRedirectPath,
+  safeNextPath,
+} from '@/shared/lib/routes';
+import { config } from '@/shared/config';
+import { translateError, useCurrentLocale } from '@/shared/i18n';
 import { AuthFormShell } from '@/features/AuthForm/AuthFormShell';
 import styles from '@/features/AuthForm/AuthForm.module.scss';
 
 export function SignInForm() {
+  const { t } = useTranslation('auth');
+  const { t: tErrors } = useTranslation('errors');
+  const locale = useCurrentLocale();
+  const routes = getLocalizedRoutes(locale);
   const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
-  const nextPath = safeNextPath(searchParams.get('next'));
+  const requestedNextPath = searchParams.get('next');
+  const nextPath = safeNextPath(requestedNextPath, routes.profileEdit);
   const recovered = searchParams.get('recovered') === '1';
-  const forgotPasswordHref = `${ROUTES.forgotPassword}?next=${encodeURIComponent(nextPath)}`;
-  const { error, twoFactorToken } = useAppSelector((s) => s.auth);
+  const forgotPasswordHref = `${routes.forgotPassword}?next=${encodeURIComponent(nextPath)}`;
+  const { error, errorCode, twoFactorToken } = useAppSelector((s) => s.auth);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,7 +47,13 @@ export function SignInForm() {
 
   const completeAuthRedirect = async () => {
     await dispatch(loadMeThunk());
-    window.location.replace(nextPath);
+    window.location.replace(
+      getPostAuthRedirectPath(
+        requestedNextPath,
+        routes.profileEdit,
+        window.location.hash,
+      ),
+    );
   };
 
   const onSubmit = async (e: FormEvent) => {
@@ -75,16 +93,16 @@ export function SignInForm() {
     return (
       <AuthFormShell
         onSubmit={onSubmit2fa}
-        title="Two-factor code"
+        title={t('signIn.twoFactor.title')}
         subtitle={
           useRecoveryCode
-            ? 'Enter one of the recovery codes saved when 2FA was enabled.'
-            : 'Enter the 6-digit code from your authenticator app.'
+            ? t('signIn.twoFactor.recoverySubtitle')
+            : t('signIn.twoFactor.authenticatorSubtitle')
         }
       >
         {useRecoveryCode ? (
           <InputMain
-            label="Recovery code"
+            label={t('signIn.twoFactor.recoveryCodeLabel')}
             value={code}
             onChange={(event) => setCode(event.target.value.toUpperCase())}
             placeholder="ABCD-EFGH-JKLM"
@@ -95,7 +113,7 @@ export function SignInForm() {
           />
         ) : (
           <OtpCodeInput
-            label="Authenticator code"
+            label={t('signIn.twoFactor.authenticatorCodeLabel')}
             value={code}
             onValueChange={setCode}
             onComplete={(value) => void submitTwoFactorCode(value)}
@@ -103,9 +121,13 @@ export function SignInForm() {
             autoFocus
           />
         )}
-        {error && <div className={styles['auth-error']}>{error}</div>}
+        {error && (
+          <div className={styles['auth-error']}>
+            {translateError(tErrors, { code: errorCode, message: error })}
+          </div>
+        )}
         <ButtonMain type="submit" fullWidth loading={busy}>
-          Verify
+          {t('signIn.twoFactor.verify')}
         </ButtonMain>
         <ButtonMain
           variant="ghost"
@@ -117,7 +139,9 @@ export function SignInForm() {
           }}
           type="button"
         >
-          {useRecoveryCode ? 'Use authenticator code' : 'Use recovery code'}
+          {useRecoveryCode
+            ? t('signIn.twoFactor.useAuthenticatorCode')
+            : t('signIn.twoFactor.useRecoveryCode')}
         </ButtonMain>
         <ButtonMain
           variant="ghost"
@@ -125,7 +149,7 @@ export function SignInForm() {
           onClick={() => dispatch(resetTwoFactor())}
           type="button"
         >
-          Back
+          {t('signIn.twoFactor.back')}
         </ButtonMain>
       </AuthFormShell>
     );
@@ -134,24 +158,40 @@ export function SignInForm() {
   return (
     <AuthFormShell
       onSubmit={onSubmit}
-      eyebrow="Welcome back"
-      title="Sign in"
+      eyebrow={t('signIn.eyebrow')}
+      title={t('signIn.title')}
       footer={
         <>
           <div className={styles['auth-register-panel']}>
-            <span>New to Authora?</span>
-            <Link className={styles['auth-register-link']} href={ROUTES.signUp}>
-              Create account
+            <span>{t('signIn.newUserPrompt', { appName: config.appName })}</span>
+            <Link className={styles['auth-register-link']} href={routes.signUp}>
+              {t('signIn.createAccount')}
             </Link>
           </div>
           <div className={styles['auth-footer']}>
-            <Link href={forgotPasswordHref}>Forgot password?</Link>
+            <Link
+              href={forgotPasswordHref}
+              onClick={(event) => {
+                const nextWithHash = getPostAuthRedirectPath(
+                  requestedNextPath,
+                  routes.profileEdit,
+                  window.location.hash,
+                );
+                if (nextWithHash === nextPath) return;
+                event.preventDefault();
+                window.location.assign(
+                  `${routes.forgotPassword}?next=${encodeURIComponent(nextWithHash)}`,
+                );
+              }}
+            >
+              {t('signIn.forgotPassword')}
+            </Link>
           </div>
         </>
       }
     >
       <InputMain
-        label="Email"
+        label={t('signIn.fields.email')}
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
@@ -159,7 +199,7 @@ export function SignInForm() {
         autoComplete="email"
       />
       <PasswordInput
-        label="Password"
+        label={t('signIn.fields.password')}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required
@@ -167,14 +207,18 @@ export function SignInForm() {
       />
       {recovered ? (
         <FeedbackText tone="success" role="status" aria-live="polite">
-          Пароль изменён. Войдите с новым паролем.
+          {t('signIn.passwordRecovered')}
         </FeedbackText>
       ) : null}
-      {error && <div className={styles['auth-error']}>{error}</div>}
+      {error && (
+        <div className={styles['auth-error']}>
+          {translateError(tErrors, { code: errorCode, message: error })}
+        </div>
+      )}
       <ButtonMain type="submit" fullWidth loading={busy}>
-        Sign in
+        {t('signIn.submit')}
       </ButtonMain>
-      <div className={styles['auth-divider']}>or</div>
+      <div className={styles['auth-divider']}>{t('signIn.dividerOr')}</div>
       <div className={styles['oauth-buttons']}>
         <GithubLoginButton />
         <TelegramLoginButton />

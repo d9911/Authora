@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslation } from 'react-i18next';
 import { Country, City, Region } from '@/shared/types';
 import styles from './EditProfileForm.module.scss';
 
@@ -56,27 +59,29 @@ export function LocationSelectGroup({
   onRegionChange,
   onCityChange,
 }: LocationSelectGroupProps) {
+  const { t } = useTranslation('profile');
+
   return (
     <>
       <SelectField
-        label="Country"
+        label={t('edit.location.country.label')}
         value={selectedCountryId}
-        placeholder="Select country"
+        placeholder={t('edit.location.country.placeholder')}
         options={countries}
         onChange={onCountryChange}
       />
       <SelectField
-        label="Region"
+        label={t('edit.location.region.label')}
         value={selectedRegionId}
-        placeholder="All regions"
+        placeholder={t('edit.location.region.placeholder')}
         options={regions}
         disabled={!selectedCountryId || loading}
         onChange={onRegionChange}
       />
       <SelectField
-        label="City"
+        label={t('edit.location.city.label')}
         value={cityId}
-        placeholder="No city"
+        placeholder={t('edit.location.city.placeholder')}
         options={cities}
         disabled={!selectedCountryId || loading}
         onChange={onCityChange}

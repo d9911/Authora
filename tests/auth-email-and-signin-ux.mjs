@@ -11,11 +11,14 @@ const confirmEmail = read('frontend/src/features/ConfirmEmailForm/ConfirmEmailFo
 const authUseCases = read('backend/src/modules/auth/use-cases/AuthUseCases.ts');
 const mailService = read('backend/src/infrastructure/mail/MailService.ts');
 const emailTemplate = read('backend/src/infrastructure/mail/emailTemplate.ts');
+const enAuth = JSON.parse(read('frontend/src/locales/en/auth.json'));
 
 const checks = [
   [
     'sign-in has a visible register panel below the form',
-    /auth-register-panel/.test(signIn) && /New to Authora\?/.test(signIn),
+    /auth-register-panel/.test(signIn) &&
+      /signIn\.newUserPrompt/.test(signIn) &&
+      enAuth.signIn?.newUserPrompt === 'New to {{appName}}?',
   ],
   [
     'register panel has dedicated styling',

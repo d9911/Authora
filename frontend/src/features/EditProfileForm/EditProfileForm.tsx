@@ -1,11 +1,13 @@
 'use client'
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAppDispatch, useAppSelector } from '@/processes/store/hooks'
 import { clearProfileFlags, loadMyProfileThunk, updateProfileThunk } from '@/processes/store/slices/profileSlice'
 import { loadMeThunk } from '@/processes/store/slices/authSlice'
 import { loadCountriesThunk, loadCountryByIdThunk } from '@/processes/store/slices/locationSlice'
 import { fetchCityById } from '@/entities/country/api/locationApi'
+import { translateError } from '@/shared/i18n/errors'
 import { ButtonMain, FeedbackText, InputMain } from '@/shared/ui'
 import { ProfilePhotoManager } from '@/features/ProfilePhotoManager/ui/ProfilePhotoManager'
 import { LocationSelectGroup } from './LocationSelectGroup'
@@ -24,6 +26,8 @@ const emptyForm = {
 }
 
 export function EditProfileForm() {
+  const { t } = useTranslation('profile')
+  const { t: tErrors } = useTranslation('errors')
   const dispatch = useAppDispatch()
   const { user, status } = useAppSelector((s) => s.auth)
   const {
@@ -32,6 +36,7 @@ export function EditProfileForm() {
     saving,
     saved,
     error,
+    errorCode,
     loading,
   } = useAppSelector((s) => s.profile)
   const {
@@ -157,17 +162,17 @@ export function EditProfileForm() {
     await dispatch(updateProfileThunk(payload))
   }
 
-  if (loading) return <p className="muted">Loading profile…</p>
+  if (loading) return <p className="muted">{t('edit.loading')}</p>
 
   return (
     <>
       {user && <ProfilePhotoManager user={user} profile={profile} />}
       <form onSubmit={onSubmit} className="card">
-        <h2>Edit profile</h2>
+        <h2>{t('edit.title')}</h2>
         <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <InputMain label="Name" value={form.name} onChange={set('name')} />
-          <InputMain label="Nickname" value={form.nickname} onChange={set('nickname')} />
-          <InputMain label="Phone number" value={form.phoneNumber} onChange={set('phoneNumber')} />
+          <InputMain label={t('edit.fields.name')} value={form.name} onChange={set('name')} />
+          <InputMain label={t('edit.fields.nickname')} value={form.nickname} onChange={set('nickname')} />
+          <InputMain label={t('edit.fields.phoneNumber')} value={form.phoneNumber} onChange={set('phoneNumber')} />
           <LocationSelectGroup
             countries={countries}
             regions={regions}
@@ -180,18 +185,22 @@ export function EditProfileForm() {
             onRegionChange={onRegionChange}
             onCityChange={onCityChange}
           />
-          <InputMain label="Date of birth" type="date" value={form.dateOfBirth} onChange={set('dateOfBirth')} />
-          <InputMain label="Gender" value={form.gender} onChange={set('gender')} />
-          <InputMain label="Address" value={form.address} onChange={set('address')} />
-          <InputMain label="Timezone" value={form.timezone} onChange={set('timezone')} placeholder="Europe/Moscow" />
+          <InputMain label={t('edit.fields.dateOfBirth')} type="date" value={form.dateOfBirth} onChange={set('dateOfBirth')} />
+          <InputMain label={t('edit.fields.gender')} value={form.gender} onChange={set('gender')} />
+          <InputMain label={t('edit.fields.address')} value={form.address} onChange={set('address')} />
+          <InputMain label={t('edit.fields.timezone')} value={form.timezone} onChange={set('timezone')} placeholder="Europe/Moscow" />
         </div>
-        <InputMain label="Bio" value={form.bio} onChange={set('bio')} />
-        <InputMain label="Description" value={form.description} onChange={set('description')} />
+        <InputMain label={t('edit.fields.bio')} value={form.bio} onChange={set('bio')} />
+        <InputMain label={t('edit.fields.description')} value={form.description} onChange={set('description')} />
 
-        {error && <FeedbackText tone="error">{error}</FeedbackText>}
-        {saved && <FeedbackText tone="success">Profile saved ✓</FeedbackText>}
+        {error && (
+          <FeedbackText tone="error">
+            {translateError(tErrors, { code: errorCode, message: error }, 'saveProfile')}
+          </FeedbackText>
+        )}
+        {saved && <FeedbackText tone="success">{t('edit.saved')}</FeedbackText>}
         <ButtonMain type="submit" loading={saving} style={{ marginTop: 8 }}>
-          Save changes
+          {t('edit.save')}
         </ButtonMain>
       </form>
     </>

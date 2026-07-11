@@ -1,0 +1,196 @@
+{
+  "metadata": {
+    "title": "UI kit"
+  },
+  "page": {
+    "badges": {
+      "dependencyFree": "Dependency-free",
+      "fsdAligned": "FSD aligned",
+      "themes": "Light + Dark",
+      "cssDepth": "CSS depth"
+    },
+    "hero": {
+      "title": "Spatial UI kit for premium product screens.",
+      "description": "A reusable component selection page for cards, controls, overlays, pseudo-3D previews and page sections. The route stays thin, reusable pieces stay in the correct Feature-Sliced layer and every surface follows the active theme.",
+      "explore": "Explore parts",
+      "layers": "View layers",
+      "compositionPath": "Composition path"
+    },
+    "layerMap": {
+      "eyebrow": "Feature-Sliced Design",
+      "title": "Every component has a layer.",
+      "description": "Shared primitives stay generic. UI-kit compositions live in entities. The final public page is assembled as a widget page-block."
+    },
+    "layers": {
+      "shared": {
+        "title": "Primitives",
+        "description": "Buttons, cards, tabs, controls, badges, overlays and depth previews."
+      },
+      "entities": {
+        "title": "Compositions",
+        "description": "Selected states, grouped examples and product-facing kit demonstrations."
+      },
+      "widgets": {
+        "title": "Page assembly",
+        "description": "Hero, layer map and showcase are composed into a ready public block."
+      },
+      "app": {
+        "title": "Thin route",
+        "description": "The Next.js route imports the block and avoids local business logic."
+      }
+    },
+    "tokenSection": {
+      "eyebrow": "Design tokens",
+      "title": "The page reuses the current Authora visual system.",
+      "description": "These swatches are live CSS variables. Flip the header theme switch and the same UI kit resolves to the light or dark token set."
+    },
+    "tokens": {
+      "paper": "Paper",
+      "card": "Card",
+      "ink": "Ink",
+      "iris": "Iris",
+      "line": "Line"
+    }
+  },
+  "components": {
+    "spatial-card": {
+      "title": "Spatial Card",
+      "description": "Premium surface with hover lift, glow border, selected state and crisp radius."
+    },
+    "hero-preview": {
+      "title": "Pseudo 3D Preview",
+      "description": "CSS/SVG depth scene for hero blocks when no 3D dependency is allowed."
+    },
+    "actions": {
+      "title": "Action Set",
+      "description": "Primary, secondary, ghost and icon actions with focus-visible and active states."
+    },
+    "segment-tabs": {
+      "title": "Segment Tabs",
+      "description": "Accessible tablist for filters, modes and showcase navigation."
+    },
+    "inputs": {
+      "title": "Control Stack",
+      "description": "Input, toggle, range and progress primitives for dense tool surfaces."
+    },
+    "overlay": {
+      "title": "Overlay Feedback",
+      "description": "Modal and toast patterns for confirmations, previews and saved states."
+    },
+    "entity-group": {
+      "title": "Entity Composition",
+      "description": "Domain-facing compositions group primitive parts without leaking into shared."
+    },
+    "page-block": {
+      "title": "Page Block",
+      "description": "Route-level assembly stays in widgets/page-blocks so app pages stay thin."
+    }
+  },
+  "showcase": {
+    "tabs": {
+      "all": "All parts",
+      "surfaces": "Surfaces",
+      "actions": "Actions",
+      "forms": "Forms",
+      "feedback": "Feedback"
+    },
+    "header": {
+      "eyebrow": "Component selector",
+      "title": "Choose the parts, then compose them by layer.",
+      "description": "The selector demonstrates how neutral shared primitives become richer entity compositions without breaking the FSD dependency rule."
+    },
+    "accessibility": {
+      "categories": "UI kit categories",
+      "components": "UI components",
+      "selectedPreview": "Selected component preview"
+    },
+    "status": {
+      "ready": "ready",
+      "interactive": "interactive",
+      "layout": "layout"
+    },
+    "categories": {
+      "surfaces": "surfaces",
+      "actions": "actions",
+      "forms": "forms",
+      "feedback": "feedback"
+    },
+    "selected": "Selected",
+    "controls": {
+      "title": "Controls",
+      "description": "Local state changes the preview immediately.",
+      "motion": {
+        "label": "Motion",
+        "hint": "CSS-only animation, disabled under reduced motion."
+      },
+      "compact": {
+        "label": "Compact density",
+        "hint": "Switches the same components into a tighter layout."
+      },
+      "depth": "Scene depth",
+      "readiness": "Composition readiness"
+    },
+    "demos": {
+      "actions": {
+        "title": "Action cluster",
+        "description": "Buttons, icon buttons and state feedback share focus and hover behavior.",
+        "showToast": "Show toast",
+        "openModal": "Open modal",
+        "generate": "Generate",
+        "preview": "Preview"
+      },
+      "form": {
+        "title": "Form stack",
+        "description": "Reusable controls for product, auth and admin surfaces.",
+        "searchLabel": "Search component",
+        "searchPlaceholder": "Card, tabs, overlay…",
+        "tokenLabel": "Token preview",
+        "apply": "Apply",
+        "reset": "Reset"
+      },
+      "layers": {
+        "title": "FSD map",
+        "description": "One-way imports keep the kit reusable."
+      }
+    },
+    "stats": {
+      "groups_one": "<count>{{count}}</count> group",
+      "groups_other": "<count>{{count}}</count> groups",
+      "mechanics_one": "<count>{{count}}+</count> mechanic",
+      "mechanics_other": "<count>{{count}}+</count> mechanics",
+      "dependencies_one": "<count>{{count}}</count> dependency",
+      "dependencies_other": "<count>{{count}}</count> dependencies"
+    },
+    "timeline": {
+      "ariaLabel": "UI composition process",
+      "steps": {
+        "primitive": {
+          "title": "Primitive",
+          "description": "Build neutral controls in shared/ui."
+        },
+        "composition": {
+          "title": "Composition",
+          "description": "Group selected states and demos in entities/ui-kit."
+        },
+        "pageBlock": {
+          "title": "Page block",
+          "description": "Assemble the public page in widgets/page-blocks."
+        },
+        "route": {
+          "title": "Route",
+          "description": "Keep the app route thin and predictable."
+        }
+      }
+    },
+    "modal": {
+      "title": "Preview overlay",
+      "description": "This modal is opened from the UI kit entity and rendered by a shared primitive. It proves the overlay path without adding a new dependency.",
+      "close": "Close",
+      "save": "Save state"
+    },
+    "toast": {
+      "title": "UI state updated",
+      "description": "The selected kit configuration is visible on the page."
+    }
+  }
+}

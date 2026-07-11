@@ -3,7 +3,7 @@
         backend-start backend-test backend-test-sqlite security-audit load-test test-all \
         seed seed-mongo seed-sqlite docker-up docker-down \
         db-mongo-up doc-mongo db-postgres-up db-sqlite-up clean-ports \
-        check-source check-types check-account-recovery check
+        check-source check-types check-account-recovery check-i18n-http check
 
 BACKEND_DIR = backend
 FRONTEND_DIR = frontend
@@ -80,6 +80,10 @@ check-types:           ## backend + frontend TypeScript checks
 
 check-account-recovery: ## compiled account-recovery behavior tests
 	cd backend && yarn run test:account-recovery
+
+check-i18n-http:       ## run against an already-started production frontend
+	NODE_ENV=production node tests/i18n-production-fallback.mjs
+	I18N_BASE_URL=$${I18N_BASE_URL:-http://127.0.0.1:5178} node tests/i18n-http-routing.mjs
 
 check: check-source check-types check-account-recovery
 

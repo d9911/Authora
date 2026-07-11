@@ -1,9 +1,14 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { ButtonMain } from '@/shared/ui';
 import { config } from '@/shared/config';
-import { optionalNextPath } from '@/shared/lib/routes';
+import {
+  getLocalizedRoutes,
+  getPostAuthRedirectPath,
+} from '@/shared/lib/routes';
+import { useCurrentLocale } from '@/shared/i18n';
 
 /**
  * GitHub OAuth entry point. This is a full-page redirect to the BACKEND
@@ -11,17 +16,27 @@ import { optionalNextPath } from '@/shared/lib/routes';
  * cookies -> redirects to the frontend profile page.
  */
 export function GithubLoginButton() {
+  const { t } = useTranslation('auth');
+  const locale = useCurrentLocale();
+  const routes = getLocalizedRoutes(locale);
   const searchParams = useSearchParams();
-  const nextPath = optionalNextPath(searchParams.get('next'));
+  const requestedNextPath = searchParams.get('next');
 
   const onClick = () => {
     const url = new URL('/api/auth/github', config.backendPublicUrl);
-    if (nextPath) url.searchParams.set('next', nextPath);
+    url.searchParams.set(
+      'next',
+      getPostAuthRedirectPath(
+        requestedNextPath,
+        routes.profileEdit,
+        window.location.hash,
+      ),
+    );
     window.location.href = url.toString();
   };
   return (
     <ButtonMain variant="secondary" fullWidth onClick={onClick} type="button">
-      Continue with GitHub
+      {t('github.action.continue')}
     </ButtonMain>
   );
 }

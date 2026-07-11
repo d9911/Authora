@@ -1,64 +1,66 @@
 import Link from 'next/link';
 import { UiKitShowcase } from '@/entities/ui-kit';
+import { getServerTranslation } from '@/shared/i18n/server';
+import { type SupportedLocale } from '@/shared/i18n/config';
 import { Badge, Card, SectionHeader, SpatialPreview } from '@/shared/ui';
 import styles from './UiKitPage.module.scss';
 
-const layerCards = [
-  {
-    layer: 'shared/ui',
-    title: 'Primitives',
-    description: 'Buttons, cards, tabs, controls, badges, overlays and depth previews.',
-  },
-  {
-    layer: 'entities/ui-kit',
-    title: 'Compositions',
-    description: 'Selected states, grouped examples and product-facing kit demonstrations.',
-  },
-  {
-    layer: 'widgets/page-blocks',
-    title: 'Page assembly',
-    description: 'Hero, layer map and showcase are composed into a ready public block.',
-  },
-  {
-    layer: 'app/(public)/ui',
-    title: 'Thin route',
-    description: 'The Next.js route imports the block and avoids local business logic.',
-  },
-];
+export async function UiKitPage({ locale }: { locale: SupportedLocale }) {
+  const { t } = await getServerTranslation(locale, 'ui');
+  const layerCards = [
+    {
+      layer: 'shared/ui',
+      title: t('page.layers.shared.title'),
+      description: t('page.layers.shared.description'),
+    },
+    {
+      layer: 'entities/ui-kit',
+      title: t('page.layers.entities.title'),
+      description: t('page.layers.entities.description'),
+    },
+    {
+      layer: 'widgets/page-blocks',
+      title: t('page.layers.widgets.title'),
+      description: t('page.layers.widgets.description'),
+    },
+    {
+      layer: 'app/[locale]/(public)/ui',
+      title: t('page.layers.app.title'),
+      description: t('page.layers.app.description'),
+    },
+  ];
+  const tokens = [
+    { name: t('page.tokens.paper'), value: 'var(--paper)', token: '--paper' },
+    { name: t('page.tokens.card'), value: 'var(--card)', token: '--card' },
+    { name: t('page.tokens.ink'), value: 'var(--ink)', token: '--ink' },
+    { name: t('page.tokens.iris'), value: 'var(--iris)', token: '--iris' },
+    { name: t('page.tokens.line'), value: 'var(--line)', token: '--line' },
+  ];
 
-const tokens = [
-  { name: 'Paper', value: 'var(--paper)', token: '--paper' },
-  { name: 'Card', value: 'var(--card)', token: '--card' },
-  { name: 'Ink', value: 'var(--ink)', token: '--ink' },
-  { name: 'Iris', value: 'var(--iris)', token: '--iris' },
-  { name: 'Line', value: 'var(--line)', token: '--line' },
-];
-
-export function UiKitPage() {
   return (
     <div className={styles.page}>
       <section className={styles.hero} aria-labelledby="ui-kit-title">
         <div className={styles.heroCopy}>
           <div className={styles.badgeRow}>
-            <Badge tone="accent">Dependency-free</Badge>
-            <Badge tone="success">FSD aligned</Badge>
-            <Badge tone="accent" variant="outline">Light + Dark</Badge>
-            <Badge>CSS depth</Badge>
+            <Badge tone="accent">{t('page.badges.dependencyFree')}</Badge>
+            <Badge tone="success">{t('page.badges.fsdAligned')}</Badge>
+            <Badge tone="accent" variant="outline">
+              {t('page.badges.themes')}
+            </Badge>
+            <Badge>{t('page.badges.cssDepth')}</Badge>
           </div>
           <h1 id="ui-kit-title" className={styles.title}>
-            Spatial UI kit for premium product screens.
+            {t('page.hero.title')}
           </h1>
           <p className={styles.subtitle}>
-            A reusable component selection page for cards, controls, overlays, pseudo-3D
-            previews and page sections. The route stays thin; reusable pieces stay in the
-            correct Feature-Sliced layer, and every surface follows the active theme.
+            {t('page.hero.description')}
           </p>
           <div className={styles.heroActions}>
             <Link href="#kit-parts" className={styles.primaryAction}>
-              Explore parts
+              {t('page.hero.explore')}
             </Link>
             <Link href="#layer-map" className={styles.secondaryAction}>
-              View layers
+              {t('page.hero.layers')}
             </Link>
           </div>
         </div>
@@ -66,7 +68,7 @@ export function UiKitPage() {
         <div className={styles.heroVisual}>
           <SpatialPreview />
           <div className={styles.floatingPanel}>
-            <span>Composition path</span>
+            <span>{t('page.hero.compositionPath')}</span>
             <strong>{'shared -> entities -> widgets -> app'}</strong>
           </div>
         </div>
@@ -74,9 +76,9 @@ export function UiKitPage() {
 
       <section id="layer-map" className={styles.layerSection} aria-labelledby="layer-map-title">
         <SectionHeader
-          eyebrow="Feature-Sliced Design"
-          title="Every component has a layer."
-          description="Shared primitives stay generic. UI-kit compositions live in entities. The final public page is assembled as a widget page-block."
+          eyebrow={t('page.layerMap.eyebrow')}
+          title={t('page.layerMap.title')}
+          description={t('page.layerMap.description')}
         />
         <div className={styles.layerGrid}>
           {layerCards.map((item, index) => (
@@ -95,9 +97,9 @@ export function UiKitPage() {
 
       <section className={styles.tokenSection} aria-labelledby="token-title">
         <SectionHeader
-          eyebrow="Design tokens"
-          title="The page reuses the current Authora visual system."
-          description="These swatches are live CSS variables. Flip the header theme switch and the same UI kit resolves to the light or dark token set."
+          eyebrow={t('page.tokenSection.eyebrow')}
+          title={t('page.tokenSection.title')}
+          description={t('page.tokenSection.description')}
         />
         <div className={styles.tokenGrid}>
           {tokens.map((token) => (

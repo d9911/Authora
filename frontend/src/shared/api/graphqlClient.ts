@@ -1,6 +1,7 @@
 import { axiosInstance } from './axiosInstance';
 import { ApiError } from '../types';
-import { ROUTES } from '@/shared/lib/routes';
+import { getLocaleFromPathname, i18nConfig } from '@/shared/i18n/config';
+import { getLocalizedRoutes } from '@/shared/lib/routes';
 
 interface GraphQLResponse<T> {
   data?: T;
@@ -23,7 +24,9 @@ let refreshing: Promise<boolean> | null = null;
 function redirectToSignIn(): Promise<never> {
   localStorage.removeItem('user');
   const nextPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-  window.location.href = `${ROUTES.signIn}?next=${encodeURIComponent(nextPath)}`;
+  const locale = getLocaleFromPathname(window.location.pathname) ?? i18nConfig.defaultLocale;
+  const routes = getLocalizedRoutes(locale);
+  window.location.href = `${routes.signIn}?next=${encodeURIComponent(nextPath)}`;
   return new Promise(() => {});
 }
 

@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import {
   completePasswordReset,
   exchangePasswordResetToken,
@@ -10,15 +11,23 @@ import {
 } from '@/features/password-reset/api/passwordResetApi';
 import { AuthFormShell } from '@/features/AuthForm/AuthFormShell';
 import { ButtonMain, FeedbackText, InputMain, LoaderMain, PasswordInput } from '@/shared/ui';
-import { getErrorMessage } from '@/shared/lib/errors';
-import { PASSWORD_ALLOWED_REGEX, PASSWORD_POLICY_HINT } from '@/shared/lib/passwordPolicy';
-import { optionalNextPath, ROUTES } from '@/shared/lib/routes';
+import { ErrorDescriptor, getErrorDescriptor } from '@/shared/lib/errors';
+import {
+  PASSWORD_ALLOWED_REGEX,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from '@/shared/lib/passwordPolicy';
+import { getLocalizedRoutes, optionalNextPath } from '@/shared/lib/routes';
+import { translateError, useCurrentLocale } from '@/shared/i18n';
 import { TelegramRecoveryPanel } from './TelegramRecoveryPanel';
 import styles from './PasswordResetForm.module.scss';
 
-const PASSWORD_MISMATCH_ERROR = 'Пароли не совпадают.';
-
 export function PasswordResetForm({ mode }: { mode: 'request' | 'reset' }) {
+  const { t } = useTranslation('auth');
+  const { t: tValidation } = useTranslation('validation');
+  const { t: tErrors } = useTranslation('errors');
+  const locale = useCurrentLocale();
+  const routes = getLocalizedRoutes(locale);
   const router = useRouter();
   const params = useSearchParams();
   const exchangeStarted = useRef(false);
@@ -36,7 +45,11 @@ export function PasswordResetForm({ mode }: { mode: 'request' | 'reset' }) {
   const [exchanging, setExchanging] = useState(mode === 'reset' && Boolean(token));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorDescriptor | { localized: string } | null>(null);
+  const passwordPolicyMessage = tValidation('passwordPolicy', {
+    min: PASSWORD_MIN_LENGTH,
+    max: PASSWORD_MAX_LENGTH,
+  });
 
   useEffect(() => {
     if (mode !== 'reset' || !token || exchangeStarted.current) return;
@@ -46,19 +59,19 @@ export function PasswordResetForm({ mode }: { mode: 'request' | 'reset' }) {
         setReady(true);
         const cleanParams = new URLSearchParams({ ready: '1', channel: 'email' });
         if (nextPath) cleanParams.set('next', nextPath);
-        window.history.replaceState(null, '', `${ROUTES.resetPassword}?${cleanParams.toString()}`);
+        window.history.replaceState(null, '', `${routes.resetPassword}?${cleanParams.toString()}`);
       })
       .catch((exchangeError) => {
-        setError(getErrorMessage(exchangeError, 'Ссылка восстановления недействительна.'));
+        setError(getErrorDescriptor(exchangeError));
       })
       .finally(() => setExchanging(false));
-  }, [mode, nextPath, token]);
+  }, [mode, nextPath, routes.resetPassword, token]);
 
   const passwordInvalid = password.length > 0 && !PASSWORD_ALLOWED_REGEX.test(password);
   const passwordMismatch = confirmPassword.length > 0 && password !== confirmPassword;
-  const passwordError = passwordTouched && passwordInvalid ? PASSWORD_POLICY_HINT : null;
+  const passwordError = passwordTouched && passwordInvalid ? passwordPolicyMessage : null;
   const confirmPasswordError =
-    confirmTouched && passwordMismatch ? PASSWORD_MISMATCH_ERROR : null;
+    confirmTouched && passwordMismatch ? tValidation('passwordMismatch') : null;
   const resetDisabled =
     busy ||
     !ready ||
@@ -67,8 +80,8 @@ export function PasswordResetForm({ mode }: { mode: 'request' | 'reset' }) {
     password !== confirmPassword;
 
   const signInHref = nextPath
-    ? `${ROUTES.signIn}?next=${encodeURIComponent(nextPath)}`
-    : ROUTES.signIn;
+    ? `${routes.signIn}?next=${encodeURIComponent(nextPath)}`
+    : routes.signIn;
 
   const onRequest = async (event: FormEvent) => {
     event.preventDefault();
@@ -77,11 +90,9 @@ export function PasswordResetForm({ mode }: { mode: 'request' | 'reset' }) {
     setMessage(null);
     try {
       await requestPasswordReset(email, nextPath ?? undefined);
-      setMessage(
-        'Если такой аккаунт существует и к нему привязана почта, ссылка восстановления отправлена.',
-      );
+      setMessage(t('passwordRecovery.message.requestAccepted'));
     } catch (requestError) {
-      setError(getErrorMessage(requestError, 'Не удалось отправить запрос восстановления.'));
+      setError(getErrorDescriptor(requestError));
     } finally {
       setBusy(false);
     }
@@ -93,25 +104,25 @@ export function PasswordResetForm({ mode }: { mode: 'request' | 'reset' }) {
     setConfirmTouched(true);
     setError(null);
     if (!PASSWORD_ALLOWED_REGEX.test(password)) {
-      setError(PASSWORD_POLICY_HINT);
+      setError({ localized: passwordPolicyMessage });
       return;
     }
     if (password !== confirmPassword) {
-      setError(PASSWORD_MISMATCH_ERROR);
+      setError({ localized: tValidation('passwordMismatch') });
       return;
     }
     setBusy(true);
     try {
       const result = await completePasswordReset(password);
       if (result.channel === 'telegram') {
-        router.replace(nextPath ?? ROUTES.profileEdit);
+        router.replace(nextPath ?? routes.profileEdit);
         return;
       }
       const signInParams = new URLSearchParams({ recovered: '1' });
       if (nextPath) signInParams.set('next', nextPath);
-      router.replace(`${ROUTES.signIn}?${signInParams.toString()}`);
+      router.replace(`${routes.signIn}?${signInParams.toString()}`);
     } catch (resetError) {
-      setError(getErrorMessage(resetError, 'Не удалось изменить пароль.'));
+      setError(getErrorDescriptor(resetError));
     } finally {
       setBusy(false);
     }
@@ -121,49 +132,57 @@ export function PasswordResetForm({ mode }: { mode: 'request' | 'reset' }) {
     return (
       <AuthFormShell
         onSubmit={method === 'email' ? onRequest : (event) => event.preventDefault()}
-        eyebrow="Account recovery"
-        title="Восстановление аккаунта"
-        subtitle="Выберите способ, который был привязан к аккаунту заранее."
+        eyebrow={t('passwordRecovery.request.eyebrow')}
+        title={t('passwordRecovery.request.title')}
+        subtitle={t('passwordRecovery.request.subtitle')}
         footer={
           <div className={styles['recovery-footer']}>
-            <Link href={signInHref}>Вернуться ко входу</Link>
+            <Link href={signInHref}>{t('passwordRecovery.action.backToSignIn')}</Link>
           </div>
         }
       >
-        <div className={styles['method-switch']} role="group" aria-label="Способ восстановления">
+        <div
+          className={styles['method-switch']}
+          role="group"
+          aria-label={t('passwordRecovery.method.ariaLabel')}
+        >
           <button
             type="button"
             aria-pressed={method === 'email'}
             onClick={() => setMethod('email')}
           >
-            Email
+            {t('passwordRecovery.method.email')}
           </button>
           <button
             type="button"
             aria-pressed={method === 'telegram'}
             onClick={() => setMethod('telegram')}
           >
-            Telegram
+            {t('passwordRecovery.method.telegram')}
           </button>
         </div>
         {method === 'email' ? (
           <>
             <InputMain
-              label="Email"
+              label={t('passwordRecovery.request.emailLabel')}
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
               autoComplete="email"
             />
-            {error ? <FeedbackText tone="error">{error}</FeedbackText> : null}
+            {error ? (
+              <FeedbackText tone="error">
+                {'localized' in error ? error.localized : translateError(tErrors, error)}
+              </FeedbackText>
+            ) : null}
             {message ? (
               <FeedbackText tone="success" role="status" aria-live="polite">
                 {message}
               </FeedbackText>
             ) : null}
             <ButtonMain type="submit" fullWidth loading={busy} disabled={!email.trim()}>
-              Отправить ссылку
+              {t('passwordRecovery.request.action.sendLink')}
             </ButtonMain>
           </>
         ) : (
@@ -173,25 +192,29 @@ export function PasswordResetForm({ mode }: { mode: 'request' | 'reset' }) {
     );
   }
 
-  if (exchanging) return <LoaderMain label="Проверяем ссылку восстановления…" />;
+  if (exchanging) return <LoaderMain label={t('passwordRecovery.reset.checkingLink')} />;
 
   if (!ready) {
     return (
       <AuthFormShell
         onSubmit={(event) => event.preventDefault()}
-        title="Ссылка недействительна"
-        subtitle="Запросите новую ссылку или используйте привязанный Telegram."
+        title={t('passwordRecovery.invalid.title')}
+        subtitle={t('passwordRecovery.invalid.subtitle')}
       >
-        {error ? <FeedbackText tone="error">{error}</FeedbackText> : null}
-        <Link className={styles['primary-link']} href={ROUTES.forgotPassword}>
-          Начать восстановление заново
+        {error ? (
+          <FeedbackText tone="error">
+            {'localized' in error ? error.localized : translateError(tErrors, error)}
+          </FeedbackText>
+        ) : null}
+        <Link className={styles['primary-link']} href={routes.forgotPassword}>
+          {t('passwordRecovery.invalid.action.restart')}
         </Link>
       </AuthFormShell>
     );
   }
 
   return (
-    <AuthFormShell onSubmit={onReset} title="Новый пароль">
+    <AuthFormShell onSubmit={onReset} title={t('passwordRecovery.reset.title')}>
       <input
         type="text"
         name="username"
@@ -204,7 +227,7 @@ export function PasswordResetForm({ mode }: { mode: 'request' | 'reset' }) {
       />
       <PasswordInput
         id="recovery-password"
-        label="Новый пароль"
+        label={t('passwordRecovery.reset.field.newPassword')}
         value={password}
         error={passwordError}
         required
@@ -217,7 +240,7 @@ export function PasswordResetForm({ mode }: { mode: 'request' | 'reset' }) {
       />
       <PasswordInput
         id="recovery-confirm-password"
-        label="Повторите пароль"
+        label={t('passwordRecovery.reset.field.confirmPassword')}
         value={confirmPassword}
         error={confirmPasswordError}
         required
@@ -228,9 +251,13 @@ export function PasswordResetForm({ mode }: { mode: 'request' | 'reset' }) {
           setError(null);
         }}
       />
-      {error ? <FeedbackText tone="error">{error}</FeedbackText> : null}
+      {error ? (
+        <FeedbackText tone="error">
+          {'localized' in error ? error.localized : translateError(tErrors, error)}
+        </FeedbackText>
+      ) : null}
       <ButtonMain type="submit" fullWidth loading={busy} disabled={resetDisabled}>
-        Сохранить новый пароль
+        {t('passwordRecovery.reset.action.save')}
       </ButtonMain>
     </AuthFormShell>
   );

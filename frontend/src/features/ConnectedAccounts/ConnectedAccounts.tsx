@@ -1,7 +1,8 @@
 'use client';
 
 import { FormEvent, ReactNode, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
+import { useParams, useSearchParams } from 'next/navigation';
 import { config } from '@/shared/config';
 import { useAppDispatch, useAppSelector } from '@/processes/store/hooks';
 import { loadMeThunk } from '@/processes/store/slices/authSlice';
@@ -17,9 +18,10 @@ import {
 } from './api/accountSecurityApi';
 import { TelegramLoginButton } from '@/features/TelegramLoginButton/TelegramLoginButton';
 import { ButtonMain, FeedbackText, InputMain, OtpCodeInput } from '@/shared/ui';
-import { getErrorMessage } from '@/shared/lib/errors';
+import { translateError } from '@/shared/i18n/errors';
+import { i18nConfig, normalizeLocale } from '@/shared/i18n/config';
 import { normalizeNumericCode } from '@/shared/lib/otp';
-import { ROUTES } from '@/shared/lib/routes';
+import { getLocalizedRoutes } from '@/shared/lib/routes';
 
 type Provider = 'github' | 'telegram';
 type BusyAction =
@@ -32,8 +34,8 @@ type BusyAction =
 function ConnectedAccountRow({
   label,
   connected,
-  connectedLabel = 'Connected',
-  missingLabel = 'Not connected',
+  connectedLabel,
+  missingLabel,
   detail,
   children,
 }: {
@@ -88,8 +90,13 @@ function ConnectedAccountRow({
 }
 
 export function ConnectedAccounts() {
+  const { t } = useTranslation('profile');
+  const { t: tErrors } = useTranslation('errors');
   const dispatch = useAppDispatch();
-  const params = useSearchParams();
+  const searchParams = useSearchParams();
+  const params = useParams<{ locale?: string }>();
+  const locale = normalizeLocale(params.locale) ?? i18nConfig.defaultLocale;
+  const routes = getLocalizedRoutes(locale);
   const { user } = useAppSelector((s) => s.auth);
 
   const [busy, setBusy] = useState<BusyAction | null>(null);
@@ -100,15 +107,21 @@ export function ConnectedAccounts() {
   const [emailChangeRequested, setEmailChangeRequested] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const connectedLabel = t('security.status.connected');
+  const missingLabel = t('security.status.notConnected');
 
   // Confirmation when returning from a GitHub link (?linked=github).
   useEffect(() => {
-    const linked = params.get('linked');
+    const linked = searchParams.get('linked');
     if (linked === 'github' || linked === 'telegram') {
-      setMsg(`${linked === 'github' ? 'GitHub' : 'Telegram'} account linked ✓`);
+      setMsg(
+        t('security.providers.linked', {
+          provider: linked === 'github' ? 'GitHub' : 'Telegram',
+        }),
+      );
       void dispatch(loadMeThunk());
     }
-  }, [params, dispatch]);
+  }, [searchParams, dispatch, t]);
 
   // GitHub linking = full-page redirect to the backend with a link token.
   const startGithubLink = async () => {
@@ -119,7 +132,7 @@ export function ConnectedAccounts() {
       const token = await getOAuthLinkToken();
       window.location.href = `${config.backendPublicUrl}/api/auth/github?link=${encodeURIComponent(token)}`;
     } catch (e) {
-      setError(getErrorMessage(e));
+      setError(translateError(tErrors, e, 'fallback'));
       setBusy(null);
     }
   };
@@ -131,9 +144,13 @@ export function ConnectedAccounts() {
     try {
       await unlinkProvider(provider);
       await dispatch(loadMeThunk());
-      setMsg(`${provider === 'github' ? 'GitHub' : 'Telegram'} disconnected`);
+      setMsg(
+        t('security.providers.disconnected', {
+          provider: provider === 'github' ? 'GitHub' : 'Telegram',
+        }),
+      );
     } catch (e) {
-      setError(getErrorMessage(e));
+      setError(translateError(tErrors, e, 'fallback'));
     } finally {
       setBusy(null);
     }
@@ -141,7 +158,7 @@ export function ConnectedAccounts() {
 
   const requestEmailCode = async () => {
     if (!user?.email) {
-      setError('User email is not loaded yet.');
+      setError(t('security.email.notLoaded'));
       return;
     }
     setError(null);
@@ -150,9 +167,9 @@ export function ConnectedAccounts() {
     try {
       await resendEmailCode(user.email);
       setEmailRequested(true);
-      setMsg(`Confirmation code sent to ${user.email}`);
+      setMsg(t('security.email.codeSent', { email: user.email }));
     } catch (e) {
-      setError(getErrorMessage(e));
+      setError(translateError(tErrors, e, 'fallback'));
     } finally {
       setBusy(null);
     }
@@ -160,13 +177,13 @@ export function ConnectedAccounts() {
 
   const submitEmailCode = async (nextCode = emailCode) => {
     if (!user?.email) {
-      setError('User email is not loaded yet.');
+      setError(t('security.email.notLoaded'));
       return;
     }
     const code = normalizeNumericCode(nextCode);
     if (busy) return;
     if (!code) {
-      setError('Enter the confirmation code from your email.');
+      setError(t('security.email.codeRequired'));
       return;
     }
     setError(null);
@@ -177,9 +194,9 @@ export function ConnectedAccounts() {
       setEmailCode('');
       setEmailRequested(false);
       await dispatch(loadMeThunk());
-      setMsg('Email confirmed ✓');
+      setMsg(t('security.email.confirmed'));
     } catch (e) {
-      setError(getErrorMessage(e));
+      setError(translateError(tErrors, e, 'fallback'));
     } finally {
       setBusy(null);
     }
@@ -192,7 +209,7 @@ export function ConnectedAccounts() {
 
   const requestNewEmail = async () => {
     if (!newEmail.trim()) {
-      setError('Введите новый email.');
+      setError(t('security.email.newRequired'));
       return;
     }
     setError(null);
@@ -201,9 +218,9 @@ export function ConnectedAccounts() {
     try {
       await requestEmailChange(newEmail.trim());
       setEmailChangeRequested(true);
-      setMsg(`Код подтверждения отправлен на ${newEmail.trim()}`);
+      setMsg(t('security.email.newCodeSent', { email: newEmail.trim() }));
     } catch (requestError) {
-      setError(getErrorMessage(requestError));
+      setError(translateError(tErrors, requestError, 'fallback'));
     } finally {
       setBusy(null);
     }
@@ -222,9 +239,9 @@ export function ConnectedAccounts() {
       setEmailChangeMode(false);
       setEmailChangeRequested(false);
       await dispatch(loadMeThunk());
-      setMsg('Email для входа и восстановления подтверждён.');
+      setMsg(t('security.email.changeConfirmed'));
     } catch (confirmError) {
-      setError(getErrorMessage(confirmError));
+      setError(translateError(tErrors, confirmError, 'fallback'));
     } finally {
       setBusy(null);
     }
@@ -241,21 +258,31 @@ export function ConnectedAccounts() {
   const changingEmail = !user?.email || emailChangeMode;
   const recoveryMethods = user?.recoveryMethods ?? [];
   const recoveryLabel = recoveryMethods.length
-    ? recoveryMethods.map((method) => (method === 'EMAIL' ? 'Email' : 'Telegram')).join(', ')
-    : 'No recovery method configured';
+    ? recoveryMethods
+        .map((method) =>
+          method === 'EMAIL'
+            ? t('security.recovery.email')
+            : t('security.recovery.telegram'),
+        )
+        .join(', ')
+    : t('security.recovery.none');
 
   return (
     <div className="card">
-      <h2>Connected accounts</h2>
+      <h2>{t('security.title')}</h2>
       <p className="muted" style={{ marginTop: -4 }}>
-        Link external accounts to sign in with one click.
+        {t('security.description')}
       </p>
 
       <ConnectedAccountRow
-        label="Email"
+        label={t('security.email.label')}
         connected={emailVerified}
-        connectedLabel="Verified"
-        missingLabel={emailRequested ? 'Code sent' : 'Not verified'}
+        connectedLabel={t('security.status.verified')}
+        missingLabel={
+          emailRequested
+            ? t('security.status.codeSent')
+            : t('security.status.notVerified')
+        }
         detail={user?.email}
       >
         {changingEmail ? (
@@ -264,7 +291,7 @@ export function ConnectedAccounts() {
             style={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 8 }}
           >
             <InputMain
-              aria-label="New recovery email"
+              aria-label={t('security.email.newAriaLabel')}
               type="email"
               value={newEmail}
               onChange={(event) => setNewEmail(event.target.value)}
@@ -274,11 +301,11 @@ export function ConnectedAccounts() {
             />
             {emailChangeRequested ? (
               <OtpCodeInput
-                aria-label="New email confirmation code"
+                aria-label={t('security.email.newCodeAriaLabel')}
                 value={emailCode}
                 onValueChange={setEmailCode}
                 onComplete={(value) => void submitEmailChangeCode(value)}
-                placeholder="Code"
+                placeholder={t('security.email.codePlaceholder')}
                 mono
                 style={{ width: 112 }}
               />
@@ -292,7 +319,9 @@ export function ConnectedAccounts() {
               disabled={emailChangeRequested ? !emailCode.trim() : !newEmail.trim()}
               onClick={emailChangeRequested ? undefined : requestNewEmail}
             >
-              {emailChangeRequested ? 'Confirm email' : 'Send code'}
+              {emailChangeRequested
+                ? t('security.email.confirm')
+                : t('security.email.sendCode')}
             </ButtonMain>
             {user?.email ? (
               <ButtonMain
@@ -306,7 +335,7 @@ export function ConnectedAccounts() {
                   setEmailCode('');
                 }}
               >
-                Cancel
+                {t('security.actions.cancel')}
               </ButtonMain>
             ) : null}
           </form>
@@ -317,7 +346,7 @@ export function ConnectedAccounts() {
             variant="secondary"
             onClick={() => setEmailChangeMode(true)}
           >
-            Change email
+            {t('security.email.change')}
           </ButtonMain>
         ) : (
           <form
@@ -325,11 +354,11 @@ export function ConnectedAccounts() {
             style={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 8 }}
           >
             <OtpCodeInput
-              aria-label="Email confirmation code"
+              aria-label={t('security.email.codeAriaLabel')}
               value={emailCode}
               onValueChange={setEmailCode}
               onComplete={(value) => void submitEmailCode(value)}
-              placeholder="Code"
+              placeholder={t('security.email.codePlaceholder')}
               mono
               style={{ width: 112 }}
             />
@@ -340,7 +369,9 @@ export function ConnectedAccounts() {
               loading={busy === 'email-send'}
               onClick={requestEmailCode}
             >
-              {emailRequested ? 'Resend code' : 'Send code'}
+              {emailRequested
+                ? t('security.email.resendCode')
+                : t('security.email.sendCode')}
             </ButtonMain>
             <ButtonMain
               type="submit"
@@ -348,18 +379,18 @@ export function ConnectedAccounts() {
               loading={busy === 'email-confirm'}
               disabled={!emailCode.trim()}
             >
-              Confirm
+              {t('security.actions.confirm')}
             </ButtonMain>
           </form>
         )}
       </ConnectedAccountRow>
 
       <ConnectedAccountRow
-        label="Password"
+        label={t('security.password.label')}
         connected={Boolean(user?.hasPassword)}
-        connectedLabel="Configured"
-        missingLabel="Not configured"
-        detail={`Recovery methods: ${recoveryLabel}`}
+        connectedLabel={t('security.status.configured')}
+        missingLabel={t('security.status.notConfigured')}
+        detail={t('security.recovery.methods', { methods: recoveryLabel })}
       >
         <ButtonMain
           type="button"
@@ -367,44 +398,58 @@ export function ConnectedAccounts() {
           disabled={recoveryMethods.length === 0}
           onClick={() =>
             window.location.assign(
-              `${ROUTES.forgotPassword}?next=${encodeURIComponent(ROUTES.profileEdit)}`,
+              `${routes.forgotPassword}?next=${encodeURIComponent(routes.profileEdit)}`,
             )
           }
         >
-          {user?.hasPassword ? 'Reset password' : 'Set password'}
+          {user?.hasPassword
+            ? t('security.password.reset')
+            : t('security.password.set')}
         </ButtonMain>
       </ConnectedAccountRow>
 
-      <ConnectedAccountRow label="GitHub" connected={githubConnected}>
+      <ConnectedAccountRow
+        label="GitHub"
+        connected={githubConnected}
+        connectedLabel={connectedLabel}
+        missingLabel={missingLabel}
+      >
         {githubConnected ? (
           <ButtonMain
             variant="secondary"
             loading={busy === 'github'}
             onClick={() => disconnect('github')}
           >
-            Disconnect
+            {t('security.providers.disconnect')}
           </ButtonMain>
         ) : (
           <ButtonMain loading={busy === 'github'} onClick={startGithubLink}>
-            Connect
+            {t('security.providers.connect')}
           </ButtonMain>
         )}
       </ConnectedAccountRow>
 
-      <ConnectedAccountRow label="Telegram" connected={telegramConnected}>
+      <ConnectedAccountRow
+        label="Telegram"
+        connected={telegramConnected}
+        connectedLabel={connectedLabel}
+        missingLabel={missingLabel}
+      >
         {telegramConnected ? (
           <ButtonMain
             variant="secondary"
             loading={busy === 'telegram'}
             onClick={() => disconnect('telegram')}
           >
-            Disconnect
+            {t('security.providers.disconnect')}
           </ButtonMain>
         ) : (
           // Bot deep-link flow; links to the current user on success.
           <TelegramLoginButton
             mode="link"
-            onLinked={() => setMsg('Telegram account linked ✓')}
+            onLinked={() =>
+              setMsg(t('security.providers.linked', { provider: 'Telegram' }))
+            }
           />
         )}
       </ConnectedAccountRow>

@@ -1,0 +1,127 @@
+{
+  "edit": {
+    "metadataTitle": "Edit profile",
+    "loading": "Loading profile…",
+    "title": "Edit profile",
+    "fields": {
+      "name": "Name",
+      "nickname": "Nickname",
+      "phoneNumber": "Phone number",
+      "dateOfBirth": "Date of birth",
+      "gender": "Gender",
+      "address": "Address",
+      "timezone": "Timezone",
+      "bio": "Bio",
+      "description": "Description"
+    },
+    "location": {
+      "country": {
+        "label": "Country",
+        "placeholder": "Select country"
+      },
+      "region": {
+        "label": "Region",
+        "placeholder": "All regions"
+      },
+      "city": {
+        "label": "City",
+        "placeholder": "No city"
+      }
+    },
+    "saved": "Profile saved ✓",
+    "save": "Save changes"
+  },
+  "photos": {
+    "eyebrow": "Profile photos",
+    "title": "Avatar and cover",
+    "avatar": {
+      "ariaLabel": "Avatar image",
+      "title": "Avatar",
+      "description": "Stored as a centered 512×512 WebP image and displayed round.",
+      "previewAlt": "Avatar preview",
+      "upload": "Upload avatar",
+      "replace": "Replace avatar"
+    },
+    "cover": {
+      "ariaLabel": "Cover image",
+      "title": "Cover",
+      "description": "Stored as a centered 1920×640 WebP image for the profile background.",
+      "previewAlt": "Cover preview",
+      "empty": "No cover image",
+      "upload": "Upload cover",
+      "replace": "Replace cover"
+    },
+    "actions": {
+      "delete": "Delete"
+    },
+    "accessibility": {
+      "chooseImage": "Choose {{title}} image"
+    },
+    "errors": {
+      "unsupportedType": "Choose a JPEG, PNG or WebP image.",
+      "tooLarge": "The image must not exceed {{maxSizeMb}} MB."
+    },
+    "confirmDeleteAvatar": "Delete your avatar?",
+    "confirmDeleteCover": "Delete your cover image?"
+  },
+  "security": {
+    "title": "Connected accounts",
+    "description": "Link external accounts to sign in with one click.",
+    "status": {
+      "connected": "Connected",
+      "notConnected": "Not connected",
+      "verified": "Verified",
+      "codeSent": "Code sent",
+      "notVerified": "Not verified",
+      "configured": "Configured",
+      "notConfigured": "Not configured"
+    },
+    "email": {
+      "label": "Email",
+      "notLoaded": "User email is not loaded yet.",
+      "codeSent": "Confirmation code sent to {{email}}",
+      "codeRequired": "Enter the confirmation code from your email.",
+      "confirmed": "Email confirmed ✓",
+      "newRequired": "Enter a new email address.",
+      "newCodeSent": "Confirmation code sent to {{email}}",
+      "changeConfirmed": "The sign-in and recovery email has been confirmed.",
+      "newAriaLabel": "New recovery email",
+      "newCodeAriaLabel": "New email confirmation code",
+      "codeAriaLabel": "Email confirmation code",
+      "codePlaceholder": "Code",
+      "confirm": "Confirm email",
+      "sendCode": "Send code",
+      "resendCode": "Resend code",
+      "change": "Change email"
+    },
+    "password": {
+      "label": "Password",
+      "reset": "Reset password",
+      "set": "Set password"
+    },
+    "recovery": {
+      "email": "Email",
+      "telegram": "Telegram",
+      "none": "No recovery method configured",
+      "methods": "Recovery methods: {{methods}}"
+    },
+    "providers": {
+      "linked": "{{provider}} account linked ✓",
+      "disconnected": "{{provider}} disconnected",
+      "connect": "Connect",
+      "disconnect": "Disconnect"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    }
+  },
+  "card": {
+    "fallbackUser": "Authora user",
+    "coverAlt": "Profile cover",
+    "avatarAlt": "Avatar",
+    "noRecoveryEmail": "No recovery email",
+    "verified": "✓ verified",
+    "unverified": "· unverified"
+  }
+}

@@ -140,6 +140,16 @@
   align-items: center;
 }
 
+.header-desktop-auth {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.header-mobile-auth {
+  display: none;
+}
+
 .header-mobile-toggle {
   display: none;
   background: none;
@@ -251,6 +261,32 @@
 
     span:last-child {
       display: none; // Hide text on very small screens
+    }
+  }
+
+  .header-nav {
+    min-width: 0;
+  }
+
+  .header-desktop-auth {
+    display: none;
+  }
+
+  .header-mobile-auth {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+
+    button {
+      border: 0;
+      background: transparent;
+      padding: 0;
+      font: inherit;
+      cursor: pointer;
     }
   }
 

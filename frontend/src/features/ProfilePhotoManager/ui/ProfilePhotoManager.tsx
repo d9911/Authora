@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Profile, ProfileImageKind, User } from '@/shared/types';
 import { useAppDispatch, useAppSelector } from '@/processes/store/hooks';
 import { setAuthUser } from '@/processes/store/slices/authSlice';
+import { translateError } from '@/shared/i18n/errors';
 import {
   deleteProfileImageThunk,
   uploadProfileImageThunk,
@@ -14,6 +16,8 @@ import { CoverUploader } from './CoverUploader';
 import styles from './ProfilePhotoManager.module.scss';
 
 export function ProfilePhotoManager({ user, profile }: { user: User; profile: Profile | null }) {
+  const { t } = useTranslation('profile');
+  const { t: tErrors } = useTranslation('errors');
   const dispatch = useAppDispatch();
   const saving = useAppSelector((s) => s.profile.saving);
   const [busyKind, setBusyKind] = useState<ProfileImageKind | null>(null);
@@ -38,7 +42,14 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
     setErrors((current) => ({ ...current, [kind]: null }));
     const validation = validateProfileImageFile(kind, file);
     if (validation) {
-      setErrors((current) => ({ ...current, [kind]: validation }));
+      const message =
+        validation.code === 'UNSUPPORTED_TYPE'
+          ? t('photos.errors.unsupportedType')
+          : t('photos.errors.tooLarge', {
+              kind: t(kind === 'AVATAR' ? 'photos.avatar.title' : 'photos.cover.title'),
+              maxSizeMb: validation.maxSizeMb,
+            });
+      setErrors((current) => ({ ...current, [kind]: message }));
       return;
     }
 
@@ -51,8 +62,11 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
         uploadProfileImageThunk({ kind, dataBase64, mimeType: file.type }),
       ).unwrap();
       dispatch(setAuthUser(payload.user));
-    } catch (e) {
-      setErrors((current) => ({ ...current, [kind]: errorMessage(e, 'Image upload failed.') }));
+    } catch (error) {
+      setErrors((current) => ({
+        ...current,
+        [kind]: translateError(tErrors, error, 'uploadImage'),
+      }));
     } finally {
       setBusyKind(null);
       setLocalPreview((current) => {
@@ -65,7 +79,7 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
 
   const remove = async (kind: ProfileImageKind) => {
     const confirmed = window.confirm(
-      kind === 'AVATAR' ? 'Delete your avatar?' : 'Delete your cover image?',
+      t(kind === 'AVATAR' ? 'photos.confirmDeleteAvatar' : 'photos.confirmDeleteCover'),
     );
     if (!confirmed) return;
 
@@ -74,8 +88,11 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
     try {
       const payload = await dispatch(deleteProfileImageThunk(kind)).unwrap();
       dispatch(setAuthUser(payload.user));
-    } catch (e) {
-      setErrors((current) => ({ ...current, [kind]: errorMessage(e, 'Image delete failed.') }));
+    } catch (error) {
+      setErrors((current) => ({
+        ...current,
+        [kind]: translateError(tErrors, error, 'deleteImage'),
+      }));
     } finally {
       setBusyKind(null);
     }
@@ -86,8 +103,8 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
   return (
     <div className={styles['photo-manager']}>
       <div className={styles['photo-header']}>
-        <span className="eyebrow">Profile photos</span>
-        <h2>Avatar and cover</h2>
+        <span className="eyebrow">{t('photos.eyebrow')}</span>
+        <h2>{t('photos.title')}</h2>
       </div>
       <div className={styles['photo-grid']}>
         <AvatarUploader
@@ -110,10 +127,4 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
       </div>
     </div>
   );
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  if (typeof error === 'string') return error;
-  if (error instanceof Error) return error.message;
-  return fallback;
 }

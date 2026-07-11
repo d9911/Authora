@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { ProfileImageUploaderPanel } from './ProfileImageUploaderPanel';
 import styles from './ProfilePhotoManager.module.scss';
 
@@ -22,18 +23,20 @@ export function AvatarUploader({
   onFile,
   onDelete,
 }: AvatarUploaderProps) {
+  const { t } = useTranslation('profile');
+
   return (
     <ProfileImageUploaderPanel
-      ariaLabel="Avatar image"
-      title="Avatar"
-      description="Stored as a centered 512x512 WebP image and displayed round."
+      ariaLabel={t('photos.avatar.ariaLabel')}
+      title={t('photos.avatar.title')}
+      description={t('photos.avatar.description')}
       imageUrl={imageUrl}
       localPreview={localPreview}
       previewClassName={styles['avatar-preview']}
-      imageAlt="Avatar preview"
+      imageAlt={t('photos.avatar.previewAlt')}
       fallback={<span>{fallbackLabel}</span>}
-      uploadLabel="Upload avatar"
-      replaceLabel="Replace avatar"
+      uploadLabel={t('photos.avatar.upload')}
+      replaceLabel={t('photos.avatar.replace')}
       busy={busy}
       error={error}
       onFile={onFile}

@@ -17,6 +17,7 @@ const passwordInput = read('frontend/src/shared/ui/PasswordInput/PasswordInput.t
 const passwordInputStyles = read('frontend/src/shared/ui/PasswordInput/PasswordInput.module.scss');
 const editProfileForm = read('frontend/src/features/EditProfileForm/EditProfileForm.tsx');
 const authUseCases = read('backend/src/modules/auth/use-cases/AuthUseCases.ts');
+const passwordUseCases = read('backend/src/modules/auth/use-cases/PasswordUseCases.ts');
 const sqliteUsers = read('backend/src/infrastructure/database/sqlite/SqliteUserRepository.ts');
 const mongoUsers = read('backend/src/infrastructure/database/mongo/MongoUserRepository.ts');
 const frontendPolicy = readOptional('frontend/src/shared/lib/passwordPolicy.ts');
@@ -48,25 +49,27 @@ const checks = [
   [
     'profile page loads profile data even when auth was already hydrated by the header',
     /loadMyProfileThunk/.test(editProfileForm) &&
-      /profile\s*===\s*null/.test(editProfileForm) &&
+      /!profileLoaded/.test(editProfileForm) &&
       /status\s*===\s*'authenticated'/.test(editProfileForm),
   ],
   [
     'sign-up form uses confirmPassword and mismatch copy',
-    /confirmPassword/.test(signUp) && /Пароли не совпадают\./.test(signUp),
+    /confirmPassword/.test(signUp) &&
+      /tValidation\('passwordMismatch'\)/.test(signUp),
   ],
   [
     'sign-up form has accessible show-hide buttons for both password fields',
-    /PasswordInput/.test(signUp) &&
-      /showAriaLabel="Показать пароль"/.test(signUp) &&
-      /showAriaLabel="Показать повтор пароля"/.test(signUp) &&
-      /aria-label=\{visible \? hideAriaLabel : showAriaLabel\}/.test(passwordInput) &&
+      /PasswordInput/.test(signUp) &&
+      /showAriaLabel=\{t\('signUp\.fields\.passwordShowAriaLabel'\)\}/.test(signUp) &&
+      /showAriaLabel=\{t\('signUp\.fields\.confirmPasswordShowAriaLabel'\)\}/.test(signUp) &&
+      /hideAriaLabel \?\? t\('password\.hide'\)/.test(passwordInput) &&
+      /showAriaLabel \?\? t\('password\.show'\)/.test(passwordInput) &&
       /type="button"/.test(passwordInput),
   ],
   [
     'sign-up form validates with the shared frontend password policy',
     /PASSWORD_ALLOWED_REGEX/.test(signUp) &&
-      /PASSWORD_POLICY_HINT/.test(signUp) &&
+      /tValidation\('passwordPolicy'/.test(signUp) &&
       /disabled=\{submitDisabled\}/.test(signUp),
   ],
   [
@@ -97,7 +100,7 @@ const checks = [
   [
     'backend auth use-cases use server-side password policy validation',
     /validatePassword\(input\.password\)/.test(authUseCases) &&
-      /validatePassword\(newPassword\)/.test(authUseCases) &&
+      /validatePassword\(newPassword\)/.test(passwordUseCases) &&
       !/password\.length\s*<\s*8/.test(authUseCases),
   ],
   [

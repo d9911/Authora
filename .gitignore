@@ -42,6 +42,7 @@ package-lock.json
 */package-lock.json
 yarn.lock
 */yarn.lock
+!frontend/yarn.lock
 # IDE
 .vscode/
 .idea/

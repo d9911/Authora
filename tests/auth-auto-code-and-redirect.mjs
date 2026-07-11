@@ -37,7 +37,8 @@ const checks = [
   ],
   [
     'sign-up redirects straight to the email code screen',
-    /ROUTES\.confirmEmail/.test(signUp) &&
+    /getLocalizedRoutes/.test(signUp) &&
+      /routes\.confirmEmail/.test(signUp) &&
       /encodeURIComponent\(email\.trim\(\)\)/.test(signUp) &&
       !/router\.replace\('\/profile\/edit'\)/.test(signUp),
   ],
@@ -74,7 +75,8 @@ const checks = [
   [
     'confirm-email refreshes auth state and redirects home after success',
     /loadMeThunk/.test(confirmEmail) &&
-      /router\.replace\(ROUTES\.home\)/.test(confirmEmail) &&
+      /getLocalizedRoutes/.test(confirmEmail) &&
+      /router\.replace\(routes\.home\)/.test(confirmEmail) &&
       !/router\.replace\('\/profile\/edit'\)/.test(confirmEmail),
   ],
   [
@@ -88,7 +90,7 @@ const checks = [
   ],
   [
     'telegram opens an app-owned waiting page instead of about:blank',
-    /ROUTES\.telegramOpening/.test(telegramLoginButton) &&
+    /routes\.telegramOpening/.test(telegramLoginButton) &&
       !/window\.open\(['"](?:about:blank)?['"]\s*,\s*['"]_blank['"]/.test(telegramLoginButton),
   ],
   [
@@ -100,7 +102,7 @@ const checks = [
   [
     'telegram link returns to profile with linked confirmation',
     /res\.status === 'linked'/.test(telegramLoginButton) &&
-      /window\.location\.replace\(LINKED_TELEGRAM_PROFILE_PATH\)/.test(telegramLoginButton),
+      /window\.location\.replace\(linkedTelegramProfilePath\)/.test(telegramLoginButton),
   ],
   [
     'github login flow stays separate from the telegram bot flow',

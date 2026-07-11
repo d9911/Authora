@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import {
   Badge,
   ButtonMain,
@@ -24,82 +25,56 @@ type KitCategory = 'all' | 'surfaces' | 'actions' | 'forms' | 'feedback';
 interface KitComponentCard {
   id: string;
   category: Exclude<KitCategory, 'all'>;
-  title: string;
-  description: string;
   layer: 'shared/ui' | 'entities/ui-kit' | 'widgets/page-blocks';
   status: 'ready' | 'interactive' | 'layout';
 }
 
-const tabs: TabOption<KitCategory>[] = [
-  { value: 'all', label: 'All parts' },
-  { value: 'surfaces', label: 'Surfaces' },
-  { value: 'actions', label: 'Actions' },
-  { value: 'forms', label: 'Forms' },
-  { value: 'feedback', label: 'Feedback' },
-];
-
-const components: KitComponentCard[] = [
+const kitComponents: KitComponentCard[] = [
   {
     id: 'spatial-card',
     category: 'surfaces',
-    title: 'Spatial Card',
-    description: 'Premium surface with hover lift, glow border, selected state and crisp radius.',
     layer: 'shared/ui',
     status: 'interactive',
   },
   {
     id: 'hero-preview',
     category: 'surfaces',
-    title: 'Pseudo 3D Preview',
-    description: 'CSS/SVG depth scene for hero blocks when no 3D dependency is allowed.',
     layer: 'shared/ui',
     status: 'ready',
   },
   {
     id: 'actions',
     category: 'actions',
-    title: 'Action Set',
-    description: 'Primary, secondary, ghost and icon actions with focus-visible and active states.',
     layer: 'shared/ui',
     status: 'ready',
   },
   {
     id: 'segment-tabs',
     category: 'actions',
-    title: 'Segment Tabs',
-    description: 'Accessible tablist for filters, modes and showcase navigation.',
     layer: 'shared/ui',
     status: 'interactive',
   },
   {
     id: 'inputs',
     category: 'forms',
-    title: 'Control Stack',
-    description: 'Input, toggle, range and progress primitives for dense tool surfaces.',
     layer: 'shared/ui',
     status: 'interactive',
   },
   {
     id: 'overlay',
     category: 'feedback',
-    title: 'Overlay Feedback',
-    description: 'Modal and toast patterns for confirmations, previews and saved states.',
     layer: 'shared/ui',
     status: 'interactive',
   },
   {
     id: 'entity-group',
     category: 'surfaces',
-    title: 'Entity Composition',
-    description: 'Domain-facing compositions group primitive parts without leaking into shared.',
     layer: 'entities/ui-kit',
     status: 'layout',
   },
   {
     id: 'page-block',
     category: 'feedback',
-    title: 'Page Block',
-    description: 'Route-level assembly stays in widgets/page-blocks so app pages stay thin.',
     layer: 'widgets/page-blocks',
     status: 'layout',
   },
@@ -160,6 +135,7 @@ function Glyph({ name }: { name: 'grid' | 'spark' | 'panel' | 'check' | 'plus' |
 }
 
 export function UiKitShowcase() {
+  const { t } = useTranslation('ui');
   const [activeTab, setActiveTab] = useState<KitCategory>('all');
   const [selectedId, setSelectedId] = useState('spatial-card');
   const [motionEnabled, setMotionEnabled] = useState(true);
@@ -171,12 +147,22 @@ export function UiKitShowcase() {
   const visibleComponents = useMemo(
     () =>
       activeTab === 'all'
-        ? components
-        : components.filter((component) => component.category === activeTab),
+        ? kitComponents
+        : kitComponents.filter((component) => component.category === activeTab),
     [activeTab],
   );
 
-  const selectedComponent = components.find((component) => component.id === selectedId) ?? components[0];
+  const selectedComponent =
+    kitComponents.find((component) => component.id === selectedId) ?? kitComponents[0];
+  const tabs: TabOption<KitCategory>[] = [
+    { value: 'all', label: t('showcase.tabs.all') },
+    { value: 'surfaces', label: t('showcase.tabs.surfaces') },
+    { value: 'actions', label: t('showcase.tabs.actions') },
+    { value: 'forms', label: t('showcase.tabs.forms') },
+    { value: 'feedback', label: t('showcase.tabs.feedback') },
+  ];
+  const componentTitle = (id: string) => t(`components.${id}.title`);
+  const componentDescription = (id: string) => t(`components.${id}.description`);
 
   useEffect(() => {
     if (!toastOpen) return;
@@ -189,15 +175,20 @@ export function UiKitShowcase() {
     <section className={styles.showcase} aria-labelledby="ui-kit-showcase-title">
       <div className={styles.sectionTop}>
         <SectionHeader
-          eyebrow="Component selector"
-          title="Choose the parts, then compose them by layer."
-          description="The selector demonstrates how neutral shared primitives become richer entity compositions without breaking the FSD dependency rule."
+          eyebrow={t('showcase.header.eyebrow')}
+          title={t('showcase.header.title')}
+          description={t('showcase.header.description')}
         />
-        <Tabs options={tabs} value={activeTab} onChange={setActiveTab} label="UI kit categories" />
+        <Tabs
+          options={tabs}
+          value={activeTab}
+          onChange={setActiveTab}
+          label={t('showcase.accessibility.categories')}
+        />
       </div>
 
       <div className={`${styles.layout} ${compactMode ? styles.compact : ''}`}>
-        <div className={styles.catalog} aria-label="UI components">
+        <div className={styles.catalog} aria-label={t('showcase.accessibility.components')}>
           {visibleComponents.map((component) => {
             const selected = component.id === selectedId;
 
@@ -213,12 +204,14 @@ export function UiKitShowcase() {
                   selected={selected}
                   tone={selected ? 'glass' : 'plain'}
                   eyebrow={component.layer}
-                  title={component.title}
-                  description={component.description}
+                  title={componentTitle(component.id)}
+                  description={componentDescription(component.id)}
                   footer={
                     <div className={styles.cardFooter}>
-                      <Badge tone={statusTone[component.status]}>{component.status}</Badge>
-                      <span>{component.category}</span>
+                      <Badge tone={statusTone[component.status]}>
+                        {t(`showcase.status.${component.status}`)}
+                      </Badge>
+                      <span>{t(`showcase.categories.${component.category}`)}</span>
                     </div>
                   }
                 />
@@ -227,18 +220,23 @@ export function UiKitShowcase() {
           })}
         </div>
 
-        <aside className={styles.inspector} aria-label="Selected component preview">
+        <aside
+          className={styles.inspector}
+          aria-label={t('showcase.accessibility.selectedPreview')}
+        >
           <Card
             tone="dark"
-            title={selectedComponent.title}
-            description={selectedComponent.description}
-            eyebrow="Selected"
+            title={componentTitle(selectedComponent.id)}
+            description={componentDescription(selectedComponent.id)}
+            eyebrow={t('showcase.selected')}
             footer={
               <div className={styles.layerLine}>
                 <Badge tone="accent" variant="outline">
                   {selectedComponent.layer}
                 </Badge>
-                <Badge tone={statusTone[selectedComponent.status]}>{selectedComponent.status}</Badge>
+                <Badge tone={statusTone[selectedComponent.status]}>
+                  {t(`showcase.status.${selectedComponent.status}`)}
+                </Badge>
               </div>
             }
           >
@@ -249,28 +247,32 @@ export function UiKitShowcase() {
             />
           </Card>
 
-          <Card tone="glass" title="Controls" description="Local state changes the preview immediately.">
+          <Card
+            tone="glass"
+            title={t('showcase.controls.title')}
+            description={t('showcase.controls.description')}
+          >
             <ToggleSwitch
-              label="Motion"
-              hint="CSS-only animation, disabled under reduced motion."
+              label={t('showcase.controls.motion.label')}
+              hint={t('showcase.controls.motion.hint')}
               checked={motionEnabled}
               onChange={(event) => setMotionEnabled(event.target.checked)}
             />
             <ToggleSwitch
-              label="Compact density"
-              hint="Switches the same components into a tighter layout."
+              label={t('showcase.controls.compact.label')}
+              hint={t('showcase.controls.compact.hint')}
               checked={compactMode}
               onChange={(event) => setCompactMode(event.target.checked)}
             />
             <RangeControl
-              label="Scene depth"
+              label={t('showcase.controls.depth')}
               min={58}
               max={110}
               value={depth}
               suffix="%"
               onChange={(event) => setDepth(Number(event.target.value))}
             />
-            <ProgressBar label="Composition readiness" value={depth} showValue />
+            <ProgressBar label={t('showcase.controls.readiness')} value={depth} showValue />
           </Card>
         </aside>
       </div>
@@ -278,47 +280,84 @@ export function UiKitShowcase() {
       <div className={styles.demoGrid}>
         <Card
           tone="plain"
-          title="Action cluster"
-          description="Buttons, icon buttons and state feedback share focus and hover behavior."
+          title={t('showcase.demos.actions.title')}
+          description={t('showcase.demos.actions.description')}
           footer={
             <div className={styles.actionRow}>
-              <ButtonMain onClick={() => setToastOpen(true)}>Show toast</ButtonMain>
-              <ButtonMain variant="secondary" onClick={() => setModalOpen(true)}>
-                Open modal
+              <ButtonMain onClick={() => setToastOpen(true)}>
+                {t('showcase.demos.actions.showToast')}
               </ButtonMain>
-              <IconButton icon={<Glyph name="spark" />} label="Generate" variant="accent" />
-              <IconButton icon={<Glyph name="eye" />} label="Preview" variant="glass" />
+              <ButtonMain variant="secondary" onClick={() => setModalOpen(true)}>
+                {t('showcase.demos.actions.openModal')}
+              </ButtonMain>
+              <IconButton
+                icon={<Glyph name="spark" />}
+                label={t('showcase.demos.actions.generate')}
+                variant="accent"
+              />
+              <IconButton
+                icon={<Glyph name="eye" />}
+                label={t('showcase.demos.actions.preview')}
+                variant="glass"
+              />
             </div>
           }
         >
           <div className={styles.miniStats}>
             <span>
-              <strong>8</strong>
-              groups
+              <Trans
+                t={t}
+                i18nKey="showcase.stats.groups"
+                count={8}
+                components={{ count: <strong /> }}
+              />
             </span>
             <span>
-              <strong>3+</strong>
-              mechanics
+              <Trans
+                t={t}
+                i18nKey="showcase.stats.mechanics"
+                count={3}
+                components={{ count: <strong /> }}
+              />
             </span>
             <span>
-              <strong>0</strong>
-              deps
+              <Trans
+                t={t}
+                i18nKey="showcase.stats.dependencies"
+                count={0}
+                components={{ count: <strong /> }}
+              />
             </span>
           </div>
         </Card>
 
-        <Card tone="glass" title="Form stack" description="Reusable controls for product, auth and admin surfaces.">
-          <InputMain label="Search component" placeholder="Card, tabs, overlay..." />
-          <InputMain label="Token preview" placeholder="ui-kit:selected" mono />
+        <Card
+          tone="glass"
+          title={t('showcase.demos.form.title')}
+          description={t('showcase.demos.form.description')}
+        >
+          <InputMain
+            label={t('showcase.demos.form.searchLabel')}
+            placeholder={t('showcase.demos.form.searchPlaceholder')}
+          />
+          <InputMain
+            label={t('showcase.demos.form.tokenLabel')}
+            placeholder="ui-kit:selected"
+            mono
+          />
           <div className={styles.formActions}>
-            <ButtonMain size="small">Apply</ButtonMain>
+            <ButtonMain size="small">{t('showcase.demos.form.apply')}</ButtonMain>
             <ButtonMain size="small" variant="ghost">
-              Reset
+              {t('showcase.demos.form.reset')}
             </ButtonMain>
           </div>
         </Card>
 
-        <Card tone="accent" title="FSD map" description="One-way imports keep the kit reusable.">
+        <Card
+          tone="accent"
+          title={t('showcase.demos.layers.title')}
+          description={t('showcase.demos.layers.description')}
+        >
           <div className={styles.layerStack}>
             {['app', 'widgets/page-blocks', 'entities/ui-kit', 'shared/ui'].map((layer, index) => (
               <div key={layer} className={styles.layerItem}>
@@ -330,19 +369,19 @@ export function UiKitShowcase() {
         </Card>
       </div>
 
-      <div className={styles.timeline} aria-label="UI composition process">
+      <div className={styles.timeline} aria-label={t('showcase.timeline.ariaLabel')}>
         {[
-          ['01', 'Primitive', 'Build neutral controls in shared/ui.'],
-          ['02', 'Composition', 'Group selected states and demos in entities/ui-kit.'],
-          ['03', 'Page block', 'Assemble the public page in widgets/page-blocks.'],
-          ['04', 'Route', 'Keep app route thin and predictable.'],
-        ].map(([step, title, description]) => (
+          ['01', 'primitive'],
+          ['02', 'composition'],
+          ['03', 'pageBlock'],
+          ['04', 'route'],
+        ].map(([step, key]) => (
           <Card key={step} interactive tone="glass">
             <div className={styles.timelineItem}>
               <Badge tone="accent">{step}</Badge>
               <div>
-                <h3>{title}</h3>
-                <p>{description}</p>
+                <h3>{t(`showcase.timeline.steps.${key}.title`)}</h3>
+                <p>{t(`showcase.timeline.steps.${key}.description`)}</p>
               </div>
               <Glyph name="check" />
             </div>
@@ -350,13 +389,18 @@ export function UiKitShowcase() {
         ))}
       </div>
 
-      <ModalMain open={modalOpen} title="Preview overlay" onClose={() => setModalOpen(false)}>
+      <ModalMain
+        open={modalOpen}
+        title={t('showcase.modal.title')}
+        onClose={() => setModalOpen(false)}
+      >
         <p className={styles.modalText}>
-          This modal is opened from the UI kit entity and rendered by a shared primitive. It proves the
-          overlay path without adding a new dependency.
+          {t('showcase.modal.description')}
         </p>
         <div className={styles.modalActions}>
-          <ButtonMain onClick={() => setModalOpen(false)}>Close</ButtonMain>
+          <ButtonMain onClick={() => setModalOpen(false)}>
+            {t('showcase.modal.close')}
+          </ButtonMain>
           <ButtonMain
             variant="secondary"
             onClick={() => {
@@ -364,7 +408,7 @@ export function UiKitShowcase() {
               setToastOpen(true);
             }}
           >
-            Save state
+            {t('showcase.modal.save')}
           </ButtonMain>
         </div>
       </ModalMain>
@@ -372,8 +416,8 @@ export function UiKitShowcase() {
       <Toast
         open={toastOpen}
         tone="success"
-        title="UI state updated"
-        description="The selected kit configuration is visible on the page."
+        title={t('showcase.toast.title')}
+        description={t('showcase.toast.description')}
       />
     </section>
   );

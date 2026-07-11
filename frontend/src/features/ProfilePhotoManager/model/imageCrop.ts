@@ -9,15 +9,20 @@ const LIMITS: Record<ProfileImageKind, number> = {
 
 const ALLOWED_TYPES = new Set(PROFILE_IMAGE_ACCEPT.split(','));
 
-export function validateProfileImageFile(kind: ProfileImageKind, file: File): string | null {
+export type ProfileImageValidationError =
+  | { code: 'UNSUPPORTED_TYPE' }
+  | { code: 'FILE_TOO_LARGE'; maxSizeMb: number };
+
+export function validateProfileImageFile(
+  kind: ProfileImageKind,
+  file: File,
+): ProfileImageValidationError | null {
   if (!ALLOWED_TYPES.has(file.type)) {
-    return 'Only JPEG, PNG, and WebP images are allowed.';
+    return { code: 'UNSUPPORTED_TYPE' };
   }
   const limit = LIMITS[kind];
   if (file.size > limit) {
-    return `${kind === 'AVATAR' ? 'Avatar' : 'Cover'} image must be ${
-      limit / 1024 / 1024
-    } MB or smaller.`;
+    return { code: 'FILE_TOO_LARGE', maxSizeMb: limit / 1024 / 1024 };
   }
   return null;
 }

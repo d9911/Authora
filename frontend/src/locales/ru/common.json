@@ -1,0 +1,142 @@
+{
+  "metadata": {
+    "root": {
+      "title": "{{appName}} — защищённая цифровая идентичность",
+      "description": "Аутентификация, профили и публичный атлас. Ваша цифровая идентичность под защитой."
+    },
+    "about": {
+      "title": "О проекте"
+    },
+    "manifest": {
+      "description": "Authora — платформа аутентификации и управления профилем"
+    }
+  },
+  "language": {
+    "label": "Язык",
+    "switcherLabel": "Выбрать язык интерфейса",
+    "current": "Текущий язык: {{language}}"
+  },
+  "languageSwitcher": {
+    "label": "Язык",
+    "ariaLabel": "Выбрать язык"
+  },
+  "navigation": {
+    "home": "Главная",
+    "countries": "Страны",
+    "about": "О проекте",
+    "profile": "Профиль",
+    "signIn": "Войти",
+    "signUp": "Создать аккаунт",
+    "logout": "Выйти",
+    "getStarted": "Начать"
+  },
+  "actions": {
+    "back": "Назад",
+    "cancel": "Отмена",
+    "close": "Закрыть",
+    "confirm": "Подтвердить",
+    "continue": "Продолжить",
+    "delete": "Удалить",
+    "retry": "Повторить",
+    "save": "Сохранить",
+    "send": "Отправить",
+    "reset": "Сбросить",
+    "apply": "Применить",
+    "logout": "Выйти",
+    "signIn": "Войти",
+    "getStarted": "Начать"
+  },
+  "accessibility": {
+    "toggleMenu": "Открыть или закрыть меню",
+    "closeDialog": "Закрыть диалог"
+  },
+  "status": {
+    "loading": "Загрузка…",
+    "working": "Выполняется…",
+    "saving": "Сохранение…",
+    "redirecting": "Перенаправление…",
+    "success": "Готово",
+    "unavailable": "Перевод недоступен"
+  },
+  "password": {
+    "label": "Пароль",
+    "show": "Показать пароль",
+    "hide": "Скрыть пароль",
+    "showAction": "Показать",
+    "hideAction": "Скрыть"
+  },
+  "theme": {
+    "label": "Тема",
+    "light": "Светлая",
+    "dark": "Тёмная",
+    "switchToLight": "Переключить на светлую тему",
+    "switchToDark": "Переключить на тёмную тему"
+  },
+  "home": {
+    "eyebrow": "{{appName}} · платформа идентификации",
+    "hero": {
+      "title": "Ваша цифровая идентичность,<lineBreak/>окружённая <accent>аурой</accent>.",
+      "description": "Аутентификация, которая защищает и не мешает: коды подтверждения, восстановление, двухфакторная защита и привязка социальных аккаунтов в одном спокойном интерфейсе."
+    },
+    "actions": {
+      "createIdentity": "Создать профиль",
+      "exploreAtlas": "Открыть атлас"
+    },
+    "capabilities": {
+      "auth": {
+        "title": "Надёжные сессии",
+        "description": "Email и пароль с JWT access/refresh-токенами, ротацией и хранением в httpOnly cookies. Сессия восстанавливается незаметно для пользователя."
+      },
+      "twoFactor": {
+        "title": "Второй фактор",
+        "description": "Одноразовые коды из любого приложения-аутентификатора: подключение по QR-коду и проверка при входе."
+      },
+      "oauth": {
+        "title": "Ваши аккаунты вместе",
+        "description": "Вход и привязка GitHub и Telegram к единому профилю с возможностью отключить их в любой момент."
+      },
+      "atlas": {
+        "title": "Публичный атлас",
+        "description": "Просматривайте страны, регионы и города, полученные напрямую из GraphQL API."
+      }
+    }
+  },
+  "about": {
+    "title": "О проекте {{appName}}",
+    "description": "Это демонстрационное fullstack-приложение с frontend на Next.js в архитектуре Feature-Sliced Design и backend на Express + GraphQL в Clean Architecture. Оно показывает JWT-аутентификацию с ротацией refresh-токенов, подтверждение email, восстановление пароля, двухфакторную аутентификацию, управление профилем и публичные географические страницы.",
+    "stack": "Frontend: Next.js · TypeScript · Redux · Sass · PWA."
+  },
+  "notFound": {
+    "title": "404",
+    "description": "Страница не найдена.",
+    "home": "На главную"
+  },
+  "footer": {
+    "description": "Платформа аутентификации, восстановления доступа и управления профилем.",
+    "columns": {
+      "product": "Продукт",
+      "account": "Аккаунт",
+      "company": "Компания",
+      "services": "Услуги"
+    },
+    "links": {
+      "countries": "Страны",
+      "profile": "Профиль",
+      "signIn": "Войти",
+      "createAccount": "Создать аккаунт",
+      "about": "О проекте",
+      "home": "Главная",
+      "webDevelopment": "Веб-разработка",
+      "backend": "Backend",
+      "integrations": "Интеграции"
+    },
+    "copyright": "© {{year}} {{appName}}. Все права защищены.",
+    "privacy": "Политика конфиденциальности",
+    "terms": "Условия использования",
+    "builtWith": "Сделано на Next.js · FSD"
+  },
+  "offline": {
+    "title": "Нет подключения",
+    "description": "Проверьте интернет-соединение и попробуйте снова."
+  }
+}

@@ -1,4 +1,7 @@
+'use client';
+
 import { ButtonHTMLAttributes } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from './ThemeToggle.module.scss';
 
 type ThemeToggleMode = 'light' | 'dark';
@@ -8,13 +11,14 @@ interface ThemeToggleProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>,
   label?: string;
 }
 
-export function ThemeToggle({ theme, label = 'Theme', className, ...rest }: ThemeToggleProps) {
+export function ThemeToggle({ theme, label, className, ...rest }: ThemeToggleProps) {
+  const { t } = useTranslation('common');
   const isDark = theme === 'dark';
 
   return (
     <button
       type="button"
-      aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
+      aria-label={t(isDark ? 'theme.switchToLight' : 'theme.switchToDark')}
       aria-pressed={isDark}
       className={`${styles.toggle} ${isDark ? styles.dark : styles.light} ${className || ''}`}
       {...rest}
@@ -24,8 +28,10 @@ export function ThemeToggle({ theme, label = 'Theme', className, ...rest }: Them
         <span className={styles.moon} />
       </span>
       <span className={styles.copy}>
-        <span className={styles.label}>{label}</span>
-        <span className={styles.value}>{isDark ? 'Dark' : 'Light'}</span>
+        <span className={styles.label}>{label ?? t('theme.label')}</span>
+        <span className={styles.value}>
+          {t(isDark ? 'theme.dark' : 'theme.light')}
+        </span>
       </span>
     </button>
   );

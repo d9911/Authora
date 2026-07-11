@@ -1,0 +1,10 @@
+{
+  "required": "Complete this field.",
+  "email": "Enter a valid email address.",
+  "passwordPolicy": "The password must be {{min}}–{{max}} characters long. Allowed characters: Latin letters A–Z/a–z, Ñ/ñ, digits 0–9 and ! @ # $ % ^ & * ( ) _ + = . , ? : ~ [ ].",
+  "passwordMismatch": "Passwords do not match.",
+  "otpLength": "Enter the 6-digit code.",
+  "recoveryCodeRequired": "Enter a recovery code.",
+  "fileType": "Choose a supported image format.",
+  "fileSize": "The file must not exceed {{maxSize}}."
+}

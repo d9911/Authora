@@ -1,6 +1,7 @@
 'use client';
 
 import { InputHTMLAttributes, useId, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from './PasswordInput.module.scss';
 
 interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
@@ -15,10 +16,11 @@ export function PasswordInput({
   id,
   error,
   className,
-  showAriaLabel = 'Показать пароль',
-  hideAriaLabel = 'Скрыть пароль',
+  showAriaLabel,
+  hideAriaLabel,
   ...rest
 }: PasswordInputProps) {
+  const { t } = useTranslation('common');
   const generatedId = useId();
   const inputId = id ?? generatedId;
   const errorId = `${inputId}-error`;
@@ -43,10 +45,14 @@ export function PasswordInput({
         <button
           className={styles['password-toggle']}
           type="button"
-          aria-label={visible ? hideAriaLabel : showAriaLabel}
+          aria-label={
+            visible
+              ? (hideAriaLabel ?? t('password.hide'))
+              : (showAriaLabel ?? t('password.show'))
+          }
           onClick={() => setVisible((value) => !value)}
         >
-          {visible ? 'Hide' : 'Show'}
+          {visible ? t('password.hide') : t('password.show')}
         </button>
       </div>
       {error && (

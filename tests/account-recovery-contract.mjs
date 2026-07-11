@@ -27,6 +27,8 @@ const resetForm = read('frontend/src/features/PasswordResetForm/PasswordResetFor
 const telegramTickets = read('backend/src/modules/auth/domain/TelegramTicketRepository.ts');
 const routes = read('frontend/src/shared/lib/routes.ts');
 const legacyAuthApi = read('frontend/src/features/auth-api/authApi.ts');
+const ruValidation = JSON.parse(read('frontend/src/locales/ru/validation.json'));
+const enValidation = JSON.parse(read('frontend/src/locales/en/validation.json'));
 
 assert.match(authUseCases, /exchangePasswordResetToken/);
 assert.match(authUseCases, /completePasswordReset/);
@@ -47,7 +49,9 @@ assert.match(requestHandler, /completePasswordReset/);
 
 assert.match(resetForm, /confirmPassword/);
 assert.match(resetForm, /PASSWORD_ALLOWED_REGEX/);
-assert.match(resetForm, /Пароли не совпадают\./);
+assert.match(resetForm, /tValidation\('passwordMismatch'\)/);
+assert.equal(ruValidation.passwordMismatch, 'Пароли не совпадают.');
+assert.equal(enValidation.passwordMismatch, 'Passwords do not match.');
 assert.match(resetForm, /autoComplete="new-password"/);
 assert.match(routes, /resetPassword:/);
 assert.match(legacyAuthApi, /features\/password-reset\/api\/passwordResetApi/);

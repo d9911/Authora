@@ -1,6 +1,7 @@
 'use client';
 
 import { ButtonHTMLAttributes } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from './ButtonMain.module.scss';
 
 interface ButtonMainProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -24,6 +25,7 @@ export function ButtonMain({
   className,
   ...rest
 }: ButtonMainProps) {
+  const { t } = useTranslation('common');
   const classes = [
     styles.button,
     styles[`button-${variant}`],
@@ -36,7 +38,7 @@ export function ButtonMain({
 
   return (
     <button {...rest} disabled={disabled || loading} className={classes}>
-      {loading ? 'Working…' : children}
+      {loading ? t('status.working') : children}
     </button>
   );
 }

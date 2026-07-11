@@ -1,6 +1,16 @@
 import { spawnSync } from 'node:child_process';
 
 const commands = [
+  ['node', ['tests/i18n-config-and-routing.mjs']],
+  ['node', ['tests/i18n-locale-routing-contract.mjs']],
+  ['node', ['tests/i18n-locales-parity.mjs']],
+  ['node', ['tests/i18n-used-keys.mjs']],
+  ['node', ['tests/i18n-source-coverage.mjs']],
+  ['node', ['tests/i18n-production-fallback.mjs']],
+  ['node', ['tests/i18n-metadata.mjs']],
+  ['node', ['tests/i18n-auth-integration.mjs']],
+  ['node', ['tests/i18n-mobile-header.mjs']],
+  ['node', ['tests/auth-flow-and-registration.mjs']],
   ['node', ['tests/backend-clean-architecture-boundaries.mjs']],
   ['node', ['tests/frontend-fsd-boundaries.mjs']],
   ['node', ['tests/auth-auto-code-and-redirect.mjs']],

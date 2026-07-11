@@ -1,0 +1,142 @@
+{
+  "metadata": {
+    "root": {
+      "title": "{{appName}} — identity, secured",
+      "description": "Authentication, profiles and a public atlas. Your identity, with an aura."
+    },
+    "about": {
+      "title": "About"
+    },
+    "manifest": {
+      "description": "Authora — authentication and profile management platform"
+    }
+  },
+  "language": {
+    "label": "Language",
+    "switcherLabel": "Choose interface language",
+    "current": "Current language: {{language}}"
+  },
+  "languageSwitcher": {
+    "label": "Language",
+    "ariaLabel": "Select language"
+  },
+  "navigation": {
+    "home": "Home",
+    "countries": "Countries",
+    "about": "About",
+    "profile": "Profile",
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "logout": "Log out",
+    "getStarted": "Get started"
+  },
+  "actions": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "delete": "Delete",
+    "retry": "Try again",
+    "save": "Save",
+    "send": "Send",
+    "reset": "Reset",
+    "apply": "Apply",
+    "logout": "Log out",
+    "signIn": "Sign in",
+    "getStarted": "Get started"
+  },
+  "accessibility": {
+    "toggleMenu": "Toggle menu",
+    "closeDialog": "Close dialog"
+  },
+  "status": {
+    "loading": "Loading…",
+    "working": "Working…",
+    "saving": "Saving…",
+    "redirecting": "Redirecting…",
+    "success": "Done",
+    "unavailable": "Translation unavailable"
+  },
+  "password": {
+    "label": "Password",
+    "show": "Show password",
+    "hide": "Hide password",
+    "showAction": "Show",
+    "hideAction": "Hide"
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "switchToLight": "Switch to light theme",
+    "switchToDark": "Switch to dark theme"
+  },
+  "home": {
+    "eyebrow": "{{appName}} · identity platform",
+    "hero": {
+      "title": "Your identity,<lineBreak/>wrapped in an <accent>aura</accent>.",
+      "description": "Authentication that protects without getting in the way — confirmation codes, recovery, two-factor and social linking, all in one calm surface."
+    },
+    "actions": {
+      "createIdentity": "Create your identity",
+      "exploreAtlas": "Explore the atlas"
+    },
+    "capabilities": {
+      "auth": {
+        "title": "Sessions that hold",
+        "description": "Email and password with JWT access and refresh tokens, rotation and httpOnly cookie storage. The session restores itself before you notice it lapsed."
+      },
+      "twoFactor": {
+        "title": "A second factor",
+        "description": "Time-based codes from any authenticator app, enrolled with a QR code and verified on sign-in."
+      },
+      "oauth": {
+        "title": "Bring your accounts",
+        "description": "Sign in or link GitHub and Telegram to one identity, and disconnect them at any time."
+      },
+      "atlas": {
+        "title": "A public atlas",
+        "description": "Browse countries, regions and cities served directly from the GraphQL API."
+      }
+    }
+  },
+  "about": {
+    "title": "About {{appName}}",
+    "description": "This is a demo fullstack application with a Next.js frontend using Feature-Sliced Design and an Express + GraphQL backend using Clean Architecture. It showcases JWT authentication with refresh-token rotation, email confirmation, password recovery, two-factor authentication, profile management and public geographic pages.",
+    "stack": "Frontend: Next.js · TypeScript · Redux · Sass · PWA."
+  },
+  "notFound": {
+    "title": "404",
+    "description": "This page could not be found.",
+    "home": "Go home"
+  },
+  "footer": {
+    "description": "Authentication, account recovery and profile management platform.",
+    "columns": {
+      "product": "Product",
+      "account": "Account",
+      "company": "Company",
+      "services": "Services"
+    },
+    "links": {
+      "countries": "Countries",
+      "profile": "Profile",
+      "signIn": "Sign in",
+      "createAccount": "Create account",
+      "about": "About",
+      "home": "Home",
+      "webDevelopment": "Web Development",
+      "backend": "Backend",
+      "integrations": "Integrations"
+    },
+    "copyright": "© {{year}} {{appName}}. All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Use",
+    "builtWith": "Built with Next.js · FSD"
+  },
+  "offline": {
+    "title": "You are offline",
+    "description": "Check your internet connection and try again."
+  }
+}

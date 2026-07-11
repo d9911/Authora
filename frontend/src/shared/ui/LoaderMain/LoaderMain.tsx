@@ -1,6 +1,10 @@
 'use client';
 
-export function LoaderMain({ label = 'Loading…' }: { label?: string }) {
+import { useTranslation } from 'react-i18next';
+
+export function LoaderMain({ label }: { label?: string }) {
+  const { t } = useTranslation('common');
+
   return (
     <div
       style={{
@@ -23,7 +27,7 @@ export function LoaderMain({ label = 'Loading…' }: { label?: string }) {
           animation: 'spin 0.8s linear infinite',
         }}
       />
-      {label}
+      {label ?? t('status.loading')}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );

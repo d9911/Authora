@@ -1,13 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { ReactNode, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { config } from '@/shared/config'
 import { useAppDispatch, useAppSelector } from '@/processes/store/hooks'
 import { loadMeThunk, logoutThunk } from '@/processes/store/slices/authSlice'
+import { LanguageSwitcher } from '@/features/LanguageSwitcher/LanguageSwitcher'
 import { ButtonMain } from '@/shared/ui'
-import { ROUTES } from '@/shared/lib/routes'
+import { getLocalizedRoutes } from '@/shared/lib/routes'
+import { i18nConfig, normalizeLocale } from '@/shared/i18n/config'
 import styles from './HeaderMain.module.scss'
 
 function AuraMark() {
@@ -26,8 +29,12 @@ interface HeaderMainProps {
 }
 
 export function HeaderMain({ afterActions }: HeaderMainProps) {
+  const { t } = useTranslation('common')
   const dispatch = useAppDispatch()
   const router = useRouter()
+  const params = useParams<{ locale?: string }>()
+  const locale = normalizeLocale(params.locale) ?? i18nConfig.defaultLocale
+  const routes = getLocalizedRoutes(locale)
   const { user, status } = useAppSelector((s) => s.auth)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
@@ -68,7 +75,7 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
     await dispatch(logoutThunk())
     setAccountMenuOpen(false)
     setMobileOpen(false)
-    router.push(ROUTES.home)
+    router.push(routes.home)
   }
 
   const closeMenus = () => {
@@ -83,22 +90,26 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
   return (
     <header className={styles.header}>
       <div className={`container ${styles['header-container']}`}>
-        <Link href={ROUTES.home} className={styles['header-logo']}>
+        <Link href={routes.home} className={styles['header-logo']}>
           <AuraMark />
           <span>{config.appName}</span>
         </Link>
 
-        <button className={styles['header-mobile-toggle']} onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
+        <button
+          className={styles['header-mobile-toggle']}
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label={t('accessibility.toggleMenu')}
+        >
           {mobileOpen ? '✕' : '☰'}
         </button>
 
         <nav className={`${styles['header-nav']} ${mobileOpen ? styles['mobile-open'] : ''}`}>
           <div className={styles['header-links']}>
-            <Link href={ROUTES.countries} className={styles['header-link']} onClick={() => setMobileOpen(false)}>
-              Countries
+            <Link href={routes.countries} className={styles['header-link']} onClick={() => setMobileOpen(false)}>
+              {t('navigation.countries')}
             </Link>
-            <Link href={ROUTES.about} className={styles['header-link']} onClick={() => setMobileOpen(false)}>
-              About
+            <Link href={routes.about} className={styles['header-link']} onClick={() => setMobileOpen(false)}>
+              {t('navigation.about')}
             </Link>
             {user && userLabel && (
               <div className={styles['account-menu-wrap']} ref={accountMenuRef}>
@@ -122,36 +133,55 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
                 </button>
                 {accountMenuOpen && (
                   <div id="header-account-menu" className={styles['account-menu']} role="menu">
-                    <Link href={ROUTES.profileEdit} className={styles['account-menu-item']} role="menuitem" onClick={closeMenus}>
-                      Profile
+                    <Link href={routes.profileEdit} className={styles['account-menu-item']} role="menuitem" onClick={closeMenus}>
+                      {t('navigation.profile')}
                     </Link>
                   </div>
                 )}
               </div>
             )}
+            <div className={styles['header-mobile-auth']}>
+              {user ? (
+                <button type="button" className={styles['header-link']} onClick={onLogout}>
+                  {t('actions.logout')}
+                </button>
+              ) : (
+                <>
+                  <Link href={routes.signIn} className={styles['header-link']} onClick={closeMenus}>
+                    {t('actions.signIn')}
+                  </Link>
+                  <Link href={routes.signUp} className={styles['header-link']} onClick={closeMenus}>
+                    {t('actions.getStarted')}
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
 
           <div className={styles['header-actions']}>
+            <LanguageSwitcher />
             {afterActions}
-            {user ? (
-              <ButtonMain variant="secondary" onClick={onLogout}>
-                Logout
-              </ButtonMain>
-            ) : (
-              <>
-                <Link href={ROUTES.signIn} onClick={() => setMobileOpen(false)}>
-                  <ButtonMain variant="ghost">Sign In</ButtonMain>
-                </Link>
-                <ButtonMain
-                  onClick={() => {
-                    router.push(ROUTES.signUp)
-                    setMobileOpen(false)
-                  }}
-                >
-                  Get started
+            <div className={styles['header-desktop-auth']}>
+              {user ? (
+                <ButtonMain variant="secondary" onClick={onLogout}>
+                  {t('actions.logout')}
                 </ButtonMain>
-              </>
-            )}
+              ) : (
+                <>
+                  <Link href={routes.signIn} onClick={() => setMobileOpen(false)}>
+                    <ButtonMain variant="ghost">{t('actions.signIn')}</ButtonMain>
+                  </Link>
+                  <ButtonMain
+                    onClick={() => {
+                      router.push(routes.signUp)
+                      setMobileOpen(false)
+                    }}
+                  >
+                    {t('actions.getStarted')}
+                  </ButtonMain>
+                </>
+              )}
+            </div>
           </div>
         </nav>
       </div>

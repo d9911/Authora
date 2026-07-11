@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "countries": {
+      "title": "Страны"
+    },
+    "country": {
+      "title": "Страна"
+    },
+    "region": {
+      "title": "Регион"
+    },
+    "city": {
+      "title": "Город"
+    }
+  },
+  "countries": {
+    "title": "Страны",
+    "viewRegions": "смотреть регионы →",
+    "emptyTitle": "Стран пока нет",
+    "emptyMessage": "Заполните базу данных, чтобы увидеть атлас."
+  },
+  "country": {
+    "all": "Все страны",
+    "regions": "Регионы",
+    "emptyRegions": "Регионов пока нет."
+  },
+  "region": {
+    "back": "Назад к стране",
+    "cities": "Города",
+    "viewCities": "смотреть города →",
+    "emptyCities": "Городов пока нет."
+  },
+  "city": {
+    "back": "Назад к региону",
+    "eyebrow": "Город"
+  },
+  "fields": {
+    "country": "Страна",
+    "region": "Регион",
+    "city": "Город",
+    "selectCountry": "Выберите страну",
+    "allRegions": "Все регионы",
+    "noCity": "Не выбран"
+  }
+}

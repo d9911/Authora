@@ -1,0 +1,202 @@
+{
+  "metadata": {
+    "title": "UI-kit"
+  },
+  "page": {
+    "badges": {
+      "dependencyFree": "Без зависимостей",
+      "fsdAligned": "Соответствует FSD",
+      "themes": "Светлая + тёмная",
+      "cssDepth": "Глубина на CSS"
+    },
+    "hero": {
+      "title": "Пространственный UI-kit для премиальных продуктовых экранов.",
+      "description": "Страница выбора переиспользуемых карточек, контролов, оверлеев, псевдо-3D-превью и секций. Маршрут остаётся тонким, компоненты находятся в правильных слоях Feature-Sliced Design, а каждая поверхность поддерживает активную тему.",
+      "explore": "Изучить компоненты",
+      "layers": "Посмотреть слои",
+      "compositionPath": "Путь композиции"
+    },
+    "layerMap": {
+      "eyebrow": "Feature-Sliced Design",
+      "title": "У каждого компонента есть свой слой.",
+      "description": "Общие примитивы остаются универсальными. Композиции UI-kit находятся в entities. Публичная страница собирается как widget page-block."
+    },
+    "layers": {
+      "shared": {
+        "title": "Примитивы",
+        "description": "Кнопки, карточки, вкладки, контролы, бейджи, оверлеи и превью глубины."
+      },
+      "entities": {
+        "title": "Композиции",
+        "description": "Выбранные состояния, сгруппированные примеры и продуктовые демонстрации UI-kit."
+      },
+      "widgets": {
+        "title": "Сборка страницы",
+        "description": "Hero, карта слоёв и showcase объединены в готовый публичный блок."
+      },
+      "app": {
+        "title": "Тонкий маршрут",
+        "description": "Маршрут Next.js импортирует блок и не содержит локальной бизнес-логики."
+      }
+    },
+    "tokenSection": {
+      "eyebrow": "Дизайн-токены",
+      "title": "Страница использует текущую визуальную систему Authora.",
+      "description": "Эти образцы — действующие CSS-переменные. Переключите тему в header, и тот же UI-kit применит светлый или тёмный набор токенов."
+    },
+    "tokens": {
+      "paper": "Фон",
+      "card": "Карточка",
+      "ink": "Текст",
+      "iris": "Акцент",
+      "line": "Линия"
+    }
+  },
+  "components": {
+    "spatial-card": {
+      "title": "Пространственная карточка",
+      "description": "Премиальная поверхность с подъёмом при наведении, светящейся границей, выбранным состоянием и чётким радиусом."
+    },
+    "hero-preview": {
+      "title": "Псевдо-3D-превью",
+      "description": "Сцена глубины на CSS/SVG для hero-блоков без 3D-зависимостей."
+    },
+    "actions": {
+      "title": "Набор действий",
+      "description": "Основные, вторичные, прозрачные и иконочные действия с состояниями focus-visible и active."
+    },
+    "segment-tabs": {
+      "title": "Сегментированные вкладки",
+      "description": "Доступный tablist для фильтров, режимов и навигации по showcase."
+    },
+    "inputs": {
+      "title": "Набор контролов",
+      "description": "Поле ввода, переключатель, диапазон и прогресс для насыщенных интерфейсов."
+    },
+    "overlay": {
+      "title": "Обратная связь в оверлее",
+      "description": "Modal- и toast-паттерны для подтверждений, предпросмотра и сохранённых состояний."
+    },
+    "entity-group": {
+      "title": "Композиция entity",
+      "description": "Предметные композиции объединяют примитивы, не перенося доменную логику в shared."
+    },
+    "page-block": {
+      "title": "Блок страницы",
+      "description": "Сборка уровня маршрута остаётся в widgets/page-blocks, чтобы app-страницы были тонкими."
+    }
+  },
+  "showcase": {
+    "tabs": {
+      "all": "Все компоненты",
+      "surfaces": "Поверхности",
+      "actions": "Действия",
+      "forms": "Формы",
+      "feedback": "Обратная связь"
+    },
+    "header": {
+      "eyebrow": "Выбор компонентов",
+      "title": "Выберите компоненты и соберите их по слоям.",
+      "description": "Селектор показывает, как нейтральные примитивы shared превращаются в более богатые entity-композиции без нарушения правила зависимостей FSD."
+    },
+    "accessibility": {
+      "categories": "Категории UI-kit",
+      "components": "UI-компоненты",
+      "selectedPreview": "Предпросмотр выбранного компонента"
+    },
+    "status": {
+      "ready": "готов",
+      "interactive": "интерактивный",
+      "layout": "макет"
+    },
+    "categories": {
+      "surfaces": "поверхности",
+      "actions": "действия",
+      "forms": "формы",
+      "feedback": "обратная связь"
+    },
+    "selected": "Выбрано",
+    "controls": {
+      "title": "Настройки",
+      "description": "Локальное состояние мгновенно меняет превью.",
+      "motion": {
+        "label": "Анимация",
+        "hint": "CSS-анимация отключается при системной настройке reduced motion."
+      },
+      "compact": {
+        "label": "Компактная плотность",
+        "hint": "Те же компоненты переходят в более плотную компоновку."
+      },
+      "depth": "Глубина сцены",
+      "readiness": "Готовность композиции"
+    },
+    "demos": {
+      "actions": {
+        "title": "Группа действий",
+        "description": "Кнопки, иконочные кнопки и обратная связь используют общие focus- и hover-состояния.",
+        "showToast": "Показать уведомление",
+        "openModal": "Открыть диалог",
+        "generate": "Создать",
+        "preview": "Предпросмотр"
+      },
+      "form": {
+        "title": "Стек формы",
+        "description": "Переиспользуемые контролы для продуктовых, auth- и admin-интерфейсов.",
+        "searchLabel": "Найти компонент",
+        "searchPlaceholder": "Карточка, вкладки, оверлей…",
+        "tokenLabel": "Предпросмотр токена",
+        "apply": "Применить",
+        "reset": "Сбросить"
+      },
+      "layers": {
+        "title": "Карта FSD",
+        "description": "Однонаправленные импорты сохраняют переиспользуемость UI-kit."
+      }
+    },
+    "stats": {
+      "groups_one": "<count>{{count}}</count> группа",
+      "groups_few": "<count>{{count}}</count> группы",
+      "groups_many": "<count>{{count}}</count> групп",
+      "groups_other": "<count>{{count}}</count> группы",
+      "mechanics_one": "<count>{{count}}+</count> механика",
+      "mechanics_few": "<count>{{count}}+</count> механики",
+      "mechanics_many": "<count>{{count}}+</count> механик",
+      "mechanics_other": "<count>{{count}}+</count> механики",
+      "dependencies_one": "<count>{{count}}</count> зависимость",
+      "dependencies_few": "<count>{{count}}</count> зависимости",
+      "dependencies_many": "<count>{{count}}</count> зависимостей",
+      "dependencies_other": "<count>{{count}}</count> зависимости"
+    },
+    "timeline": {
+      "ariaLabel": "Процесс композиции UI",
+      "steps": {
+        "primitive": {
+          "title": "Примитив",
+          "description": "Создайте нейтральные контролы в shared/ui."
+        },
+        "composition": {
+          "title": "Композиция",
+          "description": "Сгруппируйте выбранные состояния и демонстрации в entities/ui-kit."
+        },
+        "pageBlock": {
+          "title": "Блок страницы",
+          "description": "Соберите публичную страницу в widgets/page-blocks."
+        },
+        "route": {
+          "title": "Маршрут",
+          "description": "Оставьте app-маршрут тонким и предсказуемым."
+        }
+      }
+    },
+    "modal": {
+      "title": "Предпросмотр оверлея",
+      "description": "Диалог открывается из entity UI-kit и отображается shared-примитивом. Это подтверждает работу оверлея без новой зависимости.",
+      "close": "Закрыть",
+      "save": "Сохранить состояние"
+    },
+    "toast": {
+      "title": "Состояние UI обновлено",
+      "description": "Выбранная конфигурация UI-kit отображается на странице."
+    }
+  }
+}
