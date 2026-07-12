@@ -151,4 +151,14 @@ export const sourceChecks = [
     'Auth hydration request loop',
     'tests/auth-hydration-request-loop.mjs',
   ),
+  defineSourceCheck(
+    'auth-session-skeleton',
+    'Auth session skeleton',
+    'tests/auth-session-skeleton.mjs',
+  ),
+  defineSourceCheck(
+    'graphql-client-refresh',
+    'GraphQL client refresh concurrency',
+    'tests/graphql-client-refresh.test.mjs',
+  ),
 ];

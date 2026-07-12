@@ -1,14 +1,17 @@
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { User } from '@/shared/types'
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import type { PayloadAction } from '@reduxjs/toolkit'
+import type { User } from '@/shared/types'
 import * as authApi from '@/features/auth-api/authApi'
 import { fetchMe } from '@/entities/user/api/userApi'
-import { ErrorDescriptor, getErrorDescriptor } from '@/shared/lib/errors'
+import { getErrorDescriptor } from '@/shared/lib/errors'
+import type { ErrorDescriptor } from '@/shared/lib/errors'
 
-interface AuthState {
+export interface AuthState {
   user: User | null
   status: 'idle' | 'loading' | 'authenticated' | 'guest'
   error: string | null
   errorCode: string | null
+  currentLoadMeRequestId: string | null
   // Set when sign-in returns NEED_2FA; the page swaps to the code form.
   twoFactorToken: string | null
 }
@@ -18,6 +21,7 @@ const initialState: AuthState = {
   status: 'idle',
   error: null,
   errorCode: null,
+  currentLoadMeRequestId: null,
   twoFactorToken: null,
 }
 
@@ -57,9 +61,16 @@ export const signInTwoFactorThunk = createAsyncThunk('auth/signInTwoFactor', asy
   }
 })
 
-export const logoutThunk = createAsyncThunk('auth/logout', async () => {
-  await authApi.logout()
-  return true
+export const logoutThunk = createAsyncThunk<
+  boolean,
+  void,
+  { rejectValue: ErrorDescriptor }
+>('auth/logout', async (_input, { rejectWithValue }) => {
+  try {
+    return await authApi.logout()
+  } catch (error) {
+    return rejectWithValue(getErrorDescriptor(error, 'Logout failed'))
+  }
 })
 
 const authSlice = createSlice({
@@ -71,6 +82,7 @@ const authSlice = createSlice({
       state.errorCode = null
     },
     setAuthUser(state, action: PayloadAction<User | null>) {
+      state.currentLoadMeRequestId = null
       state.user = action.payload
       state.status = action.payload ? 'authenticated' : 'guest'
     },
@@ -80,18 +92,26 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loadMeThunk.pending, (state) => {
+      .addCase(loadMeThunk.pending, (state, action) => {
+        state.currentLoadMeRequestId = action.meta.requestId
         state.status = 'loading'
       })
       .addCase(loadMeThunk.fulfilled, (state, action) => {
+        if (state.currentLoadMeRequestId !== action.meta.requestId) return
+        state.currentLoadMeRequestId = null
         state.user = action.payload
         state.status = action.payload ? 'authenticated' : 'guest'
       })
-      .addCase(loadMeThunk.rejected, (state) => {
+      .addCase(loadMeThunk.rejected, (state, action) => {
+        if (state.currentLoadMeRequestId !== action.meta.requestId) return
+        state.currentLoadMeRequestId = null
+        state.user = null
         state.status = 'guest'
       })
       // sign in
       .addCase(signInThunk.pending, (state) => {
+        state.currentLoadMeRequestId = null
+        if (state.status === 'loading') state.status = 'guest'
         state.error = null
         state.errorCode = null
       })
@@ -113,6 +133,8 @@ const authSlice = createSlice({
       })
       // sign up
       .addCase(signUpThunk.pending, (state) => {
+        state.currentLoadMeRequestId = null
+        if (state.status === 'loading') state.status = 'guest'
         state.error = null
         state.errorCode = null
       })
@@ -129,6 +151,8 @@ const authSlice = createSlice({
       })
       // 2fa login
       .addCase(signInTwoFactorThunk.pending, (state) => {
+        state.currentLoadMeRequestId = null
+        if (state.status === 'loading') state.status = 'guest'
         state.error = null
         state.errorCode = null
       })
@@ -145,6 +169,10 @@ const authSlice = createSlice({
         state.errorCode = error?.code ?? null
       })
       // logout
+      .addCase(logoutThunk.pending, (state) => {
+        state.currentLoadMeRequestId = null
+        if (state.status === 'loading') state.status = 'guest'
+      })
       .addCase(logoutThunk.fulfilled, (state) => {
         state.user = null
         state.status = 'guest'
@@ -152,8 +180,28 @@ const authSlice = createSlice({
         state.error = null
         state.errorCode = null
       })
+      .addCase(logoutThunk.rejected, (state, action) => {
+        const error = action.payload
+        state.user = null
+        state.status = 'guest'
+        state.twoFactorToken = null
+        state.error = error?.message ?? 'Logout failed'
+        state.errorCode = error?.code ?? null
+      })
   },
 })
 
 export const { clearAuthError, resetTwoFactor, setAuthUser } = authSlice.actions
+
+type AuthRootState = { auth: AuthState }
+
+export const selectAuthUser = (state: AuthRootState) => state.auth.user
+export const selectAuthStatus = (state: AuthRootState) => state.auth.status
+export const selectIsAuthenticated = (state: AuthRootState) =>
+  state.auth.status === 'authenticated'
+export const selectAuthIsLoading = (state: AuthRootState) =>
+  state.auth.status === 'idle' || state.auth.status === 'loading'
+export const selectAuthError = (state: AuthRootState) => state.auth.error
+export const selectAuthErrorCode = (state: AuthRootState) => state.auth.errorCode
+
 export default authSlice.reducer

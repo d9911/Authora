@@ -1,6 +1,7 @@
 // Verifies refresh-token rotation against a real local backend process.
 import path from 'node:path';
 import process from 'node:process';
+import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -84,6 +85,46 @@ try {
   const access = signUp.data?.signUp?.accessToken;
   check('signup issued tokens', Boolean(refresh && access), signUp.errors);
 
+  const anonymousMe = await call(`{ me { email } }`, {});
+  check('initial anonymous session resolves to null user', anonymousMe.data?.me === null, anonymousMe);
+
+  const failedSignIn = await call(
+    `mutation($i:SignInInput!){signIn(input:$i){accessToken}}`,
+    { i: { email: 'refresh-flow@test.local', password: 'wrong-password' } },
+  );
+  check(
+    'invalid login is rejected with stable code',
+    failedSignIn.errors?.[0]?.extensions?.code === 'INVALID_CREDENTIALS',
+    failedSignIn.errors,
+  );
+
+  const successfulSignIn = await call(
+    `mutation($i:SignInInput!){signIn(input:$i){accessToken refreshToken user{email}}}`,
+    { i: { email: 'refresh-flow@test.local', password: 'password123' } },
+  );
+  const loginRefresh = successfulSignIn.data?.signIn?.refreshToken;
+  check(
+    'valid login returns the current user and session',
+    successfulSignIn.data?.signIn?.user?.email === 'refresh-flow@test.local' &&
+      Boolean(successfulSignIn.data?.signIn?.accessToken && loginRefresh),
+    successfulSignIn.errors,
+  );
+
+  const logout = await call(
+    `mutation($refreshToken:String){logout(refreshToken:$refreshToken)}`,
+    { refreshToken: loginRefresh },
+  );
+  check('logout succeeds', logout.data?.logout === true, logout.errors);
+  const refreshAfterLogout = await call(
+    `mutation($input:RefreshTokenInput!){refreshToken(input:$input){accessToken}}`,
+    { input: { refreshToken: loginRefresh } },
+  );
+  check(
+    'logout revokes its refresh token',
+    !refreshAfterLogout.data?.refreshToken?.accessToken,
+    refreshAfterLogout.errors,
+  );
+
   const refreshed = await call(
     `mutation($input:RefreshTokenInput!){refreshToken(input:$input){accessToken refreshToken}}`,
     { input: { refreshToken: refresh } },
@@ -104,6 +145,14 @@ try {
     { input: { refreshToken: refresh } },
   );
   check('old refresh token revoked after rotation', !reuse.data?.refreshToken?.accessToken, reuse.errors);
+
+  await delay(2_100);
+  const expiredSession = await call(`{ me { email } }`, {}, newAccess);
+  check(
+    'expired access token terminates the authenticated session',
+    expiredSession.errors?.[0]?.extensions?.code === 'INVALID_TOKEN',
+    expiredSession.errors,
+  );
 
   console.log(`\nRESULT: ${passed} passed, ${failed} failed`);
 } catch (error) {

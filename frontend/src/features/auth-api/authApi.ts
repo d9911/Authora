@@ -1,5 +1,5 @@
 import { gqlRequest } from '@/shared/api/graphqlClient';
-import { AuthPayload, TwoFactorSetupPayload, User } from '@/shared/types';
+import type { AuthPayload, TwoFactorSetupPayload, User } from '@/shared/types';
 
 // We request accessToken/refreshToken so the backend returns them to the
 // SERVER-SIDE proxy, which stores them as httpOnly cookies and STRIPS them
@@ -52,7 +52,7 @@ export async function signInTwoFactor(input: {
 
 export async function logout(): Promise<boolean> {
   const data = await gqlRequest<{ logout: boolean }>(
-    `mutation Logout { logout }`,
+    `mutation Logout($refreshToken: String) { logout(refreshToken: $refreshToken) }`,
     {},
     { retry: false },
   );

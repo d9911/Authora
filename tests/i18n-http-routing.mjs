@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 
 const baseUrl = process.env.I18N_BASE_URL ?? 'http://127.0.0.1:5178';
+const authBackendUrl = process.env.AUTH_TEST_BACKEND_URL;
 
 async function request(path, headers = {}) {
   return fetch(new URL(path, baseUrl), {
@@ -51,6 +52,16 @@ assert.equal(
   protectedRoute.headers.get('location'),
   '/ru/sign-in?next=%2Fru%2Fprofile%2Fedit%3Ftab%3Dsecurity',
 );
+
+const guestOnlyRoute = await request('/ru/sign-in?next=%2Fru%2Fprofile%2Fedit', {
+  cookie: 'access_token=test-cookie',
+});
+assert.equal(guestOnlyRoute.status, 307);
+assert.equal(guestOnlyRoute.headers.get('location'), '/ru/profile/edit');
+
+const logoutRoute = await request('/ru/logout');
+assert.equal(logoutRoute.status, 200);
+assert.equal(logoutRoute.headers.get('location'), null);
 
 const ruSignIn = await request('/ru/sign-in');
 assert.equal(ruSignIn.status, 200);
@@ -108,6 +119,71 @@ assert.deepEqual(await privateApi.json(), {
   message: 'Unauthorized',
   code: 'UNAUTHORIZED',
 });
+
+assert.ok(authBackendUrl, 'AUTH_TEST_BACKEND_URL is required for the session proxy checks');
+const signUpViaProxy = await fetch(new URL('/api/graphql', baseUrl), {
+  method: 'POST',
+  headers: {
+    'content-type': 'application/json',
+  },
+  body: JSON.stringify({
+    query: `mutation SignUp($input: SignUpInput!) {
+      signUp(input: $input) { accessToken refreshToken user { email } }
+    }`,
+    variables: {
+      input: {
+        email: 'proxy-session@test.local',
+        password: 'password123',
+        name: 'Proxy Session',
+      },
+    },
+  }),
+  redirect: 'manual',
+});
+assert.equal(signUpViaProxy.status, 200);
+const signUpJson = await signUpViaProxy.json();
+assert.equal(signUpJson.data?.signUp?.user?.email, 'proxy-session@test.local');
+assert.equal(signUpJson.data?.signUp?.accessToken, undefined);
+assert.equal(signUpJson.data?.signUp?.refreshToken, undefined);
+const issuedCookies = signUpViaProxy.headers.getSetCookie();
+const accessCookie = issuedCookies.find((cookie) => cookie.startsWith('access_token='));
+const refreshCookie = issuedCookies.find((cookie) => cookie.startsWith('refresh_token='));
+assert.ok(accessCookie);
+assert.ok(refreshCookie);
+const accessToken = accessCookie.split(';', 1)[0].slice('access_token='.length);
+const refreshToken = refreshCookie.split(';', 1)[0].slice('refresh_token='.length);
+
+const logoutViaProxy = await fetch(new URL('/api/graphql', baseUrl), {
+  method: 'POST',
+  headers: {
+    'content-type': 'application/json',
+    cookie: `access_token=${accessToken}; refresh_token=${refreshToken}`,
+  },
+  body: JSON.stringify({
+    query: 'mutation Logout($refreshToken: String) { logout(refreshToken: $refreshToken) }',
+    variables: {},
+  }),
+  redirect: 'manual',
+});
+assert.equal(logoutViaProxy.status, 200);
+assert.equal((await logoutViaProxy.json()).data?.logout, true);
+const logoutCookies = logoutViaProxy.headers.getSetCookie().join('\n');
+assert.match(logoutCookies, /access_token=;[\s\S]*Max-Age=0/i);
+assert.match(logoutCookies, /refresh_token=;[\s\S]*Max-Age=0/i);
+
+const reuseAfterLogout = await fetch(new URL('/graphql', authBackendUrl), {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({
+    query: `mutation Refresh($input: RefreshTokenInput!) {
+      refreshToken(input: $input) { accessToken }
+    }`,
+    variables: { input: { refreshToken } },
+  }),
+});
+const reuseJson = await reuseAfterLogout.json();
+assert.equal(reuseJson.data?.refreshToken?.accessToken, undefined);
+assert.equal(reuseJson.errors?.[0]?.extensions?.code, 'INVALID_TOKEN');
 
 const manifest = await request('/manifest.json');
 assert.equal(manifest.status, 200);

@@ -1,5 +1,5 @@
 import { axiosInstance } from './axiosInstance';
-import { ApiError } from '../types';
+import type { ApiError } from '../types';
 import { getLocaleFromPathname, i18nConfig } from '@/shared/i18n/config';
 import { getLocalizedRoutes } from '@/shared/lib/routes';
 

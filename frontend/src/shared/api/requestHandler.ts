@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { config } from '../config';
+import {
+  blockRefreshForLogout,
+  refreshTokenKey,
+  runRefreshSingleFlight,
+} from './serverRefreshCoordinator';
 
 /**
  * Server-side GraphQL proxy.
@@ -43,6 +48,11 @@ const RECOVERY_COOKIE_BASE = {
   sameSite: 'strict' as const,
   path: '/api/graphql',
 };
+
+function clearAuthCookies(response: NextResponse): void {
+  response.cookies.set(config.cookies.accessToken, '', { ...COOKIE_BASE, maxAge: 0 });
+  response.cookies.set(config.cookies.refreshToken, '', { ...COOKIE_BASE, maxAge: 0 });
+}
 
 const SESSION_INDEPENDENT_OPERATIONS = [
   'requestPasswordReset',
@@ -116,6 +126,12 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
   let setRefresh: string | null = null;
 
   const isRefreshCall = callsMutation(query, 'refreshToken');
+  const logoutRequested = isOperation(query, 'logout');
+  let logoutRefreshToken = refreshToken;
+  if (logoutRequested && refreshToken) {
+    logoutRefreshToken =
+      (await blockRefreshForLogout(refreshTokenKey(refreshToken))) ?? refreshToken;
+  }
   const isSessionIndependent = SESSION_INDEPENDENT_OPERATIONS.some((operation) =>
     isOperation(query, operation),
   );
@@ -127,10 +143,14 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
     !accessToken &&
     refreshToken &&
     !isRefreshCall &&
-    !isOperation(query, 'logout') &&
+    !logoutRequested &&
     !isSessionIndependent
   ) {
-    const pair = await serverRefresh(refreshToken);
+    const refreshTokenToRotate = refreshToken;
+    const pair = await runRefreshSingleFlight(
+      refreshTokenKey(refreshTokenToRotate),
+      () => serverRefresh(refreshTokenToRotate),
+    );
     if (pair) {
       accessToken = pair.accessToken;
       setAccess = pair.accessToken ?? null;
@@ -144,8 +164,7 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
         { errors: [{ message: 'INVALID_TOKEN', extensions: { code: 'INVALID_TOKEN' } }] },
         { status: 401 }
       );
-      res.cookies.set(config.cookies.accessToken, '', { ...COOKIE_BASE, maxAge: 0 });
-      res.cookies.set(config.cookies.refreshToken, '', { ...COOKIE_BASE, maxAge: 0 });
+      clearAuthCookies(res);
       return res;
     }
   }
@@ -157,8 +176,8 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
     const existing = (variables[varName] as Record<string, unknown>) ?? {};
     variables[varName] = { ...existing, refreshToken: refreshToken ?? '' };
   }
-  if (isOperation(query, 'logout') && refreshToken && variables.refreshToken === undefined) {
-    variables.refreshToken = refreshToken;
+  if (logoutRequested && logoutRefreshToken && variables.refreshToken === undefined) {
+    variables.refreshToken = logoutRefreshToken;
   }
   if (callsMutation(query, 'completePasswordReset')) {
     const varName = inputVarName(query, 'completePasswordReset') ?? 'input';
@@ -180,7 +199,7 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
       cache: 'no-store',
     });
   } catch {
-    return NextResponse.json(
+    const res = NextResponse.json(
       {
         errors: [
           { message: 'Backend is unreachable', extensions: { code: 'BACKEND_UNREACHABLE' } },
@@ -188,6 +207,8 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
       },
       { status: 502 },
     );
+    if (logoutRequested) clearAuthCookies(res);
+    return res;
   }
 
   const json = (await upstream.json()) as {
@@ -237,8 +258,8 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
   const resetChannel = (
     data.completePasswordReset as { channel?: 'email' | 'telegram' } | undefined
   )?.channel;
-  const clearAuthCookies =
-    (isOperation(query, 'logout') && data.logout === true) ||
+  const shouldClearAuthCookies =
+    logoutRequested ||
     (passwordResetCompleted && resetChannel !== 'telegram');
   const recoveryInvalid = (
     json.errors as Array<{ extensions?: { code?: string } }> | undefined
@@ -265,9 +286,8 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
       maxAge: RECOVERY_MAX_AGE,
     });
   }
-  if (clearAuthCookies) {
-    res.cookies.set(config.cookies.accessToken, '', { ...COOKIE_BASE, maxAge: 0 });
-    res.cookies.set(config.cookies.refreshToken, '', { ...COOKIE_BASE, maxAge: 0 });
+  if (shouldClearAuthCookies) {
+    clearAuthCookies(res);
   }
   if (passwordResetCompleted || recoveryInvalid) {
     res.cookies.set(config.cookies.recoveryToken, '', {

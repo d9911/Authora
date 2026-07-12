@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import '@/shared/styles/globals.scss'
 import { fontClassName } from '@/shared/styles/fonts'
 import { StoreProvider } from '@/processes/store/StoreProvider'
+import { AuthBootstrap } from '@/processes/store/AuthBootstrap'
 import { ThemeHeaderToggle, ThemeInitScript, ThemeProvider } from '@/processes/theme'
 import { HeaderMain } from '@/widgets/HeaderMain/HeaderMain'
 import { FooterMain } from '@/widgets/FooterMain/FooterMain'
@@ -69,6 +70,7 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
           <ThemeInitScript />
           <ThemeProvider>
             <StoreProvider>
+              <AuthBootstrap />
               <ServiceWorkerRegister />
               <HeaderMain afterActions={<ThemeHeaderToggle />} />
               <main className="container page">{children}</main>

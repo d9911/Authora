@@ -6,7 +6,7 @@ import { ReactNode, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { config } from '@/shared/config'
 import { useAppDispatch, useAppSelector } from '@/processes/store/hooks'
-import { loadMeThunk, logoutThunk } from '@/processes/store/slices/authSlice'
+import { logoutThunk, selectAuthUser } from '@/processes/store/slices/authSlice'
 import { LanguageSwitcher } from '@/features/LanguageSwitcher/LanguageSwitcher'
 import { ButtonMain } from '@/shared/ui'
 import { getLocalizedRoutes } from '@/shared/lib/routes'
@@ -35,16 +35,12 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
   const params = useParams<{ locale?: string }>()
   const locale = normalizeLocale(params.locale) ?? i18nConfig.defaultLocale
   const routes = getLocalizedRoutes(locale)
-  const { user, status } = useAppSelector((s) => s.auth)
+  const user = useAppSelector(selectAuthUser)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const accountMenuRef = useRef<HTMLDivElement>(null)
   const userLabel = user?.nickname || user?.name || user?.email
   const userInitial = (userLabel || '?').charAt(0).toUpperCase()
-
-  useEffect(() => {
-    if (status === 'idle') void dispatch(loadMeThunk())
-  }, [dispatch, status])
 
   useEffect(() => {
     if (!accountMenuOpen) return

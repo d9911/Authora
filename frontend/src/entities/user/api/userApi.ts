@@ -1,5 +1,5 @@
 import { gqlRequest } from '@/shared/api/graphqlClient';
-import { User } from '@/shared/types';
+import type { User } from '@/shared/types';
 
 const USER_FIELDS = `
   id name email nickname phoneNumber telegramId avatarUrl
