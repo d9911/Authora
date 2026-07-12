@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 .wrapper {
   display: grid;
   gap: 10px;
@@ -17,7 +19,7 @@
 .value {
   font-family: var(--font-mono);
   font-size: 12px;
-  color: var(--iris);
+  color: var(--accent-text);
 }
 
 .input {

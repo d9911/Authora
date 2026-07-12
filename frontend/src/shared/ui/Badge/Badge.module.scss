@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -18,26 +20,31 @@
 .tone-neutral {
   --badge-rgb: 107, 104, 120;
   --badge-color: var(--mist);
+  --badge-solid-rgb: 107, 104, 120;
 }
 
 .tone-accent {
-  --badge-rgb: 91, 75, 255;
-  --badge-color: var(--iris);
+  --badge-rgb: 71, 56, 199;
+  --badge-color: var(--accent-text);
+  --badge-solid-rgb: 71, 56, 199;
 }
 
 .tone-success {
-  --badge-rgb: 18, 184, 134;
-  --badge-color: var(--signal);
+  --badge-rgb: 8, 119, 90;
+  --badge-color: var(--status-success-text);
+  --badge-solid-rgb: 8, 119, 90;
 }
 
 .tone-danger {
-  --badge-rgb: 255, 84, 112;
-  --badge-color: var(--alert);
+  --badge-rgb: 180, 35, 60;
+  --badge-color: var(--status-danger-text);
+  --badge-solid-rgb: 180, 35, 60;
 }
 
 .tone-warning {
-  --badge-rgb: 228, 154, 64;
-  --badge-color: #9f651e;
+  --badge-rgb: 122, 74, 0;
+  --badge-color: var(--status-warning-text);
+  --badge-solid-rgb: 122, 74, 0;
 }
 
 .variant-soft {
@@ -53,7 +60,7 @@
 }
 
 .variant-solid {
-  color: #fff;
+  color: var(--on-action);
   border-color: transparent;
-  background: rgb(var(--badge-rgb));
+  background: rgb(var(--badge-solid-rgb));
 }

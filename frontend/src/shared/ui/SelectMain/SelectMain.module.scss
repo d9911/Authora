@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 @use '../../styles/breakpoints' as *;
 
 .root {
@@ -99,7 +101,7 @@
   border: 1px solid rgba(91, 75, 255, 0.24);
   border-radius: var(--r-pill);
   background: rgba(91, 75, 255, 0.1);
-  color: var(--iris);
+  color: var(--accent-text);
   font: 600 12px/1.2 var(--font-body);
   cursor: pointer;
 }
@@ -136,7 +138,7 @@
 .clear:hover,
 .clear:focus-visible {
   background: rgba(91, 75, 255, 0.1);
-  color: var(--iris);
+  color: var(--accent-text);
 }
 
 .compact {
@@ -215,7 +217,7 @@
 
 .option[data-active='true'] {
   background: var(--paper);
-  color: var(--iris);
+  color: var(--accent-text);
 }
 
 .option[data-selected='true'] {
@@ -229,7 +231,7 @@
 
 .check {
   flex: 0 0 auto;
-  color: var(--iris);
+  color: var(--accent-text);
   font-size: 15px;
 }
 

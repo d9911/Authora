@@ -1,0 +1,63 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
+@use '../../styles/breakpoints' as *;
+
+.avatar {
+  --avatar-size: 40px;
+  --avatar-font-size: 15px;
+
+  display: inline-flex;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  flex: 0 0 var(--avatar-size);
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--accent-text);
+  font-family: var(--font-display);
+  font-size: var(--avatar-font-size);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.size-small {
+  --avatar-size: 28px;
+  --avatar-font-size: 12px;
+}
+
+.size-default {
+  --avatar-size: 40px;
+  --avatar-font-size: 15px;
+}
+
+.size-large {
+  --avatar-size: 64px;
+  --avatar-font-size: 24px;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fallback {
+  display: inline-flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+@include media(sm) {
+  .size-large {
+    --avatar-size: 48px;
+    --avatar-font-size: 18px;
+  }
+}

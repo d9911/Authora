@@ -1,3 +1,5 @@
+> Денис: файл создан или изменён по запросу пользователя.
+
 # Authora test runner
 
 The canonical full-project test command is:
@@ -36,25 +38,25 @@ path to the full log. `VERBOSE=1` additionally mirrors child output while the st
 
 ## Check order
 
-The production catalog contains 54 unique steps: 50 required checks followed by 4
+The production catalog contains 55 unique steps: 51 required checks followed by 4
 optional environment-dependent checks. The order is fixed and is never parallelized.
 
 | Position | Category | Checks, in execution order | Required | Server/tool requirements |
 | --- | --- | --- | --- | --- |
 | 1 | Runner | Runner unit/integration tests | yes | Node.js |
-| 2-33 | Source regressions | 32 source checks listed below | yes | Node.js; no server |
-| 34 | Makefile regression | `doc-mongo` fallback fixture | yes | fake local `docker`/`yarn`; no Docker daemon or MongoDB |
-| 35-36 | Types | Backend TypeScript, frontend TypeScript | yes | Yarn |
-| 37-40 | Backend build and recovery | Backend build, mail templates, account-recovery use cases, Telegram recovery ticket | yes | Yarn and Node.js |
-| 41-43 | SQLite | Smoke compile, Telegram ticket repository, SQLite GraphQL smoke | yes | self-hosted local SQLite smoke |
-| 44-46 | Profile photo | Test compile, image processor, profile-photo use cases | yes | Yarn and Node.js |
-| 47 | Refresh flow | Refresh-token rotation integration | yes | self-hosted local backend |
-| 48-50 | Production/runtime | Frontend production build, i18n HTTP routing, security audit | yes | self-hosted local frontend/backend |
-| 51 | Mongo | Legacy in-memory Mongo smoke | no | `mongodb-memory-server` |
-| 52-53 | k6 | Auth load, OAuth functional load | no | runnable `k6`; self-hosted local backend |
-| 54 | Autocannon | HTTP throughput benchmark | no | backend `autocannon`; self-hosted local backend |
+| 2-34 | Source regressions | 33 source checks listed below | yes | Node.js; no server |
+| 35 | Makefile regression | `doc-mongo` fallback fixture | yes | fake local `docker`/`yarn`; no Docker daemon or MongoDB |
+| 36-37 | Types | Backend TypeScript, frontend TypeScript | yes | Yarn |
+| 38-41 | Backend build and recovery | Backend build, mail templates, account-recovery use cases, Telegram recovery ticket | yes | Yarn and Node.js |
+| 42-44 | SQLite | Smoke compile, Telegram ticket repository, SQLite GraphQL smoke | yes | self-hosted local SQLite smoke |
+| 45-47 | Profile photo | Test compile, image processor, profile-photo use cases | yes | Yarn and Node.js |
+| 48 | Refresh flow | Refresh-token rotation integration | yes | self-hosted local backend |
+| 49-51 | Production/runtime | Frontend production build, i18n HTTP routing, security audit | yes | self-hosted local frontend/backend |
+| 52 | Mongo | Legacy in-memory Mongo smoke | no | `mongodb-memory-server` |
+| 53-54 | k6 | Auth load, OAuth functional load | no | runnable `k6`; self-hosted local backend |
+| 55 | Autocannon | HTTP throughput benchmark | no | backend `autocannon`; self-hosted local backend |
 
-The 32 source checks at positions 2-33 run in this exact order:
+The 33 source checks at positions 2-34 run in this exact order:
 
 1. i18n config and routing
 2. i18n locale routing contract
@@ -76,18 +78,19 @@ The 32 source checks at positions 2-33 run in this exact order:
 18. theme hydration
 19. SelectMain model
 20. SelectMain component contract
-21. Sass deprecation guard
-22. OAuth cookie handoff fields
-23. account-recovery contract
-24. account-recovery session version
-25. account-recovery settings
-26. account-recovery security
-27. account-recovery observability
-28. account-recovery persistence
-29. two-factor recovery codes
-30. auth hydration request loop
-31. auth session skeleton
-32. GraphQL client refresh concurrency
+21. UI-kit remediation contracts
+22. Sass deprecation guard
+23. OAuth cookie handoff fields
+24. account-recovery contract
+25. account-recovery session version
+26. account-recovery settings
+27. account-recovery security
+28. account-recovery observability
+29. account-recovery persistence
+30. two-factor recovery codes
+31. auth hydration request loop
+32. auth session skeleton
+33. GraphQL client refresh concurrency
 
 `tests/source-checks.mjs` is the shared registry for this source group, so
 `make check-source` and `make test` do not maintain separate copies of that list. The full
@@ -241,7 +244,7 @@ tools in the job before `make test`; missing tools currently have the documented
 These existing commands keep their narrower historical purpose:
 
 ```bash
-make check-source          # fail-fast run of the 32 source checks
+make check-source          # fail-fast run of the 33 source checks
 make check-types           # backend + frontend TypeScript
 make check-account-recovery # backend build + three recovery behavior tests
 make check                 # source + types + account recovery aggregate

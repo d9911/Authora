@@ -1,3 +1,5 @@
+// Денис: файл создан или изменён по запросу пользователя.
+
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -17,6 +19,7 @@ const enCommon = JSON.parse(read('frontend/src/locales/en/common.json'));
 const locationSelects = read('frontend/src/features/EditProfileForm/LocationSelectGroup.tsx');
 const languageSwitcher = read('frontend/src/features/LanguageSwitcher/LanguageSwitcher.tsx');
 const header = read('frontend/src/widgets/HeaderMain/HeaderMain.tsx');
+const dropdownMenu = read('frontend/src/shared/ui/DropdownMenu/DropdownMenu.tsx');
 
 assert.match(component, /multiple\?: false/);
 assert.match(component, /multiple: true/);
@@ -88,7 +91,9 @@ assert.match(
 );
 assert.match(languageSwitcher, /variant="compact"/);
 assert.match(languageSwitcher, /if \(!nextLocale \|\| nextLocale === locale\) return/);
-assert.match(header, /role="menu"/);
+assert.match(header, /<DropdownMenu/);
 assert.match(header, /role="menuitem"/);
+assert.match(dropdownMenu, /role="menu"/);
+assert.match(dropdownMenu, /aria-haspopup': 'menu'/);
 
 console.log('SelectMain component contract checks passed');

@@ -52,7 +52,9 @@
       "replace": "Заменить обложку"
     },
     "actions": {
-      "delete": "Удалить"
+      "delete": "Удалить",
+      "cancel": "Отмена",
+      "confirmDelete": "Удалить"
     },
     "accessibility": {
       "chooseImage": "Выбрать изображение: {{title}}"
@@ -62,7 +64,8 @@
       "tooLarge": "Размер изображения не должен превышать {{maxSizeMb}} МБ."
     },
     "confirmDeleteAvatar": "Удалить аватар?",
-    "confirmDeleteCover": "Удалить обложку?"
+    "confirmDeleteCover": "Удалить обложку?",
+    "confirmDeleteDescription": "Это действие нельзя отменить. Изображение будет удалено из профиля."
   },
   "security": {
     "title": "Подключённые аккаунты",

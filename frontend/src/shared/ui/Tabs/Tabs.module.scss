@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 .tabs {
   display: inline-flex;
   width: fit-content;
@@ -39,15 +41,22 @@
   outline-offset: 2px;
 }
 
-.tab:hover {
+.tab:hover:not(:disabled) {
   color: var(--ink);
   background: rgba(91, 75, 255, 0.06);
 }
 
+.tab:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .active {
-  color: #fff;
-  background: var(--iris);
-  box-shadow: 0 9px 20px -13px rgba(91, 75, 255, 0.84);
+  color: var(--on-action);
+  background: var(--action-accent);
+  box-shadow:
+    inset 0 0 0 2px var(--selection-edge),
+    0 9px 20px -13px rgba(91, 75, 255, 0.84);
 }
 
 @media (max-width: 640px) {
@@ -57,5 +66,11 @@
 
   .tab {
     flex: 1 0 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab {
+    transition: none;
   }
 }

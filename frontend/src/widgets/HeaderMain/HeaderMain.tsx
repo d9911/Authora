@@ -1,14 +1,16 @@
 'use client'
 
+// Денис: файл создан или изменён по запросу пользователя.
+
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { ReactNode, useEffect, useRef, useState } from 'react'
+import { ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { config } from '@/shared/config'
 import { useAppDispatch, useAppSelector } from '@/processes/store/hooks'
 import { logoutThunk, selectAuthUser } from '@/processes/store/slices/authSlice'
 import { LanguageSwitcher } from '@/features/LanguageSwitcher/LanguageSwitcher'
-import { ButtonMain } from '@/shared/ui'
+import { Avatar, ButtonMain, DropdownMenu } from '@/shared/ui'
 import { getLocalizedRoutes } from '@/shared/lib/routes'
 import { i18nConfig, normalizeLocale } from '@/shared/i18n/config'
 import styles from './HeaderMain.module.scss'
@@ -36,36 +38,30 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
   const locale = normalizeLocale(params.locale) ?? i18nConfig.defaultLocale
   const routes = getLocalizedRoutes(locale)
   const user = useAppSelector(selectAuthUser)
+  const navigationId = `primary-navigation-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
+  const mobileToggleRef = useRef<HTMLButtonElement>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
-  const accountMenuRef = useRef<HTMLDivElement>(null)
   const userLabel = user?.nickname || user?.name || user?.email
   const userInitial = (userLabel || '?').charAt(0).toUpperCase()
 
   useEffect(() => {
-    if (!accountMenuOpen) return
-
-    const closeOnOutsideClick = (event: MouseEvent) => {
-      if (!accountMenuRef.current?.contains(event.target as Node)) {
-        setAccountMenuOpen(false)
-      }
-    }
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setAccountMenuOpen(false)
-    }
-
-    document.addEventListener('mousedown', closeOnOutsideClick)
-    document.addEventListener('keydown', closeOnEscape)
-
-    return () => {
-      document.removeEventListener('mousedown', closeOnOutsideClick)
-      document.removeEventListener('keydown', closeOnEscape)
-    }
-  }, [accountMenuOpen])
-
-  useEffect(() => {
     if (!user) setAccountMenuOpen(false)
   }, [user])
+
+  useEffect(() => {
+    if (!mobileOpen) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.key !== 'Escape') return
+      event.preventDefault()
+      setMobileOpen(false)
+      window.requestAnimationFrame(() => mobileToggleRef.current?.focus())
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [mobileOpen])
 
   const onLogout = async () => {
     await dispatch(logoutThunk())
@@ -79,27 +75,27 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
     setMobileOpen(false)
   }
 
-  const toggleAccountMenu = () => {
-    setAccountMenuOpen((open) => !open)
-  }
-
   return (
     <header className={styles.header}>
       <div className={`container ${styles['header-container']}`}>
-        <Link href={routes.home} className={styles['header-logo']}>
+        <Link href={routes.home} className={styles['header-logo']} aria-label={config.appName}>
           <AuraMark />
           <span>{config.appName}</span>
         </Link>
 
         <button
+          ref={mobileToggleRef}
+          type="button"
           className={styles['header-mobile-toggle']}
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={t('accessibility.toggleMenu')}
+          aria-expanded={mobileOpen}
+          aria-controls={navigationId}
         >
           {mobileOpen ? '✕' : '☰'}
         </button>
 
-        <nav className={`${styles['header-nav']} ${mobileOpen ? styles['mobile-open'] : ''}`}>
+        <nav id={navigationId} className={`${styles['header-nav']} ${mobileOpen ? styles['mobile-open'] : ''}`}>
           <div className={styles['header-links']}>
             <Link href={routes.countries} className={styles['header-link']} onClick={() => setMobileOpen(false)}>
               {t('navigation.countries')}
@@ -108,33 +104,32 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
               {t('navigation.about')}
             </Link>
             {user && userLabel && (
-              <div className={styles['account-menu-wrap']} ref={accountMenuRef}>
-                <button
-                  type="button"
-                  className={`${styles['header-link']} ${styles['account-trigger']}`}
-                  onClick={toggleAccountMenu}
-                  aria-haspopup="menu"
-                  aria-expanded={accountMenuOpen}
-                  aria-controls="header-account-menu"
-                >
-                  <span className={styles['account-avatar']} aria-hidden="true">
-                    {user?.avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={user.avatarUrl} alt="" />
-                    ) : (
-                      userInitial
-                    )}
-                  </span>
-                  <span>{userLabel}</span>
-                </button>
-                {accountMenuOpen && (
-                  <div id="header-account-menu" className={styles['account-menu']} role="menu">
-                    <Link href={routes.profileEdit} className={styles['account-menu-item']} role="menuitem" onClick={closeMenus}>
-                      {t('navigation.profile')}
-                    </Link>
-                  </div>
+              <DropdownMenu
+                className={styles['account-menu-wrap']}
+                open={accountMenuOpen}
+                onOpenChange={setAccountMenuOpen}
+                align="end"
+                menuClassName={styles['account-menu']}
+                renderTrigger={(triggerProps) => (
+                  <button
+                    {...triggerProps}
+                    className={`${styles['header-link']} ${styles['account-trigger']}`}
+                  >
+                    <Avatar
+                      size="small"
+                      src={user.avatarUrl}
+                      alt=""
+                      fallback={userInitial}
+                      decorative
+                    />
+                    <span className={styles['account-label']}>{userLabel}</span>
+                  </button>
                 )}
-              </div>
+              >
+                <Link href={routes.profileEdit} role="menuitem" tabIndex={-1} onClick={closeMenus}>
+                  {t('navigation.profile')}
+                </Link>
+              </DropdownMenu>
             )}
             <div className={styles['header-mobile-auth']}>
               {user ? (
@@ -164,9 +159,13 @@ export function HeaderMain({ afterActions }: HeaderMainProps) {
                 </ButtonMain>
               ) : (
                 <>
-                  <Link href={routes.signIn} onClick={() => setMobileOpen(false)}>
-                    <ButtonMain variant="ghost">{t('actions.signIn')}</ButtonMain>
-                  </Link>
+                  <ButtonMain
+                    href={routes.signIn}
+                    variant="ghost"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {t('actions.signIn')}
+                  </ButtonMain>
                   <ButtonMain
                     onClick={() => {
                       router.push(routes.signUp)

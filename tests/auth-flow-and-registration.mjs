@@ -1,3 +1,5 @@
+// Денис: файл создан или изменён по запросу пользователя.
+
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +12,7 @@ const readOptional = (path) => {
 };
 
 const headerMain = read('frontend/src/widgets/HeaderMain/HeaderMain.tsx');
+const dropdownMenu = read('frontend/src/shared/ui/DropdownMenu/DropdownMenu.tsx');
 const graphqlClient = read('frontend/src/shared/api/graphqlClient.ts');
 const signUp = read('frontend/src/features/SignUpForm/SignUpForm.tsx');
 const authFormStyles = read('frontend/src/features/AuthForm/AuthForm.module.scss');
@@ -35,10 +38,12 @@ const disallowedCharacters = [`'`, '"', '`', '/', '\\', '<', '>', ';', '|', 'Ж'
 
 const checks = [
   [
-    'header user nickname click opens an account menu instead of direct auth-guard navigation',
-    /aria-haspopup="menu"/.test(headerMain) &&
+    'header user nickname opens the shared account menu instead of direct auth-guard navigation',
+    /<DropdownMenu/.test(headerMain) &&
       /account-menu/.test(headerMain) &&
-      /toggleAccountMenu/.test(headerMain),
+      /role="menuitem"/.test(headerMain) &&
+      /aria-haspopup': 'menu'/.test(dropdownMenu) &&
+      /role="menu"/.test(dropdownMenu),
   ],
   [
     'client-side auth redirect preserves the attempted path in next',

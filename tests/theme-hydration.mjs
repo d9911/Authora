@@ -1,3 +1,5 @@
+// Денис: файл создан или изменён по запросу пользователя.
+
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -40,8 +42,9 @@ assert.match(loader, /aria-busy="true"/);
 assert.match(loader, /styles\.fullscreen/);
 assert.match(loaderStyles, /:global\(:root\[data-theme='dark'\]\)/);
 assert.match(loaderStyles, /var\(--paper\)/);
-assert.match(loaderStyles, /var\(--iris\)/);
+assert.match(loader, /var\(--iris\)/);
 assert.match(loaderStyles, /var\(--halo\)/);
+assert.match(loaderStyles, /var\(--accent-text\)/);
 assert.match(loaderStyles, /@media \(prefers-reduced-motion: reduce\)/);
 assert.match(loadingBoundary, /<LoaderMain fullscreen\s*\/>/);
 

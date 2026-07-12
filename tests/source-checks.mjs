@@ -1,3 +1,5 @@
+// Денис: файл создан или изменён по запросу пользователя.
+
 const SOURCE_CHECK_TIMEOUT_MS = 60_000;
 
 const defineSourceCheck = (id, label, file) => ({
@@ -119,6 +121,19 @@ export const sourceChecks = [
     'SelectMain component contract',
     'tests/select-main-contract.mjs',
   ),
+  {
+    id: 'ui-kit-remediation',
+    label: 'UI-kit remediation contracts',
+    command: 'node',
+    args: [
+      '--disable-warning=MODULE_TYPELESS_PACKAGE_JSON',
+      '--test',
+      'tests/ui-kit-remediation.test.mjs',
+    ],
+    cwd: '.',
+    required: true,
+    timeoutMs: SOURCE_CHECK_TIMEOUT_MS,
+  },
   defineSourceCheck(
     'sass-deprecation-warnings',
     'Sass deprecation warnings',

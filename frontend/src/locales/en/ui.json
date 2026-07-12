@@ -92,6 +92,7 @@
       "surfaces": "Surfaces",
       "actions": "Actions",
       "forms": "Forms",
+      "navigation": "Navigation",
       "feedback": "Feedback"
     },
     "header": {
@@ -104,6 +105,54 @@
       "components": "UI components",
       "selectedPreview": "Selected component preview"
     },
+    "catalog": {
+      "searchLabel": "Search catalog",
+      "searchPlaceholder": "Component name or purpose…",
+      "noResults": "No components match this search.",
+      "importLabel": "Import",
+      "apiLabel": "Core API",
+      "a11yLabel": "Accessibility",
+      "status": {
+        "ready": "ready",
+        "extended": "extended",
+        "new": "new"
+      },
+      "a11y": {
+        "native": "Uses native semantics and an explicit accessible name.",
+        "action": "The native action supports Enter, Space and focus-visible.",
+        "form": "The field is associated with its label and hint or error state.",
+        "composite": "The composite widget implements APG keyboard and focus behavior.",
+        "feedback": "State changes are announced through the appropriate live region.",
+        "decorative": "Decorative graphics are excluded from the accessibility tree.",
+        "surface": "Content owns semantics; the surface does not imitate interactivity.",
+        "theme": "Theme state has an accessible name and keyboard operation."
+      },
+      "items": {
+        "auraSigil": { "purpose": "The signature decorative Identity Aura mark." },
+        "avatar": { "purpose": "User imagery with an accessible fallback state." },
+        "badge": { "purpose": "A compact status or category label." },
+        "buttonMain": { "purpose": "A primary action or visually consistent link." },
+        "card": { "purpose": "A themed surface for composing content." },
+        "feedbackText": { "purpose": "An inline form error, warning or status." },
+        "iconButton": { "purpose": "A compact action with a required accessible name." },
+        "inputMain": { "purpose": "A text field with label, hint, error and credential mode." },
+        "loaderMain": { "purpose": "A themed fullscreen or inline loading indicator." },
+        "modalMain": { "purpose": "A modal with focus trap, Escape and focus restoration." },
+        "alertDialog": { "purpose": "Critical-action confirmation with a busy state." },
+        "dropdownMenu": { "purpose": "An APG action menu with adaptive placement." },
+        "otpCodeInput": { "purpose": "Controlled input for a one-time numeric code." },
+        "passwordInput": { "purpose": "A password field with reveal and associated error." },
+        "progressBar": { "purpose": "Determinate progress with a localized value." },
+        "rangeControl": { "purpose": "A native range with label and formatted value." },
+        "sectionHeader": { "purpose": "Consistent section title, description and action hierarchy." },
+        "selectMain": { "purpose": "A single or multiple listbox with auto placement." },
+        "spatialPreview": { "purpose": "A dependency-free decorative CSS/SVG depth scene." },
+        "tabs": { "purpose": "A roving tablist with Arrow, Home and End navigation." },
+        "themeToggle": { "purpose": "Switches the application light and dark theme." },
+        "toast": { "purpose": "Transient status with a tone-aware live region and dismiss action." },
+        "toggleSwitch": { "purpose": "A native boolean control with label and hint." }
+      }
+    },
     "status": {
       "ready": "ready",
       "interactive": "interactive",
@@ -113,6 +162,7 @@
       "surfaces": "surfaces",
       "actions": "actions",
       "forms": "forms",
+      "navigation": "navigation",
       "feedback": "feedback"
     },
     "selected": "Selected",
@@ -136,6 +186,8 @@
         "description": "Buttons, icon buttons and state feedback share focus and hover behavior.",
         "showToast": "Show toast",
         "openModal": "Open modal",
+        "loading": "Saving",
+        "disabled": "Unavailable",
         "generate": "Generate",
         "preview": "Preview"
       },
@@ -145,6 +197,14 @@
         "searchLabel": "Search component",
         "searchPlaceholder": "Card, tabs, overlay…",
         "tokenLabel": "Token preview",
+        "errorLabel": "Credential ID",
+        "hint": "The hint and error are associated through aria-describedby.",
+        "errorMessage": "Check the identifier format.",
+        "required": "required",
+        "passwordLabel": "Disabled password",
+        "otpLabel": "One-time code",
+        "success": "Changes are ready to save.",
+        "warning": "This action will require confirmation.",
         "apply": "Apply",
         "reset": "Reset"
       },
@@ -167,6 +227,30 @@
       "layers": {
         "title": "FSD map",
         "description": "One-way imports keep the kit reusable."
+      },
+      "menu": {
+        "title": "Dropdown menu",
+        "description": "The controlled menu chooses its direction from available space.",
+        "trigger": "Open action menu",
+        "primary": "Mark as ready",
+        "secondary": "Send warning",
+        "disabled": "Unavailable action",
+        "keyboardNote": "Use Arrow Up/Down, Home, End and Escape."
+      },
+      "identity": {
+        "title": "Identity states",
+        "description": "Avatar, Badge and Loader share semantic tokens.",
+        "avatarAlt": "Authora demo avatar",
+        "verified": "verified",
+        "pending": "pending",
+        "blocked": "error",
+        "loading": "Checking identity state"
+      },
+      "overlays": {
+        "title": "Overlays and notifications",
+        "description": "Dialog, confirmation and toast preserve theme and focus.",
+        "openAlert": "Open confirmation",
+        "errorToast": "Show error"
       }
     },
     "stats": {
@@ -204,9 +288,26 @@
       "close": "Close",
       "save": "Save state"
     },
+    "alertDialog": {
+      "title": "Confirm action?",
+      "description": "A critical-action demo that does not modify user data.",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
     "toast": {
-      "title": "UI state updated",
-      "description": "The selected kit configuration is visible on the page."
+      "close": "Dismiss notification",
+      "success": {
+        "title": "UI state updated",
+        "description": "The selected kit configuration is visible on the page."
+      },
+      "warning": {
+        "title": "Attention required",
+        "description": "Review the selected settings before continuing."
+      },
+      "danger": {
+        "title": "Demonstration error",
+        "description": "The critical message is announced as an alert."
+      }
     }
   }
 }

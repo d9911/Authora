@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 /* ============================================================
    InputMain - Responsive Styles
    ============================================================ */
@@ -10,7 +12,10 @@
 }
 
 .input-label {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 7px;
   font-family: var(--font-mono);
   font-size: 11px;
@@ -20,12 +25,21 @@
   color: var(--mist);
 }
 
+.field-meta {
+  color: var(--mist);
+  font-family: var(--font-body);
+  font-size: 0.9em;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .input-field {
   width: 100%;
   height: 46px;
   background: var(--paper);
   color: var(--ink);
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-border);
   border-radius: var(--r);
   padding: 0 13px;
   font-size: 15px;
@@ -38,10 +52,34 @@
     border-color: var(--iris);
   }
 
+  &[aria-invalid='true'] {
+    border-color: var(--status-danger-text);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+  }
+
   &.mono {
     font-family: var(--font-mono);
     letter-spacing: 0.04em;
   }
+}
+
+.field-hint,
+.field-error {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.field-hint {
+  color: var(--mist);
+}
+
+.field-error {
+  color: var(--status-danger-text);
 }
 
 @include media(md) {

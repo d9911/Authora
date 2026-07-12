@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 /* ============================================================
    ModalMain - Responsive Styles
    ============================================================ */
@@ -69,6 +71,11 @@
     outline: 2px solid var(--iris);
     outline-offset: 2px;
     border-radius: 4px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
 }
 
@@ -217,5 +224,16 @@
 
   .modal-title {
     font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay,
+  .modal-content {
+    animation: none;
+  }
+
+  .modal-close {
+    transition: none;
   }
 }

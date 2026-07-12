@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 /* ============================================================
    ButtonMain - Responsive Styles
    ============================================================ */
@@ -21,8 +23,10 @@
   transition: all 0.16s ease;
   outline: none;
   white-space: nowrap;
+  text-decoration: none;
 
-  &:disabled {
+  &:disabled,
+  &[aria-disabled='true'] {
     opacity: 0.55;
     cursor: not-allowed;
   }
@@ -32,23 +36,27 @@
     outline-offset: 2px;
   }
 
-  &:active:not(:disabled) {
+  &:active:not(:disabled):not([aria-disabled='true']) {
     transform: translateY(1px);
   }
 }
 
+.button:hover {
+  text-decoration: none;
+}
+
 .button-primary {
-  background: var(--iris);
-  color: white;
+  background: var(--action-accent);
+  color: var(--on-action);
   box-shadow: 0 10px 24px -12px rgba(91, 75, 255, 0.7);
 
-  &:hover:not(:disabled) {
-    background: var(--halo);
+  &:hover:not(:disabled):not([aria-disabled='true']) {
+    background: var(--action-accent-hover);
     transform: translateY(-1px);
     box-shadow: 0 12px 28px -10px rgba(91, 75, 255, 0.8);
   }
 
-  &:active:not(:disabled) {
+  &:active:not(:disabled):not([aria-disabled='true']) {
     transform: translateY(0);
   }
 }
@@ -58,7 +66,7 @@
   color: var(--ink);
   border-color: var(--line);
 
-  &:hover:not(:disabled) {
+  &:hover:not(:disabled):not([aria-disabled='true']) {
     border-color: var(--iris);
     background: rgba(91, 75, 255, 0.04);
   }
@@ -69,17 +77,37 @@
   color: var(--ink);
   padding: 0 14px;
 
-  &:hover:not(:disabled) {
+  &:hover:not(:disabled):not([aria-disabled='true']) {
     background: rgba(91, 75, 255, 0.08);
   }
 }
 
 .button-danger {
-  background: var(--alert);
-  color: white;
+  background: var(--action-danger);
+  color: var(--on-action);
 
-  &:hover:not(:disabled) {
-    background: #ff3d5a;
+  &:hover:not(:disabled):not([aria-disabled='true']) {
+    background: color-mix(in srgb, var(--action-danger) 88%, #000);
+  }
+}
+
+.label {
+  min-width: 0;
+}
+
+.spinner {
+  width: 1em;
+  height: 1em;
+  flex: 0 0 auto;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: button-spin 700ms linear infinite;
+}
+
+@keyframes button-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -130,5 +158,11 @@
     .button {
       width: 100%;
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
   }
 }

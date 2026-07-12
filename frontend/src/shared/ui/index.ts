@@ -7,9 +7,21 @@ export { OtpCodeInput } from './OtpCodeInput/OtpCodeInput';
 export { FeedbackText } from './FeedbackText/FeedbackText';
 export { LoaderMain } from './LoaderMain/LoaderMain';
 export { ModalMain } from './ModalMain/ModalMain';
+// Денис: файл создан или изменён по запросу пользователя.
+
+export { AlertDialog } from './AlertDialog/AlertDialog';
+export type { AlertDialogProps } from './AlertDialog/AlertDialog';
 export { AuraSigil } from './AuraSigil/AuraSigil';
+export { Avatar } from './Avatar/Avatar';
+export type { AvatarProps, AvatarSize } from './Avatar/Avatar';
 export { Badge } from './Badge/Badge';
 export { Card } from './Card/Card';
+export { DropdownMenu } from './DropdownMenu/DropdownMenu';
+export type {
+  DropdownMenuAlign,
+  DropdownMenuProps,
+  DropdownMenuTriggerProps,
+} from './DropdownMenu/DropdownMenu';
 export { IconButton } from './IconButton/IconButton';
 export { ProgressBar } from './ProgressBar/ProgressBar';
 export { RangeControl } from './RangeControl/RangeControl';

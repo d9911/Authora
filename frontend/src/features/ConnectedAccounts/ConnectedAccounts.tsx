@@ -1,5 +1,7 @@
 'use client';
 
+// Денис: файл создан или изменён по запросу пользователя.
+
 import { FormEvent, ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'next/navigation';
@@ -17,7 +19,7 @@ import {
   requestEmailChange,
 } from './api/accountSecurityApi';
 import { TelegramLoginButton } from '@/features/TelegramLoginButton/TelegramLoginButton';
-import { ButtonMain, FeedbackText, InputMain, OtpCodeInput } from '@/shared/ui';
+import { Badge, ButtonMain, FeedbackText, InputMain, OtpCodeInput } from '@/shared/ui';
 import { translateError } from '@/shared/i18n/errors';
 import { i18nConfig, normalizeLocale } from '@/shared/i18n/config';
 import { normalizeNumericCode } from '@/shared/lib/otp';
@@ -60,9 +62,9 @@ function ConnectedAccountRow({
       <div>
         <strong>{label}</strong>{' '}
         {connected ? (
-          <span className="tag tag-verified" style={{ marginLeft: 6 }}>
+          <Badge tone="success" variant="outline" style={{ marginLeft: 6 }}>
             {connectedLabel}
-          </span>
+          </Badge>
         ) : (
           <span className="muted" style={{ marginLeft: 6, fontSize: 13 }}>
             {missingLabel}

@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 /* ============================================================
    HeaderMain - Responsive Styles
    ============================================================ */
@@ -57,7 +59,7 @@
   transition: color 0.2s;
 
   &:hover {
-    color: var(--iris);
+    color: var(--accent-text);
     text-decoration: none;
   }
 }
@@ -68,6 +70,8 @@
 
 .account-trigger {
   display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
   align-items: center;
   gap: 8px;
   border: 0;
@@ -83,55 +87,12 @@
   }
 }
 
-.account-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(91, 75, 255, 0.1);
-  color: var(--iris);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.account-label {
+  min-width: 0;
+  max-width: 24ch;
   overflow: hidden;
-  font-size: 12px;
-  font-weight: 700;
-  flex: 0 0 auto;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-}
-
-.account-menu {
-  position: absolute;
-  top: calc(100% + 12px);
-  right: 0;
-  min-width: 160px;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: var(--card);
-  box-shadow: var(--shadow-soft);
-  z-index: 120;
-}
-
-.account-menu-item {
-  display: block;
-  border-radius: 6px;
-  padding: 9px 10px;
-  color: var(--ink);
-  text-decoration: none;
-  font-size: 14px;
-
-  &:hover,
-  &:focus-visible {
-    background: var(--paper);
-    color: var(--iris);
-    outline: none;
-    text-decoration: none;
-  }
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .header-actions {
@@ -236,17 +197,11 @@
     width: 100%;
   }
 
-	  .account-trigger {
-	    width: 100%;
-	    justify-content: center;
-	  }
-
-  .account-menu {
-    position: static;
+  .account-trigger {
     width: 100%;
-    margin-top: 8px;
-    box-shadow: none;
+    justify-content: center;
   }
+
 }
 
 @include media(sm) {

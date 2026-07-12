@@ -1,6 +1,8 @@
+// Денис: файл создан или изменён по запросу пользователя.
+
 'use client';
 
-import { InputHTMLAttributes, useId, useState } from 'react';
+import { forwardRef, useId, useState, type InputHTMLAttributes } from 'react';
 import { useTranslation } from 'react-i18next';
 import styles from './PasswordInput.module.scss';
 
@@ -11,19 +13,25 @@ interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
   hideAriaLabel?: string;
 }
 
-export function PasswordInput({
-  label,
-  id,
-  error,
-  className,
-  showAriaLabel,
-  hideAriaLabel,
-  ...rest
-}: PasswordInputProps) {
+export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(function PasswordInput(
+  {
+    label,
+    id,
+    error,
+    className,
+    showAriaLabel,
+    hideAriaLabel,
+    ...rest
+  },
+  ref,
+) {
   const { t } = useTranslation('common');
   const generatedId = useId();
   const inputId = id ?? generatedId;
   const errorId = `${inputId}-error`;
+  const describedBy = [rest['aria-describedby'], error ? errorId : null]
+    .filter(Boolean)
+    .join(' ') || undefined;
   const [visible, setVisible] = useState(false);
 
   return (
@@ -35,16 +43,18 @@ export function PasswordInput({
       )}
       <div className={styles['password-control']}>
         <input
+          ref={ref}
           id={inputId}
           {...rest}
           className={`${styles['password-input']} ${className || ''}`}
           type={visible ? 'text' : 'password'}
           aria-invalid={error ? true : rest['aria-invalid']}
-          aria-describedby={error ? errorId : rest['aria-describedby']}
+          aria-describedby={describedBy}
         />
         <button
           className={styles['password-toggle']}
           type="button"
+          disabled={rest.disabled}
           aria-label={
             visible
               ? (hideAriaLabel ?? t('password.hide'))
@@ -56,10 +66,10 @@ export function PasswordInput({
         </button>
       </div>
       {error && (
-        <p id={errorId} className={styles['field-error']}>
+        <p id={errorId} className={styles['field-error']} role="alert">
           {error}
         </p>
       )}
     </div>
   );
-}
+});

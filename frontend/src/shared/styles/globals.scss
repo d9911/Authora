@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 /* ============================================================
    Authora — "Identity Aura"
    Security as a luminous field around an identity.
@@ -21,8 +23,20 @@
   /* --- Derived --- */
   --line: #e5e3ee;       /* hairline on light */
   --line-dark: #322b42;  /* hairline on dark */
+  --control-border: #898493; /* interactive field boundary, >= 3:1 on light surfaces */
+  --selection-edge: #4738c7;
   --on-ink: #efedf6;     /* text on dark */
   --on-ink-mist: rgba(239, 237, 246, 0.62);
+
+  /* --- Semantic action/status pairs (WCAG AA for normal text) --- */
+  --action-accent: #4738c7;
+  --action-accent-hover: #372aa8;
+  --action-danger: #b4233c;
+  --on-action: #ffffff;
+  --accent-text: #4738c7;
+  --status-success-text: #08775a;
+  --status-danger-text: #b4233c;
+  --status-warning-text: #7a4a00;
 
   /* --- Type --- */
   --font-display: 'Space Grotesk', system-ui, sans-serif;
@@ -62,8 +76,19 @@
 
   --line: #302a3e;
   --line-dark: #4a415f;
+  --control-border: #6f687e;
+  --selection-edge: #b9a9ff;
   --on-ink: #f7f4ff;
   --on-ink-mist: rgba(247, 244, 255, 0.68);
+
+  --action-accent: #4738c7;
+  --action-accent-hover: #372aa8;
+  --action-danger: #b4233c;
+  --on-action: #ffffff;
+  --accent-text: #b9a9ff;
+  --status-success-text: #6ee7bd;
+  --status-danger-text: #ffb4c0;
+  --status-warning-text: #f5c271;
 
   --glow-iris: 0 0 0 1px rgba(139, 124, 255, 0.22), 0 24px 70px -28px rgba(139, 124, 255, 0.7);
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.26), 0 18px 48px -28px rgba(0, 0, 0, 0.7);
@@ -96,12 +121,13 @@ body {
 }
 
 a {
-  color: var(--iris);
-  text-decoration: none;
-}
-a:hover {
+  color: var(--accent-text);
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+a:hover,
+a:focus-visible {
+  text-decoration: underline;
 }
 
 /* --- Layout --- */
@@ -147,7 +173,7 @@ h4 { font-size: 1.1rem; letter-spacing: -0.01em; }
   font-weight: 500;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--iris);
+  color: var(--accent-text);
 }
 
 /* Credential data — tokens, codes, IDs, country codes. */
@@ -163,8 +189,8 @@ h4 { font-size: 1.1rem; letter-spacing: -0.01em; }
   line-height: 1.65;
 }
 
-.error-text { color: var(--alert); font-size: 0.9rem; margin: 10px 0 0; }
-.success-text { color: var(--signal); font-size: 0.9rem; margin: 10px 0 0; }
+.error-text { color: var(--status-danger-text); font-size: 0.9rem; margin: 10px 0 0; }
+.success-text { color: var(--status-success-text); font-size: 0.9rem; margin: 10px 0 0; }
 
 /* --- Cards --- */
 .card {
@@ -218,7 +244,7 @@ h4 { font-size: 1.1rem; letter-spacing: -0.01em; }
   color: var(--mist);
 }
 .tag-verified {
-  color: var(--signal);
+  color: var(--status-success-text);
   border-color: rgba(18, 184, 134, 0.4);
   background: rgba(18, 184, 134, 0.08);
 }

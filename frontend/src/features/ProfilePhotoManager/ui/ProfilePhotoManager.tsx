@@ -1,11 +1,14 @@
 'use client';
 
+// Денис: файл создан или изменён по запросу пользователя.
+
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Profile, ProfileImageKind, User } from '@/shared/types';
 import { useAppDispatch, useAppSelector } from '@/processes/store/hooks';
 import { setAuthUser } from '@/processes/store/slices/authSlice';
 import { translateError } from '@/shared/i18n/errors';
+import { AlertDialog } from '@/shared/ui';
 import {
   deleteProfileImageThunk,
   uploadProfileImageThunk,
@@ -21,6 +24,7 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
   const dispatch = useAppDispatch();
   const saving = useAppSelector((s) => s.profile.saving);
   const [busyKind, setBusyKind] = useState<ProfileImageKind | null>(null);
+  const [pendingDeleteKind, setPendingDeleteKind] = useState<ProfileImageKind | null>(null);
   const [localPreview, setLocalPreview] = useState<Record<ProfileImageKind, string | null>>({
     AVATAR: null,
     COVER: null,
@@ -78,11 +82,6 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
   };
 
   const remove = async (kind: ProfileImageKind) => {
-    const confirmed = window.confirm(
-      t(kind === 'AVATAR' ? 'photos.confirmDeleteAvatar' : 'photos.confirmDeleteCover'),
-    );
-    if (!confirmed) return;
-
     setErrors((current) => ({ ...current, [kind]: null }));
     setBusyKind(kind);
     try {
@@ -95,6 +94,7 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
       }));
     } finally {
       setBusyKind(null);
+      setPendingDeleteKind(null);
     }
   };
 
@@ -114,7 +114,7 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
           busy={saving && busyKind === 'AVATAR'}
           error={errors.AVATAR}
           onFile={(file) => upload('AVATAR', file)}
-          onDelete={() => remove('AVATAR')}
+          onDelete={() => setPendingDeleteKind('AVATAR')}
         />
         <CoverUploader
           imageUrl={profile?.coverSrc}
@@ -122,9 +122,26 @@ export function ProfilePhotoManager({ user, profile }: { user: User; profile: Pr
           busy={saving && busyKind === 'COVER'}
           error={errors.COVER}
           onFile={(file) => upload('COVER', file)}
-          onDelete={() => remove('COVER')}
+          onDelete={() => setPendingDeleteKind('COVER')}
         />
       </div>
+      <AlertDialog
+        open={pendingDeleteKind !== null}
+        title={t(
+          pendingDeleteKind === 'COVER'
+            ? 'photos.confirmDeleteCover'
+            : 'photos.confirmDeleteAvatar',
+        )}
+        description={t('photos.confirmDeleteDescription')}
+        cancelLabel={t('photos.actions.cancel')}
+        confirmLabel={t('photos.actions.confirmDelete')}
+        busy={saving && busyKind === pendingDeleteKind}
+        onCancel={() => setPendingDeleteKind(null)}
+        onConfirm={() => {
+          const kind = pendingDeleteKind;
+          if (kind) void remove(kind);
+        }}
+      />
     </div>
   );
 }

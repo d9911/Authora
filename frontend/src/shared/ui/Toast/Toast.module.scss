@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 .toast {
   position: fixed;
   right: 24px;
@@ -50,11 +52,39 @@
 }
 
 .tone-success {
-  border-color: rgba(18, 184, 134, 0.32);
+  border-color: var(--status-success-text);
+}
+
+.tone-warning {
+  border-color: var(--status-warning-text);
 }
 
 .tone-danger {
-  border-color: rgba(255, 84, 112, 0.34);
+  border-color: var(--status-danger-text);
+}
+
+.close {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  color: var(--ink);
+  background: transparent;
+  font: 600 18px/1 var(--font-body);
+  cursor: pointer;
+}
+
+.close:hover {
+  border-color: var(--action-accent);
+  background: color-mix(in srgb, var(--action-accent) 8%, transparent);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--iris);
+  outline-offset: 2px;
 }
 
 @media (max-width: 640px) {

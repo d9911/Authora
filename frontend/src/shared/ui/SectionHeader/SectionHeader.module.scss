@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 .header {
   display: flex;
   align-items: end;
@@ -18,7 +20,7 @@
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--iris);
+  color: var(--accent-text);
 }
 
 .title {

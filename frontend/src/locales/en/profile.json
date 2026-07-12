@@ -52,7 +52,9 @@
       "replace": "Replace cover"
     },
     "actions": {
-      "delete": "Delete"
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "confirmDelete": "Delete"
     },
     "accessibility": {
       "chooseImage": "Choose {{title}} image"
@@ -62,7 +64,8 @@
       "tooLarge": "The image must not exceed {{maxSizeMb}} MB."
     },
     "confirmDeleteAvatar": "Delete your avatar?",
-    "confirmDeleteCover": "Delete your cover image?"
+    "confirmDeleteCover": "Delete your cover image?",
+    "confirmDeleteDescription": "This action cannot be undone. The image will be removed from your profile."
   },
   "security": {
     "title": "Connected accounts",

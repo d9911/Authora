@@ -1,3 +1,5 @@
+// Денис: файл создан или изменён по запросу пользователя.
+
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
@@ -135,9 +137,43 @@ const dynamicUsages = {
       'page-block',
     ].flatMap((id) => [`components.${id}.title`, `components.${id}.description`]),
     ...['ready', 'interactive', 'layout'].map((id) => `showcase.status.${id}`),
+    ...['ready', 'extended', 'new'].map((id) => `showcase.catalog.status.${id}`),
+    ...[
+      'auraSigil',
+      'avatar',
+      'badge',
+      'buttonMain',
+      'card',
+      'feedbackText',
+      'iconButton',
+      'inputMain',
+      'loaderMain',
+      'modalMain',
+      'alertDialog',
+      'dropdownMenu',
+      'otpCodeInput',
+      'passwordInput',
+      'progressBar',
+      'rangeControl',
+      'sectionHeader',
+      'selectMain',
+      'spatialPreview',
+      'tabs',
+      'themeToggle',
+      'toast',
+      'toggleSwitch',
+    ].map((id) => `showcase.catalog.items.${id}.purpose`),
+    ...['native', 'action', 'form', 'composite', 'feedback', 'decorative', 'surface', 'theme'].map(
+      (id) => `showcase.catalog.a11y.${id}`,
+    ),
+    ...['success', 'warning', 'danger'].flatMap((tone) => [
+      `showcase.toast.${tone}.title`,
+      `showcase.toast.${tone}.description`,
+    ]),
     ...['surfaces', 'actions', 'forms', 'feedback'].map(
       (id) => `showcase.categories.${id}`,
     ),
+    'showcase.categories.navigation',
     ...['primitive', 'composition', 'pageBlock', 'route'].flatMap((id) => [
       `showcase.timeline.steps.${id}.title`,
       `showcase.timeline.steps.${id}.description`,

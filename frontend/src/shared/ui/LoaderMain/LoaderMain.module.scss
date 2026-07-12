@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 .loader {
   --loader-aura: rgba(91, 75, 255, 0.2);
   --loader-core: #ede9ff;
@@ -87,7 +89,7 @@
 .label {
   position: relative;
   z-index: 1;
-  color: var(--iris);
+  color: var(--accent-text);
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 500;

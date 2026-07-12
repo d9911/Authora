@@ -1,0 +1,121 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
+@use '../../styles/breakpoints' as *;
+
+.root {
+  position: relative;
+  display: inline-block;
+  min-width: 0;
+}
+
+.menu {
+  position: fixed;
+  z-index: 120;
+  display: grid;
+  width: max-content;
+  min-width: min(
+    max(var(--dropdown-menu-trigger-width, 0px), 180px),
+    var(--dropdown-menu-viewport-width, calc(100vw - 24px))
+  );
+  max-width: min(
+    320px,
+    var(--dropdown-menu-viewport-width, calc(100vw - 24px))
+  );
+  max-height: var(--dropdown-menu-max-height, 320px);
+  gap: 3px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--shadow-soft), var(--glow-iris);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.menu[data-positioned='true'] {
+  visibility: visible;
+  pointer-events: auto;
+  animation: dropdown-menu-in 140ms ease-out;
+}
+
+.menu[data-placement='bottom'] {
+  --dropdown-menu-enter-y: -4px;
+
+  transform-origin: top center;
+}
+
+.menu[data-placement='top'] {
+  --dropdown-menu-enter-y: 4px;
+
+  transform-origin: bottom center;
+}
+
+.menu :global([role='menuitem']) {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink);
+  font: 500 14px/1.35 var(--font-body);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menu :global([role='menuitem']:hover),
+.menu :global([role='menuitem']:focus-visible) {
+  outline: 2px solid var(--iris);
+  outline-offset: -2px;
+  background: var(--paper);
+  color: var(--accent-text);
+  text-decoration: none;
+}
+
+.menu :global([role='menuitem'][aria-disabled='true']),
+.menu :global(button[role='menuitem']:disabled) {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+@keyframes dropdown-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--dropdown-menu-enter-y, -4px)) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@include media(sm) {
+  .menu {
+    min-width: min(
+      max(var(--dropdown-menu-trigger-width, 0px), 220px),
+      var(--dropdown-menu-viewport-width, calc(100vw - 16px))
+    );
+    max-width: var(--dropdown-menu-viewport-width, calc(100vw - 16px));
+  }
+}
+
+@media (pointer: coarse) {
+  .menu :global([role='menuitem']) {
+    min-height: 44px;
+    padding-block: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu {
+    animation: none;
+  }
+}

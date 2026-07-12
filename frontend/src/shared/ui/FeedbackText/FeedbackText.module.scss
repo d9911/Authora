@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 .feedback {
   margin: 10px 0 0;
   font-size: 0.9rem;
@@ -5,11 +7,15 @@
 }
 
 .error {
-  color: var(--alert);
+  color: var(--status-danger-text);
 }
 
 .success {
-  color: var(--signal);
+  color: var(--status-success-text);
+}
+
+.warning {
+  color: var(--status-warning-text);
 }
 
 .muted {

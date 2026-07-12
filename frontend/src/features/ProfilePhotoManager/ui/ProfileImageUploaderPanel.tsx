@@ -1,8 +1,10 @@
 'use client';
 
+// Денис: файл создан или изменён по запросу пользователя.
+
 import { ChangeEvent, ReactNode, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ButtonMain } from '@/shared/ui';
+import { ButtonMain, FeedbackText } from '@/shared/ui';
 import { PROFILE_IMAGE_ACCEPT } from '../model/imageCrop';
 import styles from './ProfilePhotoManager.module.scss';
 
@@ -68,6 +70,8 @@ export function ProfileImageUploaderPanel({
             className={styles['file-input']}
             type="file"
             accept={PROFILE_IMAGE_ACCEPT}
+            tabIndex={-1}
+            disabled={busy}
             aria-label={t('photos.accessibility.chooseImage', { title })}
             onChange={onChange}
           />
@@ -80,11 +84,7 @@ export function ProfileImageUploaderPanel({
             </ButtonMain>
           )}
         </div>
-        {error && (
-          <p className={styles['photo-error']} role="alert">
-            {error}
-          </p>
-        )}
+        {error && <FeedbackText className={styles['photo-error']} tone="error">{error}</FeedbackText>}
       </div>
     </section>
   );

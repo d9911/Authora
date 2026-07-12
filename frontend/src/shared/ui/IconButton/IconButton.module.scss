@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 .button {
   display: inline-flex;
   align-items: center;
@@ -65,9 +67,9 @@
 }
 
 .variant-accent {
-  color: #fff;
+  color: var(--on-action);
   border-color: transparent;
-  background: var(--iris);
+  background: var(--action-accent);
   box-shadow: 0 10px 24px -14px rgba(91, 75, 255, 0.8);
 }
 

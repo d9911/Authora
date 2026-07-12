@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 .card {
   position: relative;
   display: flex;
@@ -74,17 +76,17 @@
 }
 
 .tone-accent {
-  color: #fff;
+  color: var(--on-action);
   border-color: rgba(159, 140, 255, 0.5);
   background:
-    radial-gradient(circle at 80% 20%, rgba(159, 140, 255, 0.58), transparent 34%),
-    linear-gradient(135deg, var(--iris), #3226bf);
+    radial-gradient(circle at 80% 20%, rgba(159, 140, 255, 0.5), transparent 34%),
+    linear-gradient(135deg, var(--action-accent), #3226bf);
 }
 
 .tone-accent .title,
 .tone-accent .description,
 .tone-accent .eyebrow {
-  color: #fff;
+  color: var(--on-action);
 }
 
 .header,
@@ -105,7 +107,7 @@
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--iris);
+  color: var(--accent-text);
 }
 
 .title {

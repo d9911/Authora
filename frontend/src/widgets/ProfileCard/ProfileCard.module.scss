@@ -1,3 +1,5 @@
+/* Денис: файл создан или изменён по запросу пользователя. */
+
 /* ============================================================
    ProfileCard - Responsive Styles
    ============================================================ */
@@ -35,24 +37,10 @@
 }
 
 .profile-avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: rgba(91, 75, 255, 0.08);
-  color: var(--iris);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  font-weight: 600;
-  overflow: hidden;
-  flex-shrink: 0;
+  --avatar-size: 64px;
+  --avatar-font-size: 24px;
 
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+  background: rgba(91, 75, 255, 0.08);
 }
 
 .profile-info {
@@ -69,11 +57,13 @@
 
 .profile-email {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: 4px;
   font-size: 14px;
   color: var(--mist);
   flex-wrap: wrap;
+  overflow-wrap: anywhere;
 }
 
 .profile-bio {
@@ -88,9 +78,8 @@
   }
 
   .profile-avatar {
-    width: 56px;
-    height: 56px;
-    font-size: 22px;
+    --avatar-size: 56px;
+    --avatar-font-size: 22px;
   }
 
   .profile-header {
@@ -104,9 +93,8 @@
   }
 
   .profile-avatar {
-    width: 52px;
-    height: 52px;
-    font-size: 20px;
+    --avatar-size: 52px;
+    --avatar-font-size: 20px;
   }
 
   .profile-header {
@@ -135,9 +123,8 @@
   }
 
   .profile-avatar {
-    width: 48px;
-    height: 48px;
-    font-size: 18px;
+    --avatar-size: 48px;
+    --avatar-font-size: 18px;
   }
 
   .profile-info {

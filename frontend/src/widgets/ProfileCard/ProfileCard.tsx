@@ -1,7 +1,10 @@
 'use client'
 
+// Денис: файл создан или изменён по запросу пользователя.
+
 import { useTranslation } from 'react-i18next'
 import { Profile, User } from '@/shared/types'
+import { Avatar, Badge } from '@/shared/ui'
 import styles from './ProfileCard.module.scss'
 
 export function ProfileCard({ user, profile }: { user: User; profile: Profile | null }) {
@@ -18,21 +21,20 @@ export function ProfileCard({ user, profile }: { user: User; profile: Profile | 
         </div>
       )}
       <div className={styles['profile-header']}>
-        <div className={styles['profile-avatar']}>
-          {user.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.avatarUrl} alt={t('card.avatarAlt')} />
-          ) : (
-            avatarLabel
-          )}
-        </div>
+        <Avatar
+          className={styles['profile-avatar']}
+          size="large"
+          src={user.avatarUrl}
+          alt={t('card.avatarAlt')}
+          fallback={avatarLabel}
+        />
         <div className={styles['profile-info']}>
           <h4>{displayName}</h4>
           <div className={styles['profile-email']}>
             <span>{user.email ?? t('card.noRecoveryEmail')}</span>
             {user.email ? (
               user.emailVerified ? (
-                <span className="tag tag-verified">{t('card.verified')}</span>
+                <Badge tone="success" variant="outline">{t('card.verified')}</Badge>
               ) : (
                 <span>{t('card.unverified')}</span>
               )
