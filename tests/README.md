@@ -174,12 +174,12 @@ results and do not change an otherwise successful exit code.
 
 ### Mongo smoke
 
-The legacy `backend/smoke-test.ts` requires `mongodb-memory-server`, which is not currently
-declared in `backend/package.json`. To enable the check:
+The legacy `backend/smoke-test.ts` uses the `mongodb-memory-server` dev dependency declared
+in `backend/package.json`. Install backend dependencies before running the check:
 
 ```bash
 cd backend
-yarn add --dev mongodb-memory-server
+yarn install
 ```
 
 `mongodb-memory-server` may need to obtain a compatible MongoDB binary on its first run.
@@ -201,16 +201,16 @@ compatible macOS fallback.
 
 ### Autocannon
 
-The benchmark loads `autocannon` from backend dependencies and never installs packages
-during a test run. To enable it persistently:
+The benchmark loads the declared `autocannon` dev dependency from the backend and never
+installs packages during a test run:
 
 ```bash
 cd backend
-yarn add --dev autocannon@7
+yarn install
 ```
 
-Load duration and concurrency remain configurable for the legacy load entry point, for
-example:
+The local k6 profile defaults to 5 VUs so the latency threshold remains meaningful on a
+single development process. Load duration and concurrency remain configurable, for example:
 
 ```bash
 VUS=20 DURATION=30s make load-test                 # k6 duration

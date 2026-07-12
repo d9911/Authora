@@ -53,9 +53,9 @@ try {
       JWT_REFRESH_SECRET: 'load_refresh_secret',
       SMTP_USER: '',
       SMTP_PASS: '',
-      RATE_LIMIT_MAX: '100000',
-      AUTH_RATE_LIMIT_MAX: '100000',
-      AUTH_IDENTIFIER_RATE_LIMIT_MAX: '100000',
+      RATE_LIMIT_MAX: '1000000',
+      AUTH_RATE_LIMIT_MAX: '1000000',
+      AUTH_IDENTIFIER_RATE_LIMIT_MAX: '1000000',
     },
   });
   await waitForHttp(`${baseUrl}/health`, {

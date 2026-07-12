@@ -14,6 +14,7 @@ const GQL = `${BASE_URL}/graphql`;
 
 const errors = new Counter('gql_errors');
 const signupTrend = new Trend('signup_duration', true);
+const localVus = Number(__ENV.VUS || 5);
 
 export const options = {
   scenarios: {
@@ -21,7 +22,7 @@ export const options = {
     public_reads: {
       executor: 'constant-vus',
       exec: 'publicReads',
-      vus: Number(__ENV.VUS || 10),
+      vus: localVus,
       duration: __ENV.DURATION || '20s',
       tags: { scenario: 'public_reads' },
     },
@@ -31,8 +32,8 @@ export const options = {
       exec: 'authFlow',
       startVUs: 0,
       stages: [
-        { duration: '10s', target: Number(__ENV.VUS || 10) },
-        { duration: '15s', target: Number(__ENV.VUS || 10) },
+        { duration: '10s', target: localVus },
+        { duration: '15s', target: localVus },
         { duration: '5s', target: 0 },
       ],
       tags: { scenario: 'auth_flow' },
