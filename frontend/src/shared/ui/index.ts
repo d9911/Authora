@@ -1,5 +1,7 @@
 export { ButtonMain } from './ButtonMain/ButtonMain';
 export { InputMain } from './InputMain/InputMain';
+export { SelectMain } from './SelectMain/SelectMain';
+export type { SelectOption, SelectMainProps } from './SelectMain/SelectMain';
 export { PasswordInput } from './PasswordInput/PasswordInput';
 export { OtpCodeInput } from './OtpCodeInput/OtpCodeInput';
 export { FeedbackText } from './FeedbackText/FeedbackText';

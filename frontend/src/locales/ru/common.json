@@ -138,5 +138,15 @@
   "offline": {
     "title": "Нет подключения",
     "description": "Проверьте интернет-соединение и попробуйте снова."
+  },
+  "select": {
+    "placeholder": "Выберите значение",
+    "empty": "Нет доступных вариантов",
+    "clear": "Очистить выбор",
+    "removeOption": "Удалить {{option}}",
+    "selectedCount_one": "Выбран {{count}} вариант",
+    "selectedCount_few": "Выбрано {{count}} варианта",
+    "selectedCount_many": "Выбрано {{count}} вариантов",
+    "selectedCount_other": "Выбрано {{count}} варианта"
   }
 }

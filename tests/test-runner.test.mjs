@@ -361,11 +361,11 @@ test('rejects duplicate ids and execution signatures before launching children',
   assert.equal(await pathExists(marker), false);
 });
 
-test('production catalog contains 52 unique validated leaf steps', async () => {
+test('production catalog contains 54 unique validated leaf steps', async () => {
   const checks = await createProjectChecks({ ...process.env, TEST_RUNNER_PROFILE: '' });
   validateChecks(checks, path.resolve(fileURLToPath(new URL('../', import.meta.url))));
-  assert.equal(checks.length, 52);
-  assert.equal(new Set(checks.map(({ id }) => id)).size, 52);
+  assert.equal(checks.length, 54);
+  assert.equal(new Set(checks.map(({ id }) => id)).size, 54);
   assert.equal(checks[0].id, 'runner-tests');
   assert.equal(checks.filter(({ required }) => required === false).length, 4);
 });

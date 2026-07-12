@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, useTransition } from 'react';
+import { useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import {
@@ -10,7 +10,7 @@ import {
   type SupportedLocale,
 } from '@/shared/i18n/config';
 import { useCurrentLocale } from '@/shared/i18n';
-import styles from './LanguageSwitcher.module.scss';
+import { SelectMain } from '@/shared/ui';
 
 const LOCALE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
@@ -21,9 +21,8 @@ export function LanguageSwitcher() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  const onChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const nextLocale = event.target.value as SupportedLocale;
-    if (nextLocale === locale) return;
+  const onChange = (nextLocale: SupportedLocale | null) => {
+    if (!nextLocale || nextLocale === locale) return;
 
     const currentUrl = `${pathname}${window.location.search}${window.location.hash}`;
     const nextUrl = replaceLocaleInUrl(currentUrl, nextLocale);
@@ -33,21 +32,17 @@ export function LanguageSwitcher() {
   };
 
   return (
-    <label className={styles.switcher}>
-      <span className={styles.label}>{t('languageSwitcher.label')}</span>
-      <select
-        className={styles.select}
-        value={locale}
-        onChange={onChange}
-        disabled={pending}
-        aria-label={t('languageSwitcher.ariaLabel')}
-      >
-        {i18nConfig.supportedLocales.map((supportedLocale) => (
-          <option key={supportedLocale} value={supportedLocale}>
-            {getLocaleMetadata(supportedLocale).label}
-          </option>
-        ))}
-      </select>
-    </label>
+    <SelectMain
+      label={t('languageSwitcher.label')}
+      ariaLabel={t('languageSwitcher.ariaLabel')}
+      value={locale}
+      options={i18nConfig.supportedLocales.map((supportedLocale) => ({
+        value: supportedLocale,
+        label: getLocaleMetadata(supportedLocale).label,
+      }))}
+      disabled={pending}
+      variant="compact"
+      onChange={onChange}
+    />
   );
 }

@@ -12,15 +12,19 @@ import {
   ProgressBar,
   RangeControl,
   SectionHeader,
+  SelectMain,
   SpatialPreview,
   Tabs,
   Toast,
   ToggleSwitch,
+  type SelectOption,
   type TabOption,
 } from '@/shared/ui';
 import styles from './UiKitShowcase.module.scss';
 
 type KitCategory = 'all' | 'surfaces' | 'actions' | 'forms' | 'feedback';
+type SelectDemoDensity = 'balanced' | 'compact' | 'spacious';
+type SelectDemoCapability = 'keyboard' | 'multiple' | 'placement';
 
 interface KitComponentCard {
   id: string;
@@ -143,6 +147,11 @@ export function UiKitShowcase() {
   const [depth, setDepth] = useState(72);
   const [toastOpen, setToastOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectDensity, setSelectDensity] = useState<SelectDemoDensity | null>('balanced');
+  const [selectCapabilities, setSelectCapabilities] = useState<SelectDemoCapability[]>([
+    'keyboard',
+    'placement',
+  ]);
 
   const visibleComponents = useMemo(
     () =>
@@ -163,6 +172,16 @@ export function UiKitShowcase() {
   ];
   const componentTitle = (id: string) => t(`components.${id}.title`);
   const componentDescription = (id: string) => t(`components.${id}.description`);
+  const densityOptions: SelectOption<SelectDemoDensity>[] = [
+    { value: 'balanced', label: t('showcase.demos.select.options.balanced') },
+    { value: 'compact', label: t('showcase.demos.select.options.compact') },
+    { value: 'spacious', label: t('showcase.demos.select.options.spacious') },
+  ];
+  const capabilityOptions: SelectOption<SelectDemoCapability>[] = [
+    { value: 'keyboard', label: t('showcase.demos.select.options.keyboard') },
+    { value: 'multiple', label: t('showcase.demos.select.options.multiple') },
+    { value: 'placement', label: t('showcase.demos.select.options.placement') },
+  ];
 
   useEffect(() => {
     if (!toastOpen) return;
@@ -351,6 +370,30 @@ export function UiKitShowcase() {
               {t('showcase.demos.form.reset')}
             </ButtonMain>
           </div>
+        </Card>
+
+        <Card
+          tone="plain"
+          title={t('showcase.demos.select.title')}
+          description={t('showcase.demos.select.description')}
+        >
+          <SelectMain
+            label={t('showcase.demos.select.singleLabel')}
+            placeholder={t('showcase.demos.select.singlePlaceholder')}
+            options={densityOptions}
+            value={selectDensity}
+            clearable
+            onChange={setSelectDensity}
+          />
+          <SelectMain
+            multiple
+            label={t('showcase.demos.select.multiLabel')}
+            placeholder={t('showcase.demos.select.multiPlaceholder')}
+            options={capabilityOptions}
+            value={selectCapabilities}
+            clearable
+            onChange={setSelectCapabilities}
+          />
         </Card>
 
         <Card

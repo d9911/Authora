@@ -148,6 +148,22 @@
         "apply": "Apply",
         "reset": "Reset"
       },
+      "select": {
+        "title": "Universal selector",
+        "description": "One component supports single and multiple selection, removable values and adaptive menu placement.",
+        "singleLabel": "Interface density",
+        "singlePlaceholder": "Choose density",
+        "multiLabel": "Selector capabilities",
+        "multiPlaceholder": "Choose capabilities",
+        "options": {
+          "balanced": "Balanced",
+          "compact": "Compact",
+          "spacious": "Spacious",
+          "keyboard": "Keyboard navigation",
+          "multiple": "Multiple selection",
+          "placement": "Adaptive placement"
+        }
+      },
       "layers": {
         "title": "FSD map",
         "description": "One-way imports keep the kit reusable."

@@ -138,5 +138,13 @@
   "offline": {
     "title": "You are offline",
     "description": "Check your internet connection and try again."
+  },
+  "select": {
+    "placeholder": "Choose a value",
+    "empty": "No options available",
+    "clear": "Clear selection",
+    "removeOption": "Remove {{option}}",
+    "selectedCount_one": "{{count}} option selected",
+    "selectedCount_other": "{{count}} options selected"
   }
 }

@@ -101,6 +101,24 @@ export const sourceChecks = [
     'Theme hydration',
     'tests/theme-hydration.mjs',
   ),
+  {
+    id: 'select-main-model',
+    label: 'SelectMain model',
+    command: 'node',
+    args: [
+      '--disable-warning=MODULE_TYPELESS_PACKAGE_JSON',
+      '--test',
+      'tests/select-main-model.test.mjs',
+    ],
+    cwd: '.',
+    required: true,
+    timeoutMs: SOURCE_CHECK_TIMEOUT_MS,
+  },
+  defineSourceCheck(
+    'select-main-contract',
+    'SelectMain component contract',
+    'tests/select-main-contract.mjs',
+  ),
   defineSourceCheck(
     'sass-deprecation-warnings',
     'Sass deprecation warnings',

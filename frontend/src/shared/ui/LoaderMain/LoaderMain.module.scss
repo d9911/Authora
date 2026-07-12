@@ -1,0 +1,147 @@
+.loader {
+  --loader-aura: rgba(91, 75, 255, 0.2);
+  --loader-core: #ede9ff;
+
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--ink);
+}
+
+:global(:root[data-theme='dark']) .loader {
+  --loader-aura: rgba(139, 124, 255, 0.3);
+  --loader-core: #f7f4ff;
+}
+
+.compact {
+  min-height: 180px;
+  gap: 14px;
+  padding: 32px;
+  border-radius: var(--r-lg);
+}
+
+.fullscreen {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100svh;
+  background: var(--paper);
+}
+
+.aura {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 35%,
+    var(--loader-aura) 0%,
+    transparent 56%
+  );
+  pointer-events: none;
+}
+
+.graphic {
+  position: relative;
+  z-index: 1;
+  width: 88px;
+  height: 88px;
+  overflow: visible;
+}
+
+.fullscreen .graphic {
+  width: clamp(112px, 15vw, 140px);
+  height: clamp(112px, 15vw, 140px);
+}
+
+.outerGlow {
+  opacity: 0.22;
+}
+
+.outerRing,
+.innerRing {
+  transform-origin: 100px 100px;
+  will-change: transform;
+}
+
+.outerRing {
+  animation: loader-spin 2.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.innerRing {
+  opacity: 0.94;
+  animation: loader-spin-reverse 1.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.core {
+  filter: drop-shadow(0 0 8px var(--halo));
+  transform-origin: 100px 100px;
+  animation: loader-pulse 1.2s ease-in-out infinite;
+}
+
+.label {
+  position: relative;
+  z-index: 1;
+  color: var(--iris);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.34em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.fullscreen .label {
+  position: absolute;
+  bottom: max(40px, env(safe-area-inset-bottom));
+  left: 50%;
+  width: min(90vw, 560px);
+  transform: translateX(-50%);
+}
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loader-spin-reverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes loader-pulse {
+  0%,
+  100% {
+    transform: scale(0.55);
+    opacity: 0.7;
+  }
+
+  50% {
+    transform: scale(1.35);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .outerRing,
+  .innerRing,
+  .core {
+    animation: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .fullscreen .label {
+    bottom: max(28px, env(safe-area-inset-bottom));
+    font-size: 0.68rem;
+    letter-spacing: 0.26em;
+  }
+}

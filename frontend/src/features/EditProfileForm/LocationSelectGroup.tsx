@@ -2,7 +2,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { Country, City, Region } from '@/shared/types';
-import styles from './EditProfileForm.module.scss';
+import { SelectMain } from '@/shared/ui';
 
 interface LocationSelectGroupProps {
   countries: Country[];
@@ -28,22 +28,18 @@ interface SelectFieldProps {
 
 function SelectField({ label, value, placeholder, disabled, options, onChange }: SelectFieldProps) {
   return (
-    <label className={styles['select-wrapper']}>
-      <span className={styles['select-label']}>{label}</span>
-      <select
-        className={styles['select-field']}
-        value={value}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        <option value="">{placeholder}</option>
-        {options.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.name}
-          </option>
-        ))}
-      </select>
-    </label>
+    <SelectMain
+      label={label}
+      value={value || null}
+      placeholder={placeholder}
+      disabled={disabled}
+      clearable
+      options={options.map((option) => ({
+        value: option.id,
+        label: option.name,
+      }))}
+      onChange={(nextValue) => onChange(nextValue ?? '')}
+    />
   );
 }
 
