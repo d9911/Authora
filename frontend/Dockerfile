@@ -6,6 +6,8 @@ RUN corepack enable && yarn install --frozen-lockfile
 
 FROM node:24-alpine AS build
 WORKDIR /app
+ARG NEXT_PUBLIC_BACKEND_URL=http://localhost:3010
+ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN corepack enable && yarn build

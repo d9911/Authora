@@ -15,16 +15,17 @@ and keep real values in local `.env`, `backend/.env`, or `backend/.env.docker`.
 | Email | `EMAIL_FROM` | not used | none | none | MISSING | Current code sends from `SMTP_USER || OWNER_EMAIL`. |
 | GitHub | `GITHUB_CLIENT_ID` | GitHub authorize URL | backend local, backend Docker | `backend/src/config/env.ts`, `GithubOAuthService.ts` | root `.env` placeholder before fix; `backend/.env` SET len 20 | Must match the GitHub OAuth App. |
 | GitHub | `GITHUB_CLIENT_SECRET` | code-to-token exchange | backend local, backend Docker | `backend/src/config/env.ts`, `GithubOAuthService.ts` | root `.env` placeholder before fix; `backend/.env` SET len 40 | Backend-only secret. Never expose to frontend. |
-| GitHub | `GITHUB_CALLBACK_URL` | GitHub OAuth callback | backend local, backend Docker | `backend/src/config/env.ts`, `GithubOAuthService.ts`, `docker-compose.yml` | SET | Docker sets `http://localhost:3010/api/auth/github/callback`. |
+| GitHub | `GITHUB_CALLBACK_URL` | GitHub OAuth callback | backend local, backend Docker | `backend/src/config/env.ts`, `GithubOAuthService.ts`, `docker-compose.yml` | SET | Compose default is localhost; deployments override it through root `.env`. |
 | Telegram | `TELEGRAM_BOT_TOKEN` | `getMe`, `getUpdates`, bot messages | backend local, backend Docker | `backend/src/config/env.ts`, `TelegramBotService.ts` | root `.env` placeholder before fix; `backend/.env` SET len 46 | Must match Telegram token shape and pass `getMe`. |
 | Telegram | `TELEGRAM_BOT_URL` | bot deep-link base | backend local, backend Docker | `backend/src/config/env.ts`, `TelegramBotService.ts` | SET | Does not prove the token works; `getMe` is still required. |
 | Telegram | `TELEGRAM_BOT_USERNAME` | not used | none | none | MISSING | Current bot flow derives username through `getMe` or uses `TELEGRAM_BOT_URL`. |
-| Frontend public URLs | `NEXT_PUBLIC_BACKEND_URL` | browser redirect to backend OAuth routes | frontend build | `frontend/src/shared/config/index.ts` | SET in `frontend/.env` | Build-time public value for Next.js. |
+| Frontend public URLs | `NEXT_PUBLIC_BACKEND_URL` | browser redirect to backend OAuth routes | frontend build | `frontend/src/shared/config/index.ts`, `frontend/Dockerfile`, `docker-compose.yml` | SET | Build-time public value; rebuild frontend after changing it. |
 | Frontend public URLs | `NEXT_PUBLIC_APP_NAME` | app display name | frontend build | `frontend/src/shared/config/index.ts`, `next.config.mjs` | SET in example/config | Safe to expose. |
 | Frontend server URLs | `BACKEND_INTERNAL_URL` | Next server proxy to backend GraphQL | frontend local, frontend Docker | `frontend/src/shared/config/index.ts`, `docker-compose.yml` | SET | Docker runtime uses `http://backend:3010`. |
-| Backend public URLs | `FRONTEND_URL` | email links and backend OAuth redirects to frontend | backend local, backend Docker | `backend/src/config/env.ts`, `oauthRoutes.ts`, `MailService.ts` | SET | Docker sets `http://localhost:5178`. |
+| Backend public URLs | `FRONTEND_URL` | email links and backend OAuth redirects to frontend | backend local, backend Docker | `backend/src/config/env.ts`, `oauthRoutes.ts`, `MailService.ts` | SET | Compose default is localhost; deployments override it through root `.env`. |
 | Backend public URLs | `CORS_ORIGINS` | backend CORS allowlist | backend local, backend Docker | `backend/src/config/env.ts` | SET | Comma-separated list. |
 | Cookies | `COOKIE_SECURE` | httpOnly cookie Secure flag | backend and frontend proxy | `backend/src/config/env.ts`, `frontend/src/shared/api/requestHandler.ts` | SET | Keep `false` on plain localhost. |
+| Transport | `ALLOW_INSECURE_PUBLIC_HTTP` | explicit staging-only public HTTP opt-in | backend Docker | `backend/src/config/env.ts`, `docker-compose.yml` | OPTIONAL | Default `false`; never use when HTTPS is available. |
 | Docker-only config | `DB_TYPE` | repository selection | backend Docker | `docker-compose.yml`, `docker-compose.mongo.yml` | SET by Compose | Mongo profile forces `mongo`. |
 | Docker-only config | `MONGO_URI` | Mongo connection | backend Docker | `docker-compose.yml`, `docker-compose.mongo.yml` | SET by Compose | Docker value uses `mongo` service host. |
 | Docker-only config | `SQLITE_FILE` | SQLite fallback DB path | backend Docker | `docker-compose.yml` | SET by Compose | Ignored when Mongo profile sets `DB_TYPE=mongo`. |
@@ -53,7 +54,8 @@ and keep real values in local `.env`, `backend/.env`, or `backend/.env.docker`.
 ## Recovery URL and cookie contract
 
 - `FRONTEND_URL` must be an absolute `http` or `https` URL. Outside localhost,
-  production startup requires HTTPS.
+  production startup requires HTTPS unless the operator explicitly sets the
+  temporary staging escape hatch `ALLOW_INSECURE_PUBLIC_HTTP=true`.
 - Email reset links are built with the `URL` API as
   `${FRONTEND_URL}/reset-password?token=...`; an optional sanitized relative
   `next` value is preserved.

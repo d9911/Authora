@@ -20,6 +20,9 @@ export const env = {
   // plain HTTP (http://localhost), which silently breaks OAuth/session cookies.
   // Default off; set COOKIE_SECURE=true when serving over TLS.
   cookieSecure: process.env.COOKIE_SECURE === 'true',
+  // Explicit staging escape hatch. Production remains HTTPS-only unless the
+  // operator knowingly opts into public HTTP for a temporary test deployment.
+  allowInsecurePublicHttp: process.env.ALLOW_INSECURE_PUBLIC_HTTP === 'true',
 
   backendPort: Number(process.env.BACKEND_PORT ?? 3010),
 
@@ -86,8 +89,18 @@ export function validateRecoveryEnvironment(): void {
   }
 
   const localHost = ['localhost', '127.0.0.1', '::1'].includes(frontendUrl.hostname);
-  if (env.isProd && !localHost && frontendUrl.protocol !== 'https:') {
+  if (
+    env.isProd &&
+    !localHost &&
+    frontendUrl.protocol !== 'https:' &&
+    !env.allowInsecurePublicHttp
+  ) {
     throw new Error('FRONTEND_URL must use HTTPS outside local development');
+  }
+  if (env.isProd && !localHost && frontendUrl.protocol !== 'https:') {
+    console.warn(
+      '[auth-config] public HTTP explicitly enabled; OAuth and session traffic are not transport-encrypted.',
+    );
   }
   if (env.isProd && !env.mail.enabled) {
     console.warn(

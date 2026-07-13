@@ -12,7 +12,9 @@ const connectedAccounts = read('frontend/src/features/ConnectedAccounts/Connecte
 const githubLoginButton = read('frontend/src/features/GithubLoginButton/GithubLoginButton.tsx');
 const telegramLoginButton = read('frontend/src/features/TelegramLoginButton/TelegramLoginButton.tsx');
 const nextConfig = read('frontend/next.config.mjs');
+const frontendDockerfile = read('frontend/Dockerfile');
 const dockerCompose = read('docker-compose.yml');
+const rootEnvExample = read('.env.example');
 const backendEnvExample = read('backend/.env.example');
 const githubOAuthService = read('backend/src/modules/auth/oauth/GithubOAuthService.ts');
 const connectedAccountsRenderSetup = connectedAccounts.slice(
@@ -23,7 +25,9 @@ const connectedAccountsRenderSetup = connectedAccounts.slice(
 function extractGithubCallback(source, label) {
   const match = source.match(/GITHUB_CALLBACK_URL[:=]\s*["']?([^"'\n]+)["']?/);
   if (!match) throw new Error(`Missing GITHUB_CALLBACK_URL in ${label}`);
-  return match[1].trim();
+  const configured = match[1].trim();
+  const fallback = configured.match(/^\$\{GITHUB_CALLBACK_URL:-(.+)\}$/);
+  return fallback?.[1] ?? configured;
 }
 
 const dockerGithubCallbackUrl = extractGithubCallback(dockerCompose, 'docker-compose.yml');
@@ -113,6 +117,27 @@ const checks = [
     'github callback config is consistent across docker and backend example',
     dockerGithubCallbackUrl === canonicalGithubCallbackUrl &&
       exampleGithubCallbackUrl === canonicalGithubCallbackUrl,
+  ],
+  [
+    'docker github oauth urls can be overridden for a public deployment',
+    /FRONTEND_URL:\s*["']?\$\{FRONTEND_URL:-http:\/\/localhost:5178\}/.test(dockerCompose) &&
+      /CORS_ORIGINS:\s*["']?\$\{CORS_ORIGINS:-http:\/\/localhost:5178\}/.test(dockerCompose) &&
+      /ALLOW_INSECURE_PUBLIC_HTTP:\s*["']?\$\{ALLOW_INSECURE_PUBLIC_HTTP:-false\}/.test(
+        dockerCompose,
+      ) &&
+      /GITHUB_CALLBACK_URL:\s*["']?\$\{GITHUB_CALLBACK_URL:-http:\/\/localhost:3010\/api\/auth\/github\/callback\}/.test(
+        dockerCompose,
+      ) &&
+      /^ALLOW_INSECURE_PUBLIC_HTTP=false$/m.test(rootEnvExample),
+  ],
+  [
+    'frontend docker build receives the browser-facing oauth backend url',
+    /NEXT_PUBLIC_BACKEND_URL:\s*["']?\$\{NEXT_PUBLIC_BACKEND_URL:-http:\/\/localhost:3010\}/.test(
+      dockerCompose,
+    ) &&
+      /ARG NEXT_PUBLIC_BACKEND_URL=http:\/\/localhost:3010/.test(frontendDockerfile) &&
+      /ENV NEXT_PUBLIC_BACKEND_URL=\$NEXT_PUBLIC_BACKEND_URL/.test(frontendDockerfile) &&
+      /^NEXT_PUBLIC_BACKEND_URL=http:\/\/localhost:3010$/m.test(rootEnvExample),
   ],
   [
     'github authorize and token exchange use the same configured callback url',

@@ -185,6 +185,28 @@ const reuseJson = await reuseAfterLogout.json();
 assert.equal(reuseJson.data?.refreshToken?.accessToken, undefined);
 assert.equal(reuseJson.errors?.[0]?.extensions?.code, 'INVALID_TOKEN');
 
+const rejectedRefreshViaProxy = await fetch(new URL('/api/graphql', baseUrl), {
+  method: 'POST',
+  headers: {
+    'content-type': 'application/json',
+    cookie: `access_token=${accessToken}; refresh_token=${refreshToken}`,
+  },
+  body: JSON.stringify({
+    query: `mutation Refresh($input: RefreshTokenInput!) {
+      refreshToken(input: $input) { accessToken }
+    }`,
+    variables: { input: {} },
+  }),
+  redirect: 'manual',
+});
+assert.equal(rejectedRefreshViaProxy.status, 200);
+const rejectedRefreshJson = await rejectedRefreshViaProxy.json();
+assert.equal(rejectedRefreshJson.data?.refreshToken?.accessToken, undefined);
+assert.equal(rejectedRefreshJson.errors?.[0]?.extensions?.code, 'INVALID_TOKEN');
+const rejectedRefreshCookies = rejectedRefreshViaProxy.headers.getSetCookie().join('\n');
+assert.match(rejectedRefreshCookies, /access_token=;[\s\S]*Max-Age=0/i);
+assert.match(rejectedRefreshCookies, /refresh_token=;[\s\S]*Max-Age=0/i);
+
 const manifest = await request('/manifest.json');
 assert.equal(manifest.status, 200);
 assert.equal(manifest.headers.get('location'), null);

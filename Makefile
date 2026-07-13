@@ -138,6 +138,8 @@ db-mongo-up:
 	docker compose --profile mongo -f docker-compose.yml -f docker-compose.mongo.yml exec backend node dist/infrastructure/database/mongo/seed.js
 	@echo "✅ MongoDB stack up and seeded"
 
+doc-mongo-up: db-mongo-up
+
 doc-mongo: build
 	@if docker image inspect authora-backend:latest >/dev/null 2>&1 \
 		&& docker image inspect authora-frontend:latest >/dev/null 2>&1; then \

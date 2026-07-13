@@ -261,6 +261,11 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
   const shouldClearAuthCookies =
     logoutRequested ||
     (passwordResetCompleted && resetChannel !== 'telegram');
+  const refreshSessionInvalid =
+    isRefreshCall &&
+    (json.errors as Array<{ extensions?: { code?: string } }> | undefined)?.some((error) =>
+      ['UNAUTHORIZED', 'INVALID_TOKEN'].includes(error.extensions?.code ?? ''),
+    );
   const recoveryInvalid = (
     json.errors as Array<{ extensions?: { code?: string } }> | undefined
   )?.some((error) =>
@@ -286,7 +291,7 @@ export async function proxyRequest(req: NextRequest): Promise<NextResponse> {
       maxAge: RECOVERY_MAX_AGE,
     });
   }
-  if (shouldClearAuthCookies) {
+  if (shouldClearAuthCookies || refreshSessionInvalid) {
     clearAuthCookies(res);
   }
   if (passwordResetCompleted || recoveryInvalid) {
